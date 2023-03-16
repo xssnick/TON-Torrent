@@ -1,0 +1,248 @@
+
+$baseBack: #F7F9FB;
+$ton: rgba(0, 136, 204, 0.85);
+$border: #dadada;
+$text-black: #232328;
+
+.modal-wrap {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 700;
+  outline: 0;
+}
+
+.modal-backdrop {
+  backdrop-filter: blur(10px);
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 500;
+}
+
+.modal-back {
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  background: $baseBack;
+  position: relative;
+  margin: auto;
+  border-radius: 10px;
+  box-shadow: rgba(30, 33, 37, 0.47) 0px 2px 6px;
+  border: solid 1px rgba(30, 33, 37, 0.65);
+}
+
+.modal-content {
+  padding: 15px 15px;
+  overflow-y: auto;
+  width: 500px;
+}
+
+.add-torrent-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.add-torrent-block input {
+  width: 90%;
+  height: 100%;
+  margin: auto;
+  padding: 5px 10px;
+  border-radius: 30px;
+  border: solid 1px rgb(161, 161, 161);
+  background-color:white;
+  text-align: center;
+  font-size: 10px;
+  font-family: "JetBrains Mono",monospace;
+  color: $text-black;
+}
+.add-torrent-block input.file {
+  border: dashed 1px rgb(161, 161, 161);
+}
+
+.add-torrent-block input:focus {
+  outline: none;
+  border: solid 1px rgb(0, 136, 204);
+}
+
+.add-torrent-block input:valid {
+  border: solid 1px rgb(0, 136, 204);
+}
+
+.add-torrent-block .title {
+  text-align: center;
+  margin-bottom: 7px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.add-torrent-block .error {
+  color: #c90000;
+  text-align: center;
+  font-size: 10px;
+  margin-top: 5px;
+}
+
+.hr-text {
+  line-height: 0.5em;
+  position: relative;
+  outline: 0;
+  border: 0;
+  text-align: center;
+  height: 1em;
+  opacity: .6;
+  font-size: 12px;
+  &:before {
+    content: '';
+    // use the linear-gradient for the fading effect
+    // use a solid background color for a solid bar
+    background: linear-gradient(to right, transparent, $text-black, transparent);
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 100%;
+    height: 1px;
+  }
+  &:after {
+    content: attr(data-content);
+    position: relative;
+    display: inline-block;
+
+    padding: 0 .4em;
+    line-height: 1em;
+    color: $text-black;
+    background-color: $baseBack;
+  }
+}
+
+.files-selector {
+  border-radius: 10px;
+  background-color: white;
+  min-width: 150px;
+
+  padding: 5px;
+  max-width: 430px;
+  max-height: 300px;
+  overflow: scroll;
+  margin: auto;
+  border: dotted 1px rgba(0, 136, 204, 0.53);
+
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-control {
+  display: flex;
+  align-items: center;
+  width: 300px;
+  margin: 18px auto 5px;
+}
+
+.modal-control .item {
+  margin: auto;
+  width: 100px;
+  flex-direction: column;
+  align-items: center;
+  padding: 3px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+
+  border: solid 1px rgba(0, 136, 204, 0.68);
+  color: $text-black;
+  background: white;
+  cursor: pointer;
+}
+
+.modal-control .main {
+  color: #fff;
+
+  background: linear-gradient(180deg, #029fd9 0%, #0088cc 100%);
+}
+
+.modal-control .main:hover {
+  color: #fff;
+
+  background: linear-gradient(180deg, #03b1f1 0%, #029ae7 100%);
+}
+
+.checkbox-file {
+  margin: 3px 10px 0;
+  position: relative;
+  padding-left: 20px;
+  font-size: 12px;
+  line-height: 14px;
+}
+
+.checkbox-file.folder {
+  font-weight: bold;
+}
+
+.checkbox-file .size {
+  font-size: 9px;
+  color: $text-black;
+  font-family: "JetBrains Mono",monospace;
+}
+
+.checkbox-file button {
+  background-image: url(assets/images/icons/expand.svg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  border: 0;
+  background-color: transparent;
+
+  height: 14px;
+  margin: 0 0 0 4px;
+  cursor: pointer;
+}
+
+/* Hide the browser's default checkbox */
+.checkbox-file input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+/* Create a custom checkbox */
+.checkmark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 14px;
+  width: 14px;
+  border: solid 1px rgba(0, 136, 204, 0.68);
+  border-radius: 3px;
+}
+
+.checkbox-file:hover input ~ .checkmark {
+  background-color: rgba(0, 136, 204, 0.05);
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark:after {
+  content: '';
+  background-image: url(assets/images/icons/check.svg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 7px 7px;
+  height: 12px;
+  width: 12px;
+  display: none;
+}
+
+/* Show the checkmark when checked */
+.checkbox-file input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.dir-space {
+  display: flex;
+  flex-direction: column;
+  margin: 0 15px 3px;
+}
