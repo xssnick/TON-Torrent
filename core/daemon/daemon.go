@@ -25,6 +25,7 @@ func Run(ctx context.Context, root, path string, listen, controlPort string, onF
 	errLogs := &bytes.Buffer{}
 
 	cmd := exec.CommandContext(ctx, path+"/"+name, args...)
+	cmd.SysProcAttr = daemonAttr()
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = io.MultiWriter(os.Stderr, errLogs)
 
