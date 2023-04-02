@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -12,7 +13,7 @@ import (
 	"strings"
 )
 
-func Run(root, path string, listen, controlPort string, onFinish func(error)) (*os.Process, error) {
+func Run(ctx context.Context, root, path string, listen, controlPort string, onFinish func(error)) (*os.Process, error) {
 	args := []string{"-v", "1", "-C", path + "/global.config.json", "-I", listen, "-p", controlPort, "-D", root + "/storage-db"}
 
 	log.Println("starting daemon with args:", strings.Join(args, " "))
@@ -23,7 +24,7 @@ func Run(root, path string, listen, controlPort string, onFinish func(error)) (*
 
 	errLogs := &bytes.Buffer{}
 
-	cmd := exec.Command(path+"/"+name, args...)
+	cmd := exec.CommandContext(ctx, path+"/"+name, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = io.MultiWriter(os.Stderr, errLogs)
 
@@ -41,7 +42,9 @@ func Run(root, path string, listen, controlPort string, onFinish func(error)) (*
 	go func() {
 		err := cmd.Wait()
 		if err != nil {
-			err = errors.New(err.Error() + "\n\n" + errLogs.String())
+			reason := errLogs.String()
+			reason += " | Exit code: " + err.Error()
+			err = errors.New(reason)
 		}
 		onFinish(err)
 	}()

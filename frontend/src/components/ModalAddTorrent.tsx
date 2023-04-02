@@ -201,7 +201,7 @@ export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
                     }} value={this.state.fieldHash} type="text"/>
                     <span className="error">{this.state.err}</span>
                     <hr className="hr-text" data-content="OR"/>
-                    <input id="file-select" type="file" className="file" accept=".tontorrent" required={true} onInput={(e)=> {
+                    <input id="file-select" type="file" className="file" accept=".tonbag" required={true} onInput={(e)=> {
                         let reader = new FileReader();
                         let fileInput = e.target as HTMLInputElement;
                         if (fileInput && fileInput.files) {

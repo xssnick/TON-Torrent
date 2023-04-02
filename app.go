@@ -88,7 +88,7 @@ func (a *App) prepare() {
 	}
 	exPath := filepath.Dir(ex)
 
-	a.daemonProcess, err = daemon.Run(a.rootPath, exPath, a.config.ListenAddr,
+	a.daemonProcess, err = daemon.Run(a.ctx, a.rootPath, exPath, a.config.ListenAddr,
 		strings.SplitN(a.config.DaemonControlAddr, ":", 2)[1], func(err error) {
 			if err != nil {
 				a.Throw(fmt.Errorf("storage daemon crashed with error:\n%w", err))
