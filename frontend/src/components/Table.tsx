@@ -1,6 +1,15 @@
-import React, {Component} from 'react';
-import {GetTorrents, OpenFolder} from "../../wailsjs/go/main/App";
-import {EventsEmit, EventsOff, EventsOn} from "../../wailsjs/runtime"; // let's also import Component
+import React, {Component, MouseEvent} from 'react';
+import {ExportMeta, GetTorrents, OpenFolder, RemoveTorrent, SetActive} from "../../wailsjs/go/main/App";
+import {EventsEmit, EventsOff, EventsOn} from "../../wailsjs/runtime";
+import Download from "../assets/images/icons/download.svg";
+import Play from "../assets/images/icons/play.svg";
+import Pause from "../assets/images/icons/pause.svg";
+import Close from "../assets/images/icons/close.svg";
+
+export interface SelectedTorrent {
+    hash: string
+    active: boolean
+}
 
 export interface TorrentItem {
     id: string
@@ -15,6 +24,8 @@ export interface TorrentItem {
 }
 
 interface State {
+    contextShow: boolean
+    contextItems: JSX.Element[]
     torrents: TorrentItem[]
 }
 
@@ -25,15 +36,39 @@ export interface Filter {
 
 export interface TableProps {
     filter: Filter
-    onSelect: (items: string[]) => void
+    onSelect: (items: SelectedTorrent[]) => void
 }
 
-export function refresh() {
-    EventsEmit("refresh")
+export function Refresh() {
+    EventsEmit("refresh");
+}
+
+export function textState(state: string) {
+    switch (state) {
+        case "seeding":
+            return "Seeding";
+        case "downloading":
+            return "Downloading";
+        case "fail":
+            return "Failed";
+        case "inactive":
+            return "Inactive";
+    }
+    return "";
 }
 
 export class Table extends Component<TableProps,State> {
-    private tmpTorrents: TorrentItem[] = [{
+    constructor(props: TableProps, state:State) {
+        super(props, state);
+
+        this.state = {
+            contextShow: false,
+            contextItems: [],
+            torrents: [],
+        }
+    }
+
+    private tmpTorrents: TorrentItem[] = [/*{
         id: "1",
         name: "Half Life 3",
         state: "seeding",
@@ -83,7 +118,7 @@ export class Table extends Component<TableProps,State> {
         progress: 100,
         selected: false,
         path: "",
-    }];
+    }*/];
 
     update() {
         GetTorrents().then((tr)=>{
@@ -108,76 +143,62 @@ export class Table extends Component<TableProps,State> {
                 })
             })
 
+            let list = newList.concat(this.tmpTorrents);
             this.setState({
-                torrents: newList.concat(this.tmpTorrents)
+                torrents: list
             });
+
+            let selected = list.filter((tr)=>{return tr.selected});
+            this.props.onSelect(selected.map<SelectedTorrent>((ti) => {
+                return {
+                    hash: ti.id,
+                    active: ti.state == "downloading" || ti.state == "seeding",
+                }
+            }));
         });
     }
 
-    // Before the component mounts, we initialise our state
-    componentWillMount() {
-        this.setState({
-            torrents: [],
-        });
-    }
-
-    componentWillUnmount() {
-        EventsOff("update")
-    }
-
-        // After the component did mount, we set the state each second.
     componentDidMount() {
         EventsOn("update", () => {
             this.update();
         })
     }
+    componentWillUnmount() {
+        EventsOff("update")
+    }
 
     clickRow(t: TorrentItem) {
-        return () => {
+        return (e: React.MouseEvent) => {
+            // unselect old when no ctrl or command pressed
+            if (!e.ctrlKey && !e.metaKey) {
+                this.state.torrents.forEach((ti) => {
+                    ti.selected = false
+                })
+            }
+
             if (!t.selected) {
-                // we should have only 1 selected when regular click
+                // select clicked
                 t.selected = true
-
-                let unselect = (e: MouseEvent) => {
-                    let target = e.target as HTMLElement;
-                    if (target.classList.contains("top-button")) {
-                        // not unselect when control button clicked
-                        return
-                    }
-
-                    if (!e.ctrlKey && !e.metaKey) {
-                        this.state.torrents.forEach((ti) => {
-                            ti.selected = false
-                        })
-
-                        // copy to update state
-                        this.setState({
-                            torrents: this.state.torrents.slice(0, this.state.torrents.length)
-                        });
-                        this.props.onSelect([]);
-                        document.body.removeEventListener("mouseup", unselect);
-                    }
-                }
-
-                // unselect all when click on something else
-                document.body.addEventListener("mouseup", unselect);
-            } else {
-                // just unselect
-                t.selected = false
             }
 
             // copy to update state
             this.setState({
                 torrents: this.state.torrents.slice(0, this.state.torrents.length)
             });
+
+            // report selected to callback
             let selected = this.state.torrents.filter((tr)=>{return tr.selected});
-            this.props.onSelect(selected.map<string>((ti) => ti.id));
+            this.props.onSelect(selected.map<SelectedTorrent>((ti) => {
+                return {
+                    hash: ti.id,
+                    active: ti.state == "downloading" || ti.state == "seeding",
+                }
+            }));
         }
     }
 
     renderTorrentsList() {
         let items = [];
-        let i = 0;
 
         for (let t of this.state.torrents) {
             if (this.props.filter.search.length > 0) {
@@ -209,14 +230,49 @@ export class Table extends Component<TableProps,State> {
                     break
             }
 
-            let addClass = "";
-            if (i++ % 2 == 0) {
-                addClass = "gray"
-            }
-            items.push(<tr className={t.selected ? "torrent-selected" : ""} key={t.id}
-                           onClick={this.clickRow(t)} onDoubleClick={() => {OpenFolder(t.path).then(r => {})}}>
-                <td className={addClass}><div id={"state-"+t.id} className={"item-state "+t.state} onMouseEnter={(e) =>{
+            items.push(<tr className={t.selected ? "torrent-row torrent-selected" : "torrent-row"} key={t.id}
+                           onClick={this.clickRow(t)} onDoubleClick={() => {OpenFolder(t.path).then()}}
+                           onContextMenu={(e)=>{
+                               e.preventDefault()
+
+                               let menu = document.getElementById("menu")
+                               let menuBack = document.getElementById("menu-back")
+                               menu!.style.top =  e.pageY+"px";
+                               menu!.style.left = e.pageX+"px";
+
+                               let elems: JSX.Element[] = [];
+
+                               elems.push(<div onClick={() => {
+                                   OpenFolder(t.path).then()}}>
+                                   <img src={Download} alt=""/><span>Open directory</span></div>)
+
+                               if (t.state != "downloading" && t.state != "seeding" && t.state != "fail") {
+                                   elems.push(<div onClick={() => {
+                                       SetActive(t.id, true).then(Refresh)
+                                   }}>
+                                       <img src={Play} alt=""/><span>Start</span></div>)
+                               }
+                               if (t.state != "inactive" && t.state != "fail") {
+                                   elems.push(<div onClick={() => {
+                                       SetActive(t.id, false).then(Refresh)
+                                   }}><img src={Pause} alt=""/><span>Pause</span></div>)
+                               }
+                               elems.push(<div onClick={() => {
+                                   RemoveTorrent(t.id, false, false).then(Refresh)
+                               }}><img src={Close} alt=""/><span>Remove</span></div>)
+                               elems.push(<div onClick={() => {
+                                   ExportMeta(t.id).then()
+                               }}><img src={Close} alt=""/><span>Export .tonbag</span></div>)
+
+                               this.setState((current) => ({ ...current, contextShow: true, contextItems: elems}))
+
+                               document.body.addEventListener("click", () => {
+                                  this.setState((current) => ({ ...current, contextShow: false, contextItems: []}))
+                              }, { once: true });
+                           }}>
+                <td onMouseEnter={(e) =>{
                     let tip = document.getElementById("tip")
+                    tip!.textContent = textState(t.state);
                     let rectItem = document.getElementById("state-"+t.id)!.getBoundingClientRect()
                     let rectTip = tip!.getBoundingClientRect()
 
@@ -231,16 +287,16 @@ export class Table extends Component<TableProps,State> {
                         tip!.style.opacity = "0";
                         tip!.style.visibility = "hidden";
                     }
-                }></div></td>
-                <td className={addClass} style={{maxWidth:"150px"}}>{t.name}</td>
-                <td className={"small "+addClass}>{t.size}</td>
-                <td className={addClass}><div className="progress-block-small">
+                }><div id={"state-"+t.id} className={"item-state "+t.state}></div></td>
+                <td>{t.name}</td>
+                <td className={"small"}>{t.size}</td>
+                <td><div className="progress-block-small">
                     <span style={{textAlign:"left", width:"27px"}}>{t.progress}%</span>
                     <div className="progress-bar-small-form">
                         <div className="progress-bar-small" style={{width: t.progress+"%"}}></div>
                     </div></div></td>
-                <td className={"small "+addClass}>{t.downloadSpeed}</td>
-                <td className={"small "+addClass}>{t.uploadSpeed}</td>
+                <td className={"small"}>{t.downloadSpeed}</td>
+                <td className={"small"}>{t.uploadSpeed}</td>
             </tr>);
         }
         return items;
@@ -248,18 +304,23 @@ export class Table extends Component<TableProps,State> {
 
     render() {
         return <table style={{fontSize:12}}>
+            <span id="tip" className="tooltip"/>
+            <div id="menu-back" className="context-backdrop" style={{visibility: this.state.contextShow ? "visible":"hidden"}}/>
+            <div id="menu" className="context-menu" style={{visibility: this.state.contextShow ? "visible":"hidden"}}>
+                {this.state.contextItems}
+            </div>
             <thead>
             <tr>
-                <th></th>
+                <th style={{width:"23px"}}></th>
                 <th>Description</th>
-                <th>Size</th>
-                <th>Progress</th>
-                <th>Download</th>
-                <th>Upload</th>
+                <th style={{width:"80px"}}>Size</th>
+                <th style={{width:"150px"}}>Progress</th>
+                <th style={{width:"90px"}}>Download</th>
+                <th style={{width:"90px"}}>Upload</th>
             </tr>
             </thead>
             <tbody>
-                {this.renderTorrentsList()}
+            {this.renderTorrentsList()}
             </tbody>
         </table>
     }

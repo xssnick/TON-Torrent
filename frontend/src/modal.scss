@@ -2,6 +2,7 @@
 $baseBack: #F7F9FB;
 $ton: rgba(0, 136, 204, 0.85);
 $border: #dadada;
+$borderHover: #969696;
 $text-black: #232328;
 
 .modal-wrap {
@@ -39,12 +40,46 @@ $text-black: #232328;
 .modal-content {
   padding: 15px 15px;
   overflow-y: auto;
-  width: 500px;
 }
 
 .add-torrent-block {
   display: flex;
   flex-direction: column;
+  #torrent-hash-field {
+    width: 409px;
+  }
+}
+
+.set-speed {
+  margin-top: 10px;
+  display: flex;
+
+
+  .info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 50px;
+    margin: auto;
+    input {
+      text-align: center;
+      font-size: 12px;
+      height: 30px;
+      width: 120px;
+    }
+    input::placeholder {
+      color: #1e2125;
+    }
+      input+span:after {
+      content: '112';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 10px;
+      height: 10px;
+      background-color: black;
+    }
+  }
 }
 
 .add-torrent-block input {
@@ -53,24 +88,27 @@ $text-black: #232328;
   margin: auto;
   padding: 5px 10px;
   border-radius: 30px;
-  border: solid 1px rgb(161, 161, 161);
+  border: solid 1px $border;
   background-color:white;
-  text-align: center;
+
   font-size: 10px;
   font-family: "JetBrains Mono",monospace;
   color: $text-black;
 }
+.add-torrent-block input::placeholder {
+  color: #a6a6a6;
+}
 .add-torrent-block input.file {
-  border: dashed 1px rgb(161, 161, 161);
+  border: dashed 1px $border;
 }
 
 .add-torrent-block input:focus {
   outline: none;
-  border: solid 1px rgb(0, 136, 204);
+  border: solid 1px $borderHover;
 }
 
 .add-torrent-block input:valid {
-  border: solid 1px rgb(0, 136, 204);
+  border: solid 1px $borderHover;
 }
 
 .add-torrent-block .title {
@@ -94,13 +132,13 @@ $text-black: #232328;
   border: 0;
   text-align: center;
   height: 1em;
-  opacity: .6;
+  opacity: 1;
   font-size: 12px;
   &:before {
     content: '';
     // use the linear-gradient for the fading effect
     // use a solid background color for a solid bar
-    background: linear-gradient(to right, transparent, $text-black, transparent);
+    background: linear-gradient(to right, transparent, $borderHover, transparent);
     position: absolute;
     left: 0;
     top: 50%;
@@ -114,7 +152,7 @@ $text-black: #232328;
 
     padding: 0 .4em;
     line-height: 1em;
-    color: $text-black;
+    color: #818181;
     background-color: $baseBack;
   }
 }
@@ -122,7 +160,8 @@ $text-black: #232328;
 .files-selector {
   border-radius: 10px;
   background-color: white;
-  min-width: 150px;
+  min-width: 300px;
+  min-height: 200px;
 
   padding: 5px;
   max-width: 430px;
@@ -142,7 +181,7 @@ $text-black: #232328;
   margin: 18px auto 5px;
 }
 
-.modal-control .item {
+.second-button {
   margin: auto;
   width: 100px;
   flex-direction: column;
@@ -156,17 +195,32 @@ $text-black: #232328;
   background: white;
   cursor: pointer;
 }
+.main-button {
+  margin: auto;
+  width: 100px;
+  flex-direction: column;
+  align-items: center;
+  padding: 3px 14px;
+  font-size: 13px;
+  border-radius: 6px;
 
-.modal-control .main {
+  border: solid 1px rgba(0, 136, 204, 0.68);
   color: #fff;
-
+  cursor: pointer;
   background: linear-gradient(180deg, #029fd9 0%, #0088cc 100%);
 }
-
-.modal-control .main:hover {
+.main-button:hover {
   color: #fff;
-
   background: linear-gradient(180deg, #03b1f1 0%, #029ae7 100%);
+}
+.main-button:disabled {
+  color: #23232888;
+  border: solid 1px rgba(204, 204, 204, 0.68);
+  background: linear-gradient(180deg, #f1f1f1 0%, #e7e7e7 100%);
+  cursor: auto;
+}
+.second-button:active {
+  box-shadow: inset 0 0 3px #00000042;
 }
 
 .checkbox-file {
@@ -245,4 +299,56 @@ $text-black: #232328;
   display: flex;
   flex-direction: column;
   margin: 0 15px 3px;
+}
+
+.loader-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  margin: auto;
+}
+.loader-text {
+  font-size: 14px;
+  padding-top: 5px;
+}
+.loader {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #0088cc;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+  margin: auto;
+}
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.torrent-created {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  width: 100%;
+  input {
+    text-align: center;
+    margin-top: 5px;
+    margin-bottom: 10px;
+  }
+  span {
+    font-size: 12px;
+  }
+  .header {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 10px;
+  }
 }

@@ -1,6 +1,6 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "ton-torrent-client",
+  "name": "TON Torrent",
   "outputfilename": "ton-torrent-client",
   "frontend:install": "npm install",
   "frontend:build": "npm run build",

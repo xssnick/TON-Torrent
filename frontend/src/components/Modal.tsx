@@ -1,15 +1,5 @@
-import React, {useState} from 'react';
+import React from 'react';
 import ReactDOM from 'react-dom';
-
-
-export const useModal = () => {
-    const [isShown, setIsShown] = useState<boolean>(false);
-    const toggle = () => setIsShown(!isShown);
-    return {
-        isShown,
-        toggle,
-    };
-};
 
 export const baseModal = (onHide: () => void, content: JSX.Element) => {
     const modal = (

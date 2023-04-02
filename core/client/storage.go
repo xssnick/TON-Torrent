@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/xssnick/tonutils-go/tl"
+	"log"
 )
 
 type ADNL interface {
@@ -31,7 +32,7 @@ func (s *StorageClient) GetTorrents(ctx context.Context) (*TorrentsList, error) 
 	case TorrentsList:
 		return &t, nil
 	case DaemonError:
-		return nil, fmt.Errorf("daemon err: %s", t.Message)
+		return nil, fmt.Errorf("%s", t.Message)
 	}
 	return nil, fmt.Errorf("unexpected response")
 }
@@ -53,7 +54,50 @@ func (s *StorageClient) AddByHash(ctx context.Context, hash []byte, dir string) 
 	case TorrentFull:
 		return &t, nil
 	case DaemonError:
-		return nil, fmt.Errorf("daemon err: %s", t.Message)
+		return nil, fmt.Errorf("%s", t.Message)
+	}
+	return nil, fmt.Errorf("unexpected response")
+}
+
+func (s *StorageClient) AddByMeta(ctx context.Context, meta []byte, dir string) (*TorrentFull, error) {
+	var res tl.Serializable
+	err := s.client.QueryADNL(ctx, AddByMeta{
+		Meta:          meta,
+		RootDir:       dir,
+		StartDownload: true,
+		AllowUpload:   true,
+		Priorities:    []any{PriorityActionAll{0}}, // download only header
+	}, &res)
+	if err != nil {
+		return nil, fmt.Errorf("faled to query add by meta: %w", err)
+	}
+
+	switch t := res.(type) {
+	case TorrentFull:
+		return &t, nil
+	case DaemonError:
+		return nil, fmt.Errorf("%s", t.Message)
+	}
+	return nil, fmt.Errorf("unexpected response")
+}
+
+func (s *StorageClient) CreateTorrent(ctx context.Context, dir, description string) (*TorrentFull, error) {
+	var res tl.Serializable
+	err := s.client.QueryADNL(ctx, CreateTorrent{
+		Path:        dir,
+		Description: description,
+		AllowUpload: true,
+		CopyInside:  false,
+	}, &res)
+	if err != nil {
+		return nil, fmt.Errorf("faled to query create torrent: %w", err)
+	}
+
+	switch t := res.(type) {
+	case TorrentFull:
+		return &t, nil
+	case DaemonError:
+		return nil, fmt.Errorf("%s", t.Message)
 	}
 	return nil, fmt.Errorf("unexpected response")
 }
@@ -71,7 +115,43 @@ func (s *StorageClient) GetTorrentFull(ctx context.Context, hash []byte) (*Torre
 	case TorrentFull:
 		return &t, nil
 	case DaemonError:
-		return nil, fmt.Errorf("daemon err: %s", t.Message)
+		return nil, fmt.Errorf("%s", t.Message)
+	}
+	return nil, fmt.Errorf("unexpected response")
+}
+
+func (s *StorageClient) GetTorrentMeta(ctx context.Context, hash []byte) ([]byte, error) {
+	var res tl.Serializable
+	err := s.client.QueryADNL(ctx, GetTorrentMeta{
+		Hash: hash,
+	}, &res)
+	if err != nil {
+		return nil, fmt.Errorf("faled to query get torrent meta: %w", err)
+	}
+
+	switch t := res.(type) {
+	case TorrentMeta:
+		return t.Meta, nil
+	case DaemonError:
+		return nil, fmt.Errorf("%s", t.Message)
+	}
+	return nil, fmt.Errorf("unexpected response")
+}
+
+func (s *StorageClient) GetPeers(ctx context.Context, hash []byte) (*PeersList, error) {
+	var res tl.Serializable
+	err := s.client.QueryADNL(ctx, GetPeers{
+		Hash: hash,
+	}, &res)
+	if err != nil {
+		return nil, fmt.Errorf("faled to query get peers: %w", err)
+	}
+
+	switch t := res.(type) {
+	case PeersList:
+		return &t, nil
+	case DaemonError:
+		return nil, fmt.Errorf("%s", t.Message)
 	}
 	return nil, fmt.Errorf("unexpected response")
 }
@@ -90,7 +170,7 @@ func (s *StorageClient) RemoveTorrent(ctx context.Context, hash []byte, withFile
 	case Success:
 		return nil
 	case DaemonError:
-		return fmt.Errorf("daemon err: %s", t.Message)
+		return fmt.Errorf("%s", t.Message)
 	}
 	return fmt.Errorf("unexpected response")
 }
@@ -120,11 +200,32 @@ func (s *StorageClient) SetActive(ctx context.Context, hash []byte, active bool)
 		case Success:
 			return nil
 		case DaemonError:
-			return fmt.Errorf("daemon err: %s", t.Message)
+			return fmt.Errorf("%s", t.Message)
 		}
 		return fmt.Errorf("unexpected response")
 	case DaemonError:
-		return fmt.Errorf("daemon err: %s", t.Message)
+		return fmt.Errorf("%s", t.Message)
+	}
+	return fmt.Errorf("unexpected response")
+}
+
+func (s *StorageClient) SetFilePriority(ctx context.Context, hash []byte, name string, priority int32) error {
+	var res tl.Serializable
+	err := s.client.QueryADNL(ctx, SetFilePriorityByName{
+		Hash:     hash,
+		Name:     name,
+		Priority: priority,
+	}, &res)
+	if err != nil {
+		return fmt.Errorf("faled to query set file priority by name: %w", err)
+	}
+
+	switch t := res.(type) {
+	case PriorityStatusPending, PriorityStatusSet:
+		return nil
+	case DaemonError:
+		log.Println("priority set err:", t.Message)
+		return fmt.Errorf("%s", t.Message)
 	}
 	return fmt.Errorf("unexpected response")
 }

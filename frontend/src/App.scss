@@ -18,6 +18,7 @@
 $baseBack: #F7F9FB;
 $ton: rgba(0, 136, 204, 0.85);
 $border: #dadada;
+$borderHover: #969696;
 $text-black: #232328;
 
 #root {
@@ -71,6 +72,7 @@ html {
     height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .logo-block {
@@ -108,14 +110,24 @@ html {
 .search-input {
     width: 160px;
     height: 25px;
-    /*box-shadow:inset 0 1px 2px 1px #0000001a;*/
     border-radius: 30px;
     border: solid 1px rgba(0, 0, 0, 0.13);
-    background-color:white /*#ebedf0*/;
-    padding: 9px;
+    padding: 9px 25px;
     font-size: 12px;
     color: $text-black;
     margin: auto 30px;
+
+    background: white url(assets/images/icons/search.svg) left no-repeat;
+    background-size: 16% 70%;
+}
+
+.search-input::placeholder {
+    color: #a6a6a6;
+}
+
+.search-input:focus {
+    outline: none;
+    border: solid 1px $borderHover;
 }
 
 .torrents-table {
@@ -125,9 +137,9 @@ html {
 }
 
 .torrents-table table {
+    table-layout: initial;
     width: 100%;
     background-color: #ffffff;
-
 }
 
 .torrents-table td.small {
@@ -143,15 +155,14 @@ html {
     padding-right: 5px;
     padding-left: 5px;
 
-    border-bottom: solid 1px rgba(35, 35, 40, 0.1);
+    border-bottom: solid 1px $border;
 }
 
 .torrents-table th {
     height: 27px;
-    border-bottom: solid 1px rgba(35, 35, 40, 0.1);
+    border-bottom: solid 1px $border;
     padding-left: 5px;
     background-color: $baseBack;
-
 }
 
 .torrent-selected {
@@ -164,6 +175,8 @@ html {
     display: flex;
     flex-direction: column;
     background: $baseBack;
+    box-shadow: 0 -1px 2px 0 #0000001a;
+    z-index: 2;
 }
 
 .foot-bar {
@@ -181,33 +194,58 @@ html {
     width: 250px;
     display: flex;
     margin: auto;
+    span img {
+        height: 13px;
+        margin: 0 5px 2px;
+    }
+    span .upload {
+        transform: rotate(180deg);
+    }
 }
+
+
 
 .foot-bar .speed span {
     font-family: "JetBrains Mono",monospace;
     font-size: 11px;
     margin: auto;
+    width: 150px;
 }
 
 .torrent-menu {
-    height: 28px;
+    height: 20px;
     width: 100%;
-    /*box-shadow: 0 1px 2px 0 #0000001a;*/
-    border-top: 1px solid $border;
-   /* background: linear-gradient(#f1f1f1, #ffffff 80%);*/
-    background: $baseBack;
+    padding-left: 4px;
     display: flex;
     flex-direction: row;
 }
 
-.torrent-menu-button {
+.torrent-menu button {
     width: 80px;
     height: 100%;
-    padding: 5px;
-    background-color: rgba(0, 0, 0, 0.04);
-    margin-left: 10px;
-    border-radius: 2px;
-    border-right: solid 1px rgba(0, 0, 0, 0.13);
+    line-height: 100%;
+    background-color: white;
+    margin-left: 5px;
+    border-radius: 0 0 7px 7px;
+    border: solid 1px $border;
+    border-top: none;
+    font-size: 11px;
+}
+.torrent-menu button:hover {
+    border: solid 1px $borderHover;
+    border-top: none;
+}
+.torrent-menu button:disabled {
+    color: $text-black;
+    border: solid 1px $text-black;
+    border-top: none;
+}
+
+.torrent-body {
+    height: calc(100% - 20px);
+    min-height: 0;
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 .size-scroller {
@@ -273,8 +311,7 @@ html {
     background-color: $ton;
     border-radius: 5px;
     box-shadow:inset 0 0px 2px 1px rgba(77, 77, 77, 0.07);
-    transition: width 0.7s;
-
+    transition: width 0.2s;
 }
 
 .progress-bar-small-form {
@@ -317,13 +354,12 @@ html {
     background-color: white;
     width:95%;
     height: 22px;
-    margin: auto auto 3px;
+    margin: auto auto 4px;
     border: solid 1px rgba(155, 155, 155, 0.46);
     border-radius: 3px;
     font-size: 11px;
     color: $text-black;
     cursor: pointer;
-
 }
 
 .filters-menu .selected {
@@ -332,11 +368,11 @@ html {
 }
 
 .filters-menu .not-selected:hover {
-    border: solid 1px #969696;
+    border: solid 1px $borderHover;
 }
 
 .actions-menu {
-    padding: 11px 7px;
+    padding-top: 25px;
     display: flex;
     flex-direction: column;
 }
@@ -355,6 +391,9 @@ html {
     color: $text-black;
     background: white;
     cursor: pointer;
+}
+.actions-menu .menu-item:active {
+    box-shadow: inset 0 0 3px #00000042;
 }
 
 .actions-menu .main {
@@ -376,10 +415,10 @@ html {
     flex-direction: column;
     height: 65px;
     border-right: solid 1px $border;
-;
 }
 
 .version-block .dev-info {
+    visibility: hidden;
     margin: 0px 0px 0;
     font-size: 8px;
     height: 30px;
@@ -419,7 +458,7 @@ html {
 
 .top-buttons-container {
     width: 99px;
-    margin-left: 10%;
+    margin-left: 2px;
     margin-right:auto;
     display: flex;
 }
@@ -427,24 +466,215 @@ html {
 .top-button {
     margin: auto;
     font-size: 12px;
-    width: 23px;
-    height: 23px;
+    width: 21px;
+    height: 21px;
 
-    border: solid 1px rgba(2, 159, 217, 0.63);
-    border-radius: 6px;
+    border: solid 1px $border;
+    border-radius: 4px;
     background-color: white;
+}
+.top-button:hover {
+    border: solid 1px $borderHover;
+}
+.top-button:active {
+    box-shadow: inset 0 0 3px #00000042;
+}
+.top-button:disabled {
+    border: none;
 }
 
 .top-button.stop {
-    color: #1e2125;
+    background-image: url(assets/images/icons/pause.svg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 90% 90%;
+    :disabled {
+        filter: invert(47%) sepia(23%) saturate(3225%) hue-rotate(160deg) brightness(95%) contrast(102%);
+    }
 }
 
 .top-button.remove {
-    color: #b40000;
+    background-image: url(assets/images/icons/close.svg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 90% 90%;
 }
 
 .top-button.start {
-    color: #0cb400;
+    background-image: url(assets/images/icons/play.svg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 90% 90%;
+}
+
+.create-input {
+    width: 300px;
+    height: 35px;
+    border-radius: 30px;
+    border: solid 1px rgba(0, 0, 0, 0.13);
+    font-size: 12px;
+    padding: 0 10px;
+    color: $text-black;
+    margin: auto;
+    background-color: white;
+    display: flex;
+    overflow: hidden;
+}
+
+.create-input span {
+    margin: auto 0;
+    padding-left: 10px;
+    font-family: "JetBrains Mono",monospace;
+    font-size: 10px;
+}
+
+.create-input button {
+    height: 70%;
+    margin: auto 0;
+    border-radius: 8px;
+    background-color: #f8f8f8;
+    border: solid 1px rgba(0, 0, 0, 0.13);
+    font-size: 10px;
+}
+.create-input button:hover {
+    border: solid 1px $borderHover;
+}
+.create-input button:active {
+    box-shadow: inset 0 0 3px #00000042;
+}
+
+.info-progress-block {
+    width: 97%;
+    height: 50px;
+    padding-top: 10px;
+    display: flex;
+    flex-direction: row;
+    font-size: 12px;
+    justify-content: center;
+    align-items: center;
+    .percent {
+        width: 20px;
+    }
+}
+
+.info-progress-bar {
+    margin: 10px;
+    width: 75%;
+    height: 10px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow:inset 0 1px 2px 1px #0000001a;
+    background: white;
+}
+
+.info-progress-bar .filled {
+    height: 100%;
+    width: 0;
+    background-color: $ton;
+    border-radius: 10px 0 0 10px;
+    box-shadow:inset 0 0px 2px 1px rgba(77, 77, 77, 0.07);
+    transition: width 0.2s;
+}
+
+.info-data-block {
+    margin: 0 12px;
+    display: flex;
+    flex-direction: column;
+    button {
+        font-size: 10px;
+        height: 20px;
+
+        border: solid 1px $border;
+        border-radius: 5px;
+        background-color: white;
+        margin-left: 5px;
+    }
+    button:hover {
+        border: solid 1px $borderHover;
+    }
+    button:active {
+        border: solid 1px $text-black;
+    }
+}
+
+.info-data-block .description {
+    margin-top: 10px;
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+}
+
+.info-data-block .description span.field {
+    font-weight: bold;
+    font-size: 12px;
+    font-family: "JetBrains Mono",monospace;
+}
+
+.info-data-block .description p {
+    user-select: text;
+    -webkit-user-select:text;
+    -moz-user-select:text;
+    -ms-user-select:text;
+    cursor: text;
+
+    margin-top: 3px;
+    font-size: 10px;
+    font-family: "JetBrains Mono",monospace;
+}
+
+.info-data-block .basic {
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+}
+
+.info-data-block .item {
+    align-items: center;
+    overflow: clip;
+}
+
+.info-data-block .basic span {
+    font-size: 12px;
+    white-space: nowrap;
+    font-family: "JetBrains Mono",monospace;
+}
+
+.info-data-block .basic span.field {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.info-data-block .basic span.value {
+    user-select: text;
+    -webkit-user-select:text;
+    -moz-user-select:text;
+    -ms-user-select:text;
+    cursor: text;
+
+    font-size: 11px;
+}
+
+.files-table {
+    width: 95%;
+    margin-top: 5px;
+    margin-left: 10px;
+    margin-right: 10px;
+    flex-grow: 1;
+    font-family: "JetBrains Mono",monospace;
+    thead tr {
+        margin-bottom: 10px;
+        height: 30px;
+    }
+    th {
+        padding-left: 5px;
+    }
+    td {
+        padding-left: 5px;
+        line-height: 22px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 }
 
 #App {

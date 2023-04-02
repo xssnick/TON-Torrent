@@ -8,7 +8,7 @@
         <key>CFBundleExecutable</key>
         <string>{{.Name}}</string>
         <key>CFBundleIdentifier</key>
-        <string>com.wails.{{.Name}}</string>
+        <string>org.tonutils.tontorrent</string>
         <key>CFBundleVersion</key>
         <string>{{.Info.ProductVersion}}</string>
         <key>CFBundleGetInfoString</key>
@@ -21,5 +21,26 @@
         <string>10.13.0</string>
         <key>NSHighResolutionCapable</key>
         <string>true</string>
+        <key>CFBundleDocumentTypes</key>
+        <array>
+          <dict>
+            <key>CFBundleTypeExtensions</key>
+            <array>
+              <string>tonbag</string>
+            </array>
+            <key>CFBundleTypeIconFile</key>
+            <string>iconfile</string>
+            <key>CFBundleTypeName</key>
+            <string>Ton Torrent</string>
+            <key>CFBundleTypeOSTypes</key>
+            <array>
+              <string>*</string>
+            </array>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>NSDocumentClass</key>
+			<string>Document</string>
+          </dict>
+        </array>
     </dict>
 </plist>

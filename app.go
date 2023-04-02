@@ -2,11 +2,15 @@ package main
 
 import (
 	"context"
-	"crypto/ed25519"
 	"encoding/base64"
+	"encoding/hex"
+	"fmt"
 	"github.com/tonutils/torrent-client/core/api"
+	"github.com/tonutils/torrent-client/core/client"
 	"github.com/tonutils/torrent-client/core/daemon"
+	"github.com/tonutils/torrent-client/oshook"
 	runtime2 "github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/xssnick/tonutils-go/tl"
 	"log"
 	"os"
 	"os/exec"
@@ -19,53 +23,191 @@ import (
 
 // App struct
 type App struct {
-	ctx context.Context
-	api *api.API
-	mx  sync.RWMutex
+	ctx           context.Context
+	api           *api.API
+	daemonProcess *os.Process
+	rootPath      string
+	config        *Config
+	loaded        bool
+
+	openFileData []byte
+
+	mx sync.RWMutex
 }
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{}
+	a := &App{}
+	oshook.HookFileStartup(a.openFile)
+	return a
+}
+
+func (a *App) exit(ctx context.Context) {
+	println("EXIT")
+	if a.daemonProcess != nil {
+		_ = a.daemonProcess.Kill()
+	}
 }
 
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+}
 
-	go daemon.Run()
-	time.Sleep(1 * time.Second)
+func (a *App) Throw(err error) {
+	runtime2.MessageDialog(a.ctx, runtime2.MessageDialogOptions{
+		Type:          runtime2.ErrorDialog,
+		Title:         "Fatal error",
+		Message:       err.Error(),
+		DefaultButton: "Exit",
+	})
+	a.exit(a.ctx)
+	panic(err.Error())
+}
+
+func (a *App) prepare() {
+	oshook.HookFileStartup(a.openFile)
+
+	var err error
+	a.rootPath, err = PrepareRootPath()
+	if err != nil {
+		a.Throw(err)
+	}
+
+	cfg, err := LoadConfig(a.rootPath)
+	if err != nil {
+		a.Throw(err)
+	}
+
+	a.config = cfg
+
+	ex, err := os.Executable()
+	if err != nil {
+		a.Throw(err)
+	}
+	exPath := filepath.Dir(ex)
+
+	a.daemonProcess, err = daemon.Run(a.rootPath, exPath, a.config.ListenAddr,
+		strings.SplitN(a.config.DaemonControlAddr, ":", 2)[1], func(err error) {
+			if err != nil {
+				a.Throw(fmt.Errorf("storage daemon crashed with error:\n%w", err))
+			}
+		})
+	if err != nil {
+		a.Throw(err)
+	}
 
 	/*go func() {
 		// TODO: forward port
 		up, err := upnp.NewUPnP()
 		if err != nil {
 			return
-			// panic(err)
+			// a.Throw(err)
 		}
 	}()*/
+}
 
-	ourKey, err := base64.StdEncoding.DecodeString("EwP8Ano8Fn+a8lQTPkYHuKdXUuUyt1kK1ooH2Uf9DIM=")
-	if err != nil {
-		panic(err)
-	}
-	pk := ed25519.NewKeyFromSeed(ourKey)
+func (a *App) ready(ctx context.Context) {
+	a.prepare()
 
-	a.api = api.NewAPI(ctx, "127.0.0.1:5555", pk, "MLQ71gfZoJW10MNKNEFNm19qlCk+XZ6WRKEg4QKzEDU=")
+	// loading done, hook again to steal it from webview
+	a.api = api.NewAPI(ctx, a.config.DaemonControlAddr, a.rootPath)
 	a.api.SetOnListRefresh(func() {
 		runtime2.EventsEmit(a.ctx, "update")
+		runtime2.EventsEmit(a.ctx, "update_peers")
+		runtime2.EventsEmit(a.ctx, "update_files")
+		runtime2.EventsEmit(a.ctx, "update_info")
 	})
+	a.api.SetSpeedRefresh(func(speed api.Speed) {
+		runtime2.EventsEmit(a.ctx, "speed", speed)
+	})
+	a.loaded = true
+
+	go func() {
+		time.Sleep(1 * time.Second)
+		if a.openFileData != nil {
+			// loading done
+			a.openFile(a.openFileData)
+		}
+	}()
 
 	runtime2.EventsOn(a.ctx, "refresh", func(optionalData ...interface{}) {
 		_ = a.api.SyncTorrents()
 	})
+
+	runtime2.EventsEmit(a.ctx, "ready")
 }
 
-func (a *App) GetTorrents() []api.Torrent {
+func (a *App) CheckOpenedFile() {
+	if a.openFileData != nil {
+		a.openFile(a.openFileData)
+		a.openFileData = nil
+	}
+}
+
+func (a *App) openFile(data []byte) {
+	if a.loaded {
+		res := a.addByMeta(data)
+		if res.Err == "" {
+			runtime2.EventsEmit(a.ctx, "open_torrent", res.Hash)
+		}
+	} else {
+		// wait for loading
+		a.openFileData = data
+	}
+}
+
+func (a *App) OpenDir() string {
+	str, _ := runtime2.OpenDirectoryDialog(a.ctx, runtime2.OpenDialogOptions{
+		Title: "Select directory to convert to torrent",
+	})
+	return str
+}
+
+type TorrentCreateResult struct {
+	Hash string
+	Err  string
+}
+
+func (a *App) CreateTorrent(dir, description string) TorrentCreateResult {
+	hash, err := a.api.CreateTorrent(dir, description)
+	if err != nil {
+		log.Println(err.Error())
+		return TorrentCreateResult{Err: err.Error()}
+	}
+	return TorrentCreateResult{Hash: hash}
+}
+
+func (a *App) ExportMeta(hash string) string {
+	m, err := a.api.GetTorrentMeta(hash)
+	if err != nil {
+		log.Println(err.Error())
+		return ""
+	}
+
+	path, err := runtime2.SaveFileDialog(a.ctx, runtime2.SaveDialogOptions{
+		DefaultFilename: hash + ".tonbag",
+		Title:           "Save .tonbag",
+	})
+	if err != nil {
+		log.Println(err.Error())
+		return ""
+	}
+
+	err = os.WriteFile(path, m, 0766)
+	if err != nil {
+		log.Println(err.Error())
+		return ""
+	}
+
+	return path
+}
+
+func (a *App) GetTorrents() []*api.Torrent {
 	list := a.api.GetTorrents()
 	if list == nil {
-		list = []api.Torrent{}
+		list = []*api.Torrent{}
 	}
 	return list
 }
@@ -81,9 +223,46 @@ func (a *App) GetFiles(hash string) []*api.File {
 	return list
 }
 
+func (a *App) GetInfo(hash string) *api.TorrentInfo {
+	info, err := a.api.GetInfo(hash)
+	if err != nil {
+		log.Println(err.Error())
+		return &api.TorrentInfo{}
+	}
+	return info
+}
+
+func (a *App) GetPlainFiles(hash string) []api.PlainFile {
+	list, err := a.api.GetPlainFiles(hash)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	if list == nil {
+		return []api.PlainFile{}
+	}
+	return list
+}
+
+func (a *App) GetPeers(hash string) []api.Peer {
+	list, err := a.api.GetPeers(hash)
+	if err != nil {
+		log.Println(err.Error())
+	}
+	if list == nil {
+		return []api.Peer{}
+	}
+	return list
+}
+
+func (a *App) StartDownload(hash string, files []string) {
+	err := a.api.SetPriorities(hash, files, 1)
+	if err != nil {
+		log.Println(err.Error())
+	}
+}
+
 func (a *App) AddTorrentByHash(hash string) string {
-	err := a.api.AddTorrentByHash(hash, "/Users/xssnick/Downloads/"+strings.ToUpper(hash))
-	// "/usr/bin/ton/storage/storage-daemon/storage-db/torrent/torrent-files"
+	err := a.api.AddTorrentByHash(hash, a.config.DownloadsPath+"/"+strings.ToUpper(hash))
 	if err != nil {
 		return err.Error()
 	}
@@ -91,21 +270,67 @@ func (a *App) AddTorrentByHash(hash string) string {
 	return ""
 }
 
+type TorrentAddResult struct {
+	Hash string
+	Err  string
+}
+
+func (a *App) AddTorrentByMeta(meta string) TorrentAddResult {
+	metaBytes, err := base64.StdEncoding.DecodeString(meta)
+	if err != nil {
+		return TorrentAddResult{Err: err.Error()}
+	}
+	return a.addByMeta(metaBytes)
+}
+
+func (a *App) addByMeta(meta []byte) TorrentAddResult {
+	var ti client.MetaFile
+	_, err := tl.Parse(&ti, meta, false)
+	if err != nil {
+		return TorrentAddResult{Err: err.Error()}
+	}
+	hash := hex.EncodeToString(ti.Hash)
+
+	err = a.api.AddTorrentByMeta(meta, a.config.DownloadsPath+"/"+strings.ToUpper(hash))
+	if err != nil {
+		return TorrentAddResult{Err: err.Error()}
+	}
+	return TorrentAddResult{Hash: hash}
+}
+
 func (a *App) CheckHeader(hash string) bool {
-	hasHeader, _ := a.api.CheckTorrentHeader(hash)
+	hasHeader, err := a.api.CheckTorrentHeader(hash)
+	if err != nil {
+		log.Println(hash, err.Error())
+	}
 	return hasHeader
 }
 
-func (a *App) RemoveTorrent(hash string, withFiles bool) string {
-	err := a.api.RemoveTorrent(hash, withFiles)
+func (a *App) RemoveTorrent(hash string, withFiles, onlyNotInitiated bool) string {
+	err := a.api.RemoveTorrent(hash, withFiles, onlyNotInitiated)
 	if err != nil {
+		log.Println(hash, err.Error())
+		return err.Error()
+	}
+	return ""
+}
+
+func (a *App) GetConfig() *Config {
+	return a.config
+}
+
+func (a *App) SaveConfig(downloads string) string {
+	a.config.DownloadsPath = downloads
+	err := a.config.SaveConfig(a.rootPath)
+	if err != nil {
+		log.Println(err.Error())
 		return err.Error()
 	}
 	return ""
 }
 
 func (a *App) OpenFolder(path string) {
-	println(path)
+	println("OPEN", path)
 	var cmd string
 	switch runtime.GOOS {
 	case "darwin", "linux":
@@ -117,23 +342,21 @@ func (a *App) OpenFolder(path string) {
 	exec.Command(cmd, path).Start()
 }
 
+func (a *App) OpenFolderSelectFile(path string) {
+	println("OPEN PATH", path)
+	switch runtime.GOOS {
+	case "darwin", "linux":
+		exec.Command("open", "-R", path).Start()
+	case "windows":
+		exec.Command("explorer", "/select,"+path).Start()
+	}
+}
+
 func (a *App) SetActive(hash string, active bool) string {
 	err := a.api.SetActive(hash, active)
 	if err != nil {
+		log.Println(err.Error())
 		return err.Error()
 	}
 	return ""
-}
-
-func downloadsPath() string {
-	var path string
-	switch runtime.GOOS {
-	case "darwin", "linux":
-		homeDir, _ := os.UserHomeDir()
-		path = filepath.Join(homeDir, "Downloads")
-	case "windows":
-		homeDir, _ := os.UserHomeDir()
-		path = filepath.Join(homeDir, "Downloads")
-	}
-	return path
 }

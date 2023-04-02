@@ -1,37 +1,50 @@
 package daemon
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"os/exec"
-	"os/signal"
+	"runtime"
 	"strings"
 )
 
-func Run() {
-	args := strings.Split("-v 3 -C global.config.json -I :3333 -p 5555 -D storage-db", " ")
+func Run(root, path string, listen, controlPort string, onFinish func(error)) (*os.Process, error) {
+	args := []string{"-v", "1", "-C", path + "/global.config.json", "-I", listen, "-p", controlPort, "-D", root + "/storage-db"}
 
-	cmd := exec.Command("./storage-daemon", args...)
-	cmd.Dir = "/Users/xssnick/dev/ton/ton/build/storage/storage-daemon/"
+	log.Println("starting daemon with args:", strings.Join(args, " "))
+	name := "storage-daemon"
+	if runtime.GOOS == "windows" {
+		name += ".exe"
+	}
+
+	errLogs := &bytes.Buffer{}
+
+	cmd := exec.Command(path+"/"+name, args...)
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stdout
+	cmd.Stderr = io.MultiWriter(os.Stderr, errLogs)
 
-	err := cmd.Run()
-	if err != nil {
+	if err := cmd.Start(); err != nil {
 		switch e := err.(type) {
 		case *exec.Error:
 			fmt.Println("failed executing:", err)
 		case *exec.ExitError:
 			fmt.Println("command exit rc =", e.ExitCode())
 		default:
-			panic(err)
+			return nil, err
 		}
 	}
 
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Interrupt, os.Kill)
 	go func() {
-		<-c
-		cmd.Process.Kill()
+		err := cmd.Wait()
+		if err != nil {
+			err = errors.New(err.Error() + "\n\n" + errLogs.String())
+		}
+		onFinish(err)
 	}()
+
+	return cmd.Process, nil
 }

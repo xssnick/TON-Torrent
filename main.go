@@ -5,6 +5,7 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/options/mac"
 )
 
 //go:embed all:frontend/dist
@@ -26,7 +27,12 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		OnStartup: app.startup,
+		Mac: &mac.Options{
+			Appearance: mac.NSAppearanceNameVibrantLight,
+		},
+		OnStartup:  app.startup,
+		OnDomReady: app.ready,
+		OnShutdown: app.exit,
 		Bind: []interface{}{
 			app,
 		},
