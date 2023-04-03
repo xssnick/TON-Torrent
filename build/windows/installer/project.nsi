@@ -92,28 +92,73 @@ SectionEnd
 !define ASSOC_EXT ".tonbag"
 !define ASSOC_PROGID "TON.Torrent"
 !define ASSOC_VERB "TON Torrent"
-!define ASSOC_APPEXE "TON Torrent.exe"
 Section -ShellAssoc
   # Register file type
-  WriteRegStr ShCtx "Software\Classes\${ASSOC_PROGID}\DefaultIcon" "" "$InstDir\${ASSOC_APPEXE},0"
-  WriteRegStr ShCtx "Software\Classes\${ASSOC_PROGID}\shell\${ASSOC_VERB}\command" "" '"$InstDir\${ASSOC_APPEXE}" "%1"'
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_PROGID}\DefaultIcon" "" "$InstDir\${PRODUCT_EXECUTABLE},0"
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_PROGID}\shell\${ASSOC_VERB}\command" "" '"$InstDir\${PRODUCT_EXECUTABLE}" "%1"'
   WriteRegStr ShCtx "Software\Classes\${ASSOC_EXT}" "" "${ASSOC_PROGID}"
 
   # Register "Open With" [Optional]
-  WriteRegNone ShCtx "Software\Classes\${ASSOC_EXT}\OpenWithList" "${ASSOC_APPEXE}" ; Win2000+ [Optional]
-  WriteRegStr ShCtx "Software\Classes\Applications\${ASSOC_APPEXE}\shell\open\command" "" '"$InstDir\${ASSOC_APPEXE}" "%1"'
-  WriteRegStr ShCtx "Software\Classes\Applications\${ASSOC_APPEXE}" "FriendlyAppName" "TON Torrent" ; [Optional]
-  WriteRegStr ShCtx "Software\Classes\Applications\${ASSOC_APPEXE}" "ApplicationCompany" "Tonutils" ; [Optional]
-  WriteRegNone ShCtx "Software\Classes\Applications\${ASSOC_APPEXE}\SupportedTypes" "${ASSOC_EXT}" ; [Optional] Only allow "Open With" with specific extension(s) on WinXP+
+  WriteRegNone ShCtx "Software\Classes\${ASSOC_EXT}\OpenWithList" "${PRODUCT_EXECUTABLE}" ; Win2000+ [Optional]
+  WriteRegStr ShCtx "Software\Classes\Applications\${PRODUCT_EXECUTABLE}\shell\open\command" "" '"$InstDir\${PRODUCT_EXECUTABLE}" "%1"'
+  WriteRegStr ShCtx "Software\Classes\Applications\${PRODUCT_EXECUTABLE}" "FriendlyAppName" "TON Torrent" ; [Optional]
+  WriteRegStr ShCtx "Software\Classes\Applications\${PRODUCT_EXECUTABLE}" "ApplicationCompany" "Tonutils" ; [Optional]
+  WriteRegNone ShCtx "Software\Classes\Applications\${PRODUCT_EXECUTABLE}\SupportedTypes" "${ASSOC_EXT}" ; [Optional] Only allow "Open With" with specific extension(s) on WinXP+
 
   # Register "Default Programs" [Optional]
   !ifdef REGISTER_DEFAULTPROGRAMS
-  WriteRegStr ShCtx "Software\Classes\Applications\${ASSOC_APPEXE}\Capabilities" "ApplicationDescription" "TON Storage torrent client"
-  WriteRegStr ShCtx "Software\Classes\Applications\${ASSOC_APPEXE}\Capabilities\FileAssociations" "${ASSOC_EXT}" "${ASSOC_PROGID}"
-  WriteRegStr ShCtx "Software\RegisteredApplications" "TON Torrent" "Software\Classes\Applications\${ASSOC_APPEXE}\Capabilities"
+  WriteRegStr ShCtx "Software\Classes\Applications\${PRODUCT_EXECUTABLE}\Capabilities" "ApplicationDescription" "TON Storage torrent client"
+  WriteRegStr ShCtx "Software\Classes\Applications\${PRODUCT_EXECUTABLE}\Capabilities\FileAssociations" "${ASSOC_EXT}" "${ASSOC_PROGID}"
+  WriteRegStr ShCtx "Software\RegisteredApplications" "TON Torrent" "Software\Classes\Applications\${PRODUCT_EXECUTABLE}\Capabilities"
+  !endif
+SectionEnd
+
+Section -un.ShellAssoc
+  # Unregister file type
+  ClearErrors
+  DeleteRegKey ShCtx "Software\Classes\${ASSOC_PROGID}\shell\${ASSOC_VERB}"
+  DeleteRegKey /IfEmpty ShCtx "Software\Classes\${ASSOC_PROGID}\shell"
+  ${IfNot} ${Errors}
+    DeleteRegKey ShCtx "Software\Classes\${ASSOC_PROGID}\DefaultIcon"
+  ${EndIf}
+  ReadRegStr $0 ShCtx "Software\Classes\${ASSOC_EXT}" ""
+  DeleteRegKey /IfEmpty ShCtx "Software\Classes\${ASSOC_PROGID}"
+  ${IfNot} ${Errors}
+  ${AndIf} $0 == "${ASSOC_PROGID}"
+    DeleteRegValue ShCtx "Software\Classes\${ASSOC_EXT}" ""
+    DeleteRegKey /IfEmpty ShCtx "Software\Classes\${ASSOC_EXT}"
+  ${EndIf}
+
+  # Unregister "Open With"
+  DeleteRegKey ShCtx "Software\Classes\Applications\${PRODUCT_EXECUTABLE}"
+  DeleteRegValue ShCtx "Software\Classes\${ASSOC_EXT}\OpenWithList" "${PRODUCT_EXECUTABLE}"
+  DeleteRegKey /IfEmpty ShCtx "Software\Classes\${ASSOC_EXT}\OpenWithList"
+  DeleteRegValue ShCtx "Software\Classes\${ASSOC_EXT}\OpenWithProgids" "${ASSOC_PROGID}"
+  DeleteRegKey /IfEmpty ShCtx "Software\Classes\${ASSOC_EXT}\OpenWithProgids"
+  DeleteRegKey /IfEmpty  ShCtx "Software\Classes\${ASSOC_EXT}"
+
+  # Unregister "Default Programs"
+  !ifdef REGISTER_DEFAULTPROGRAMS
+  DeleteRegValue ShCtx "Software\RegisteredApplications" "TON Torrent"
+  DeleteRegKey ShCtx "Software\Classes\Applications\${PRODUCT_EXECUTABLE}\Capabilities"
+  DeleteRegKey /IfEmpty ShCtx "Software\Classes\Applications\${PRODUCT_EXECUTABLE}"
   !endif
 
-  ${NotifyShell_AssocChanged}
+  # Attempt to clean up junk left behind by the Windows shell
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Search\JumplistData" "$InstDir\${PRODUCT_EXECUTABLE}"
+  DeleteRegValue HKCU "Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache" "$InstDir\${PRODUCT_EXECUTABLE}.FriendlyAppName"
+  DeleteRegValue HKCU "Software\Classes\Local Settings\Software\Microsoft\Windows\Shell\MuiCache" "$InstDir\${PRODUCT_EXECUTABLE}.ApplicationCompany"
+  DeleteRegValue HKCU "Software\Microsoft\Windows\ShellNoRoam\MUICache" "$InstDir\${PRODUCT_EXECUTABLE}" ; WinXP
+  DeleteRegValue HKCU "Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Compatibility Assistant\Store" "$InstDir\${PRODUCT_EXECUTABLE}"
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\ApplicationAssociationToasts" "${ASSOC_PROGID}_${ASSOC_EXT}"
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\ApplicationAssociationToasts" "Applications\${PRODUCT_EXECUTABLE}_${ASSOC_EXT}"
+  DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\${ASSOC_EXT}\OpenWithProgids" "${ASSOC_PROGID}"
+  DeleteRegKey /IfEmpty HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\${ASSOC_EXT}\OpenWithProgids"
+  DeleteRegKey /IfEmpty HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\${ASSOC_EXT}\OpenWithList"
+  DeleteRegKey /IfEmpty HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\${ASSOC_EXT}"
+  ;DeleteRegKey HKCU "Software\Microsoft\Windows\Roaming\OpenWith\FileExts\${ASSOC_EXT}"
+  ;DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs\${ASSOC_EXT}"
+
 SectionEnd
 
 Section "uninstall" 
