@@ -89,6 +89,33 @@ Section
     !insertmacro wails.writeUninstaller
 SectionEnd
 
+!define ASSOC_EXT ".tonbag"
+!define ASSOC_PROGID "TON.Torrent"
+!define ASSOC_VERB "TON Torrent"
+!define ASSOC_APPEXE "TON Torrent.exe"
+Section -ShellAssoc
+  # Register file type
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_PROGID}\DefaultIcon" "" "$InstDir\${ASSOC_APPEXE},0"
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_PROGID}\shell\${ASSOC_VERB}\command" "" '"$InstDir\${ASSOC_APPEXE}" "%1"'
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_EXT}" "" "${ASSOC_PROGID}"
+
+  # Register "Open With" [Optional]
+  WriteRegNone ShCtx "Software\Classes\${ASSOC_EXT}\OpenWithList" "${ASSOC_APPEXE}" ; Win2000+ [Optional]
+  WriteRegStr ShCtx "Software\Classes\Applications\${ASSOC_APPEXE}\shell\open\command" "" '"$InstDir\${ASSOC_APPEXE}" "%1"'
+  WriteRegStr ShCtx "Software\Classes\Applications\${ASSOC_APPEXE}" "FriendlyAppName" "TON Torrent" ; [Optional]
+  WriteRegStr ShCtx "Software\Classes\Applications\${ASSOC_APPEXE}" "ApplicationCompany" "Tonutils" ; [Optional]
+  WriteRegNone ShCtx "Software\Classes\Applications\${ASSOC_APPEXE}\SupportedTypes" "${ASSOC_EXT}" ; [Optional] Only allow "Open With" with specific extension(s) on WinXP+
+
+  # Register "Default Programs" [Optional]
+  !ifdef REGISTER_DEFAULTPROGRAMS
+  WriteRegStr ShCtx "Software\Classes\Applications\${ASSOC_APPEXE}\Capabilities" "ApplicationDescription" "TON Storage torrent client"
+  WriteRegStr ShCtx "Software\Classes\Applications\${ASSOC_APPEXE}\Capabilities\FileAssociations" "${ASSOC_EXT}" "${ASSOC_PROGID}"
+  WriteRegStr ShCtx "Software\RegisteredApplications" "TON Torrent" "Software\Classes\Applications\${ASSOC_APPEXE}\Capabilities"
+  !endif
+
+  ${NotifyShell_AssocChanged}
+SectionEnd
+
 Section "uninstall" 
     RMDir /r "$AppData\${PRODUCT_EXECUTABLE}" # Remove the WebView2 DataPath
 
