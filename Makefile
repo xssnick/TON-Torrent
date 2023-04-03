@@ -11,3 +11,8 @@ build-linux:
 	wails build -clean
 	cp ton-build/storage/storage-daemon/storage-daemon build/bin/storage-daemon
 	wget https://ton.org/global.config.json -P build/bin/
+
+build-windows:
+	wails build -clean -nsis
+	wget https://ton.org/global.config.json -P build/bin/
+	cp ton-build/storage/storage-daemon/storage-daemon build/bin/storage-daemon
