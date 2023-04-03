@@ -6,3 +6,8 @@ build-mac:
 	wails build -clean
 	cp ton-build/storage/storage-daemon/storage-daemon build/bin/TON\ Torrent.app/Contents/MacOS/storage-daemon
 	wget https://ton.org/global.config.json -P build/bin/TON\ Torrent.app/Contents/MacOS/
+
+build-linux:
+	wails build -clean
+	cp ton-build/storage/storage-daemon/storage-daemon build/bin/storage-daemon
+	wget https://ton.org/global.config.json -P build/bin/
