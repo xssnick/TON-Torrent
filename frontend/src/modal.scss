@@ -44,15 +44,28 @@ $text-black: #232328;
 .add-torrent-block {
   display: flex;
   flex-direction: column;
-  #torrent-hash-field {
-    width: 409px;
+  input {
+    width: 90%;
+    height: 100%;
+    margin: auto;
+    padding: 5px 10px;
+    border-radius: 30px;
+    border: solid 1px $border;
+    background-color:white;
+    text-align: center;
+
+    font-size: 10px;
+    font-family: "JetBrains Mono",monospace;
+    color: $text-black;
+  }
+  .torrent-name-input {
+    margin-bottom: 8px;
   }
 }
 
 .set-speed {
   margin-top: 10px;
   display: flex;
-
 
   .info {
     display: flex;
@@ -67,7 +80,8 @@ $text-black: #232328;
       width: 120px;
     }
     input::placeholder {
-      color: #1e2125;
+      font-size: 16px;
+      color: $text-black;
     }
       input+span:after {
       content: '112';
@@ -79,21 +93,11 @@ $text-black: #232328;
       background-color: black;
     }
   }
+  .info.listen {
+    margin-top: 5px;
+  }
 }
 
-.add-torrent-block input {
-  width: 90%;
-  height: 100%;
-  margin: auto;
-  padding: 5px 10px;
-  border-radius: 30px;
-  border: solid 1px $border;
-  background-color:white;
-
-  font-size: 10px;
-  font-family: "JetBrains Mono",monospace;
-  color: $text-black;
-}
 .add-torrent-block input::placeholder {
   color: #a6a6a6;
 }
@@ -106,8 +110,9 @@ $text-black: #232328;
   border: solid 1px $borderHover;
 }
 
-.add-torrent-block input:valid {
-  border: solid 1px $borderHover;
+.add-torrent-block input.invalid {
+  outline: none;
+  border: solid 1px red;
 }
 
 .add-torrent-block .title {
@@ -115,6 +120,18 @@ $text-black: #232328;
   margin-bottom: 7px;
   font-size: 12px;
   font-weight: bold;
+}
+.add-torrent-block .title.big {
+  font-size: 14px;
+}
+.add-torrent-block .title.name {
+  padding-top: 8px;
+  font-size: 14px;
+  max-width: 400px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  font-weight: normal;
 }
 
 .add-torrent-block .error {
@@ -188,11 +205,16 @@ $text-black: #232328;
   padding: 3px 14px;
   font-size: 13px;
   border-radius: 6px;
+  justify-content: center;
+  white-space: nowrap;
 
   border: solid 1px rgba(0, 136, 204, 0.68);
   color: $text-black;
   background: white;
   cursor: pointer;
+}
+.second-button.black {
+  border: solid 1px $text-black;
 }
 .main-button {
   margin: auto;
@@ -203,6 +225,7 @@ $text-black: #232328;
   font-size: 13px;
   border-radius: 6px;
 
+  white-space: nowrap;
   border: solid 1px rgba(0, 136, 204, 0.68);
   color: #fff;
   cursor: pointer;
@@ -215,11 +238,18 @@ $text-black: #232328;
 .main-button:disabled {
   color: #23232888;
   border: solid 1px rgba(204, 204, 204, 0.68);
-  background: linear-gradient(180deg, #f1f1f1 0%, #e7e7e7 100%);
+  background: white;
   cursor: auto;
 }
 .second-button:active {
   box-shadow: inset 0 0 3px #00000042;
+}
+.second-button.danger {
+  width: auto;
+  color: white;
+  background: linear-gradient(180deg, rgb(246,79,79) 0%, rgb(196, 66, 50) 100%);
+
+  border: solid 1px rgba(196, 66, 50, 0.68);
 }
 
 .checkbox-file {

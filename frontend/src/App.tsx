@@ -5,14 +5,15 @@ import './tooltip.css';
 import './modal.scss';
 import {Filter, Refresh, SelectedTorrent, Table} from "./components/Table";
 import {AddTorrentModal} from "./components/ModalAddTorrent";
-import {CheckOpenedFile, RemoveTorrent, SetActive} from "../wailsjs/go/main/App";
+import {CheckOpenedFile, RemoveTorrent, SetActive, WantRemoveTorrent} from "../wailsjs/go/main/App";
 import {FiltersMenu} from "./components/FiltersMenu";
-import {EventsOn} from "../wailsjs/runtime";
+import {BrowserOpenURL, EventsOn} from "../wailsjs/runtime";
 import {FilesTorrentMenu} from "./components/FilesTorrentMenu";
 import {CreateTorrentModal} from "./components/ModalCreateTorrent";
 import {PeersTorrentMenu} from "./components/PeersTorrentMenu";
 import {InfoTorrentMenu} from "./components/InfoTorrentMenu";
 import {SettingsModal} from "./components/ModalSettings";
+import {RemoveConfirmModal} from "./components/ModalRemoveConfirm";
 
 interface State {
     selectedItems:  SelectedTorrent[]
@@ -21,12 +22,14 @@ interface State {
     showAddTorrentModal: boolean
     showCreateTorrentModal: boolean
     showSettingsModal: boolean
+    showRemoveConfirmModal: boolean
 
     overallUploadSpeed: string
     overallDownloadSpeed: string
     torrentMenuSelected: number
 
     openFileHash?: string
+    removeHash?: string
 }
 
 export class App extends Component<{}, State> {
@@ -43,6 +46,7 @@ export class App extends Component<{}, State> {
             showAddTorrentModal: false,
             showCreateTorrentModal: false,
             showSettingsModal: false,
+            showRemoveConfirmModal: false,
             overallUploadSpeed: "0 Bytes",
             overallDownloadSpeed: "0 Bytes",
             torrentMenuSelected: -1,
@@ -79,17 +83,28 @@ export class App extends Component<{}, State> {
     toggleSettingsModal = () => {
         this.setState((current)=>({...current, showSettingsModal: !this.state.showSettingsModal}))
     }
+    toggleRemoveConfirmModal = () => {
+        this.setState((current)=>({...current, showRemoveConfirmModal: !this.state.showRemoveConfirmModal, removeHash: undefined}))
+    }
 
     componentDidMount() {
+        EventsOn("want_remove_torrent", (hash: string) => {
+            this.setState((current)=>({...current, removeHash: hash, showRemoveConfirmModal: true}))
+        })
         EventsOn("open_torrent", (hash: string) => {
             this.setState((current)=>({...current, showAddTorrentModal: true, openFileHash: hash}))
         })
         CheckOpenedFile().then()
 
         window.addEventListener('resize', () => {
+            let inf = document.getElementsByClassName("torrent-info");
+            if (inf.length == 0) {
+                return
+            }
+
             let topH = document.getElementsByClassName("top-bar")![0].getBoundingClientRect().height;
             let botH = document.getElementsByClassName("foot-bar")![0].getBoundingClientRect().height;
-            let minINF = document.getElementsByClassName("torrent-info")![0].getBoundingClientRect();
+            let minINF = inf[0].getBoundingClientRect();
 
             let minH = minINF.height;
             if (minH > window.innerHeight-(topH+botH)) {
@@ -133,6 +148,7 @@ export class App extends Component<{}, State> {
                 {this.state.showAddTorrentModal ? <AddTorrentModal openHash={this.state.openFileHash} onExit={this.toggleAddTorrentModal}/> : null}
                 {this.state.showCreateTorrentModal ? <CreateTorrentModal onExit={this.toggleCreateTorrentModal}/> : null}
                 {this.state.showSettingsModal ? <SettingsModal onExit={this.toggleSettingsModal}/> : null}
+                {this.state.showRemoveConfirmModal ? <RemoveConfirmModal hash={this.state.removeHash!}  onExit={this.toggleRemoveConfirmModal}/> : null}
                 <div className="left-bar">
                     <div className="logo-block">
                         <img className="logo-img" src={Logo} alt=""/>
@@ -144,6 +160,7 @@ export class App extends Component<{}, State> {
                                     type: v,
                                     search: this.state.tableFilter.search
                                 }}));
+                            Refresh();
                         }}/>
                         <div className="actions-menu">
                             <button className="menu-item main" onClick={this.toggleAddTorrentModal}>
@@ -159,29 +176,31 @@ export class App extends Component<{}, State> {
                     </div>
                     <div className="version-block">
                         <div className="ver-info">
-                            <span>v1.0.0</span>
-                            <div className="updates">Check updates</div>
+                            <span>v0.1.0</span>
+                            <button className="updates" onClick={()=>{
+                                BrowserOpenURL("https://github.com/tonutils/torrent-client/releases")
+                            }}>Check updates</button>
                         </div>
                     </div>
                 </div>
                 <div className="right-screen">
                     <div className="top-bar">
                         <div className="top-buttons-container">
-                            <button className="top-button start" disabled={!this.hasInactiveTorrents()} onClick={() => {
+                            <button className={this.hasInactiveTorrents() ? "top-button start" : "top-button start disabled"} disabled={!this.hasInactiveTorrents()} onClick={() => {
                                 this.state.selectedItems.forEach((t) => {
                                     SetActive(t.hash, true).then(Refresh)
                                 })
                             }}/>
-                            <button className="top-button stop" disabled={!this.hasActiveTorrents()} onClick={() => {
+                            <button className={this.hasActiveTorrents() ? "top-button stop" : "top-button stop disabled"} disabled={!this.hasActiveTorrents()} onClick={() => {
                                 this.state.selectedItems.forEach((t) => {
                                     SetActive(t.hash, false).then(Refresh)
                                 })
                             }}/>
-                            <button className="top-button remove" onClick={() => {
+                            <button className={this.state.selectedItems.length > 0 ? "top-button remove" : "top-button remove disabled"} disabled={this.state.selectedItems.length == 0} onClick={() => {
                                 this.state.selectedItems.forEach((t) => {
-                                    RemoveTorrent(t.hash, false, false).then(()=>{
-                                        Refresh()
-                                        this.setState((current) => ({ ...current, selectedItems: []}))
+                                    WantRemoveTorrent(t.hash).then(()=>{
+                                      //  Refresh()
+                                      //  this.setState((current) => ({ ...current, selectedItems: []}))
                                     })
                                 })
                             }}/>
@@ -207,9 +226,11 @@ export class App extends Component<{}, State> {
                     </div>
                     { this.state.selectedItems.length >0 ? <div className="torrent-info" style={{minHeight: this.state.infoSize + "px",maxHeight: this.state.infoSize + "px"}}>
                         <div className="torrent-menu">
-                            <button disabled={this.state.torrentMenuSelected == 0 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(0)}>Info</button>
-                            <button disabled={this.state.torrentMenuSelected == 1 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(1)}>Files</button>
-                            <button disabled={this.state.torrentMenuSelected == 2 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(2)}>Peers</button>
+                            <div className="buttons-block">
+                                <button disabled={this.state.torrentMenuSelected == 0 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(0)}>Info</button>
+                                <button disabled={this.state.torrentMenuSelected == 1 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(1)}>Files</button>
+                                <button disabled={this.state.torrentMenuSelected == 2 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(2)}>Peers</button>
+                            </div>
                             <div onMouseDown={this.extendInfoEvent} className="size-scroller"></div>
                         </div>
                         <div className="torrent-body">

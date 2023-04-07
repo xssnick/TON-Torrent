@@ -64,6 +64,11 @@ type TorrentInfo struct {
 	AddedAt     string
 }
 
+type SpeedLimits struct {
+	Download int64
+	Upload   int64
+}
+
 type Peer struct {
 	IP       string
 	ADNL     string
@@ -392,6 +397,30 @@ func (a *API) GetPeers(hash string) ([]Peer, error) {
 		})
 	}
 	return peers, nil
+}
+
+func (a *API) GetSpeedLimits() (*SpeedLimits, error) {
+	limits, err := a.daemon.GetSpeedLimits(a.globalCtx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SpeedLimits{
+		Download: int64(limits.Download.Value) / 1024, // to KB
+		Upload:   int64(limits.Upload.Value) / 1024,
+	}, nil
+}
+
+func (a *API) SetSpeedLimits(limits *SpeedLimits) error {
+	dow, up := int64(-1), int64(-1)
+	if limits.Download >= 0 {
+		dow = limits.Download * 1024
+	}
+	if limits.Upload >= 0 {
+		up = limits.Upload * 1024
+	}
+
+	return a.daemon.SetSpeedLimits(a.globalCtx, dow, up)
 }
 
 func (a *API) GetTorrentFiles(hash string) ([]*File, error) {

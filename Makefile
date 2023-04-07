@@ -1,3 +1,6 @@
+git-modules:
+	git submodule update --remote --init --recursive
+
 compile-storage:
 	mkdir -p ton-build
 	cd ton-build; CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Release ../ton; make storage-daemon -j8

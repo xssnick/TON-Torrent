@@ -25,6 +25,8 @@ export function GetPeers(arg1:string):Promise<Array<api.Peer>>;
 
 export function GetPlainFiles(arg1:string):Promise<Array<api.PlainFile>>;
 
+export function GetSpeedLimit():Promise<api.SpeedLimits>;
+
 export function GetTorrents():Promise<Array<api.Torrent>>;
 
 export function OpenDir():Promise<string>;
@@ -35,10 +37,16 @@ export function OpenFolderSelectFile(arg1:string):Promise<void>;
 
 export function RemoveTorrent(arg1:string,arg2:boolean,arg3:boolean):Promise<string>;
 
-export function SaveConfig(arg1:string):Promise<string>;
+export function SaveConfig(arg1:string,arg2:string):Promise<string>;
 
 export function SetActive(arg1:string,arg2:boolean):Promise<string>;
+
+export function SetSpeedLimit(arg1:number,arg2:number):Promise<string>;
+
+export function ShowMsg(arg1:string):Promise<void>;
 
 export function StartDownload(arg1:string,arg2:Array<string>):Promise<void>;
 
 export function Throw(arg1:Error):Promise<void>;
+
+export function WantRemoveTorrent(arg1:string):Promise<void>;

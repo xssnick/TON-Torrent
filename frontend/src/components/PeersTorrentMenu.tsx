@@ -60,7 +60,7 @@ export class PeersTorrentMenu extends Component<PeersProps,State> {
         for (let t of this.state.peers) {
             items.push(<tr>
                 <td>{t.ip}</td>
-                <td>{t.adnl}</td>
+                <td style={{maxWidth:"200px"}}>{t.adnl}</td>
                 <td className={"small"}>{t.downloadSpeed}</td>
                 <td className={"small"}>{t.uploadSpeed}</td>
             </tr>);
@@ -72,7 +72,7 @@ export class PeersTorrentMenu extends Component<PeersProps,State> {
         return <table className="files-table" style={{fontSize:12}}>
             <thead>
             <tr>
-                <th style={{width:"150px"}}>IP</th>
+                <th style={{width:"160px"}}>IP</th>
                 <th>ADNL ID</th>
                 <th style={{width:"130px"}}>Download speed</th>
                 <th style={{width:"110px"}}>Upload speed</th>

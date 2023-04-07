@@ -13,4 +13,8 @@ extern void HookDelegate();
 
 @end
 
+@interface URLHandler : NSObject
+
+@end
+
 #endif

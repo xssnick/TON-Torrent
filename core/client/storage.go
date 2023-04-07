@@ -229,3 +229,45 @@ func (s *StorageClient) SetFilePriority(ctx context.Context, hash []byte, name s
 	}
 	return fmt.Errorf("unexpected response")
 }
+
+func (s *StorageClient) GetSpeedLimits(ctx context.Context) (*SpeedLimits, error) {
+	var res tl.Serializable
+	err := s.client.QueryADNL(ctx, GetSpeedLimits{
+		Flags: 0b11,
+	}, &res)
+	if err != nil {
+		return nil, fmt.Errorf("faled to query get speed limits: %w", err)
+	}
+
+	switch t := res.(type) {
+	case SpeedLimits:
+		return &t, nil
+	case DaemonError:
+		return nil, fmt.Errorf("%s", t.Message)
+	}
+	return nil, fmt.Errorf("unexpected response")
+}
+
+func (s *StorageClient) SetSpeedLimits(ctx context.Context, download, upload int64) error {
+	var res tl.Serializable
+	err := s.client.QueryADNL(ctx, SetSpeedLimits{
+		Flags: 0b11,
+		Download: &Double{
+			Value: float64(download),
+		},
+		Upload: &Double{
+			Value: float64(upload),
+		},
+	}, &res)
+	if err != nil {
+		return fmt.Errorf("faled to query get speed limits: %w", err)
+	}
+
+	switch t := res.(type) {
+	case Success:
+		return nil
+	case DaemonError:
+		return fmt.Errorf("%s", t.Message)
+	}
+	return fmt.Errorf("unexpected response")
+}

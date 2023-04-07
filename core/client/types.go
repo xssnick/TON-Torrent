@@ -22,6 +22,8 @@ func init() {
 	tl.Register(CreateTorrent{}, "storage.daemon.createTorrent path:string description:string allow_upload:Bool copy_inside:Bool flags:# = storage.daemon.TorrentFull")
 	tl.Register(GetTorrentMeta{}, "storage.daemon.getTorrentMeta hash:int256 flags:# = storage.daemon.TorrentMeta")
 	tl.Register(GetPeers{}, "storage.daemon.getTorrentPeers hash:int256 flags:# = storage.daemon.PeerList")
+	tl.Register(GetSpeedLimits{}, "storage.daemon.getSpeedLimits flags:# = storage.daemon.SpeedLimits")
+	tl.Register(SetSpeedLimits{}, "storage.daemon.setSpeedLimits flags:# download:flags.0?double upload:flags.1?double = storage.daemon.Success")
 
 	tl.Register(TorrentsList{}, "storage.daemon.torrentList torrents:(vector storage.daemon.torrent) = storage.daemon.TorrentList")
 	tl.Register(Torrent{}, "storage.daemon.torrent hash:int256 flags:# total_size:flags.0?long description:flags.0?string files_count:flags.1?long included_size:flags.1?long dir_name:flags.1?string downloaded_size:long added_at:int root_dir:string active_download:Bool active_upload:Bool completed:Bool download_speed:double upload_speed:double fatal_error:flags.2?string = storage.daemon.Torrent")
@@ -35,6 +37,7 @@ func init() {
 	tl.Register(PriorityStatusPending{}, "storage.daemon.priorityPending = storage.daemon.SetPriorityStatus")
 	tl.Register(Peer{}, "storage.daemon.peer adnl_id:int256 ip_str:string download_speed:double upload_speed:double ready_parts:long = storage.daemon.Peer")
 	tl.Register(PeersList{}, "storage.daemon.peerList peers:(vector storage.daemon.peer) download_speed:double upload_speed:double total_parts:long = storage.daemon.PeerList")
+	tl.Register(SpeedLimits{}, "storage.daemon.speedLimits download:double upload:double = storage.daemon.SpeedLimits")
 
 	tl.Register(DaemonError{}, "storage.daemon.queryError message:string = storage.daemon.QueryError")
 	tl.Register(Success{}, "storage.daemon.success = storage.daemon.Success")
@@ -165,6 +168,21 @@ type SetActiveUpload struct {
 	Active bool   `tl:"bool"`
 }
 
+type SpeedLimits struct {
+	Download Double `tl:"struct"`
+	Upload   Double `tl:"struct"`
+}
+
+type GetSpeedLimits struct {
+	Flags uint32 `tl:"int"`
+}
+
+type SetSpeedLimits struct {
+	Flags    uint32  `tl:"int"`
+	Download *Double `tl:"struct"`
+	Upload   *Double `tl:"struct"`
+}
+
 type Torrent struct {
 	Hash           []byte
 	Flags          uint32
@@ -253,7 +271,6 @@ func (t *Torrent) Parse(data []byte) (_ []byte, err error) {
 	t.Completed = binary.LittleEndian.Uint32(data) == tl.BoolTrue
 	data = data[4:]
 
-	// TODO: not correct
 	t.DownloadSpeed = math.Float64frombits(binary.LittleEndian.Uint64(data))
 	data = data[8:]
 	t.UploadSpeed = math.Float64frombits(binary.LittleEndian.Uint64(data))
@@ -274,7 +291,6 @@ func (t *Torrent) Parse(data []byte) (_ []byte, err error) {
 }
 
 func (t *Torrent) Serialize() ([]byte, error) {
-	//TODO implement me
 	return nil, fmt.Errorf("not implemented")
 }
 
@@ -287,8 +303,9 @@ func (d *Double) Parse(data []byte) (_ []byte, err error) {
 }
 
 func (d *Double) Serialize() ([]byte, error) {
-	//TODO implement me
-	return nil, fmt.Errorf("not implemented")
+	var data = make([]byte, 8)
+	binary.LittleEndian.PutUint64(data, math.Float64bits(d.Value))
+	return data, nil
 }
 
 func (d *MetaFile) Parse(data []byte) (_ []byte, err error) {

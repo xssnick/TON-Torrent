@@ -88,11 +88,11 @@ export class InfoTorrentMenu extends Component<InfoProps,State> {
                <span className="percent">{this.state.progress}%</span>
            </div>
             <div className="info-data-block">
-                <div className="basic">
+                { (this.state.status == "downloading" || this.state.status == "seeding") ? <div className="basic">
                     <div className="item" style={{width: "33%"}}><span className="field">Upload Speed: </span><span className="value">{this.state.uploadSpeed}</span></div>
                     <div className="item" style={{width: "40%"}}><span className="field">Download Speed: </span><span className="value">{this.state.downloadSpeed}</span></div>
                     <div className="item">{this.state.status == "downloading" ? <><span className="field">Remaining: </span><span className="value">{this.state.left}</span></> : ""}</div>
-                </div>
+                </div> : <></> }
                 <div className="basic">
                     <div className="item" style={{width: "33%"}}><span className="field">Size: </span><span className="value">{this.state.size}</span></div>
                     <div className="item" style={{width: "40%"}}><span className="field">Downloaded: </span><span className="value">{this.state.downloaded}</span></div>

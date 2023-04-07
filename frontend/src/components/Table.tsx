@@ -1,10 +1,19 @@
 import React, {Component, MouseEvent} from 'react';
-import {ExportMeta, GetTorrents, OpenFolder, RemoveTorrent, SetActive} from "../../wailsjs/go/main/App";
+import {
+    ExportMeta,
+    GetTorrents,
+    OpenFolder,
+    RemoveTorrent,
+    SetActive,
+    WantRemoveTorrent
+} from "../../wailsjs/go/main/App";
 import {EventsEmit, EventsOff, EventsOn} from "../../wailsjs/runtime";
 import Download from "../assets/images/icons/download.svg";
 import Play from "../assets/images/icons/play.svg";
 import Pause from "../assets/images/icons/pause.svg";
 import Close from "../assets/images/icons/close.svg";
+import OpenDir from "../assets/images/icons/open-folder.svg";
+import Export from "../assets/images/icons/export.svg";
 
 export interface SelectedTorrent {
     hash: string
@@ -68,58 +77,6 @@ export class Table extends Component<TableProps,State> {
         }
     }
 
-    private tmpTorrents: TorrentItem[] = [/*{
-        id: "1",
-        name: "Half Life 3",
-        state: "seeding",
-        size: "4.12 Gb",
-        uploadSpeed: "1.12 Mb/s",
-        downloadSpeed: "",
-        progress: 100,
-        selected: false,
-        path: "",
-    },{
-        id: "2",
-        name: "Tom Clancy: Ghost of Reconnect",
-        state: "seeding",
-        size: "12.89 Gb",
-        uploadSpeed: "121.1 Kb/s",
-        downloadSpeed: "",
-        progress: 100,
-        selected: false,
-        path: "",
-    },{
-        id: "3",
-        name: "Dota 3",
-        state: "downloading",
-        size: "20000.12 Gb",
-        uploadSpeed: "1.92 Mb/s",
-        downloadSpeed: "79.92 Mb/s",
-        progress: 31.8,
-        selected: false,
-        path: "",
-    },{
-        id: "4",
-        name: "Lost, Season 3",
-        state: "fail",
-        size: "189 Mb",
-        uploadSpeed: "",
-        downloadSpeed: "",
-        progress: 0,
-        selected: false,
-        path: "",
-    },{
-        id: "5",
-        name: "Dungeons & Dragons 5: Muhammed Ali",
-        state: "inactive",
-        size: "982 Mb",
-        uploadSpeed: "",
-        downloadSpeed: "",
-        progress: 100,
-        selected: false,
-        path: "",
-    }*/];
-
     update() {
         GetTorrents().then((tr)=>{
             let newList: TorrentItem[] = []
@@ -143,12 +100,11 @@ export class Table extends Component<TableProps,State> {
                 })
             })
 
-            let list = newList.concat(this.tmpTorrents);
             this.setState({
-                torrents: list
+                torrents: newList
             });
 
-            let selected = list.filter((tr)=>{return tr.selected});
+            let selected = newList.filter((tr)=>{return tr.selected && this.checkFilters(tr.name, tr.state)});
             this.props.onSelect(selected.map<SelectedTorrent>((ti) => {
                 return {
                     hash: ti.id,
@@ -197,37 +153,44 @@ export class Table extends Component<TableProps,State> {
         }
     }
 
+    checkFilters = (name: string, state: string) => {
+        if (this.props.filter.search.length > 0) {
+            if (!name.toLowerCase().includes(this.props.filter.search.toLowerCase())) {
+                return false;
+            }
+        }
+
+        switch (this.props.filter.type) {
+            case "Downloading":
+                if(state != "downloading")
+                    return false;
+                break
+            case "Seeding":
+                if(state != "seeding")
+                    return false;
+                break
+            case "Failed":
+                if(state != "fail")
+                    return false;
+                break
+            case "Active":
+                if(state != "downloading" && state != "seeding")
+                    return false;
+                break
+            case "Inactive":
+                if(state != "fail" && state != "inactive")
+                    return false;
+                break
+        }
+        return true;
+    }
+
     renderTorrentsList() {
         let items = [];
 
         for (let t of this.state.torrents) {
-            if (this.props.filter.search.length > 0) {
-                if (!t.name.toLowerCase().includes(this.props.filter.search.toLowerCase())) {
-                    continue
-                }
-            }
-
-            switch (this.props.filter.type) {
-                case "Downloading":
-                    if(t.state != "downloading")
-                        continue
-                    break
-                case "Seeding":
-                    if(t.state != "seeding")
-                        continue
-                    break
-                case "Failed":
-                    if(t.state != "fail")
-                        continue
-                    break
-                case "Active":
-                    if(t.state != "downloading" && t.state != "seeding")
-                        continue
-                    break
-                case "Inactive":
-                    if(t.state != "fail" && t.state != "inactive")
-                        continue
-                    break
+            if (!this.checkFilters(t.name, t.state)) {
+                continue
             }
 
             items.push(<tr className={t.selected ? "torrent-row torrent-selected" : "torrent-row"} key={t.id}
@@ -244,7 +207,7 @@ export class Table extends Component<TableProps,State> {
 
                                elems.push(<div onClick={() => {
                                    OpenFolder(t.path).then()}}>
-                                   <img src={Download} alt=""/><span>Open directory</span></div>)
+                                   <img src={OpenDir} alt=""/><span>Open directory</span></div>)
 
                                if (t.state != "downloading" && t.state != "seeding" && t.state != "fail") {
                                    elems.push(<div onClick={() => {
@@ -258,11 +221,11 @@ export class Table extends Component<TableProps,State> {
                                    }}><img src={Pause} alt=""/><span>Pause</span></div>)
                                }
                                elems.push(<div onClick={() => {
-                                   RemoveTorrent(t.id, false, false).then(Refresh)
+                                   WantRemoveTorrent(t.id).then()
                                }}><img src={Close} alt=""/><span>Remove</span></div>)
                                elems.push(<div onClick={() => {
                                    ExportMeta(t.id).then()
-                               }}><img src={Close} alt=""/><span>Export .tonbag</span></div>)
+                               }}><img src={Export} alt=""/><span>Export .tonbag</span></div>)
 
                                this.setState((current) => ({ ...current, contextShow: true, contextItems: elems}))
 
@@ -288,7 +251,7 @@ export class Table extends Component<TableProps,State> {
                         tip!.style.visibility = "hidden";
                     }
                 }><div id={"state-"+t.id} className={"item-state "+t.state}></div></td>
-                <td>{t.name}</td>
+                <td style={{maxWidth:"197px"}}>{t.name}</td>
                 <td className={"small"}>{t.size}</td>
                 <td><div className="progress-block-small">
                     <span style={{textAlign:"left", width:"27px"}}>{t.progress}%</span>

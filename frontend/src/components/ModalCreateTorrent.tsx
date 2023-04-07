@@ -69,20 +69,20 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
     render() {
         return baseModal(this.props.onExit, (
             <>
-                <div style={this.state.createdStage ? {} : {display: "none"}} className="add-torrent-block">
+                <div style={this.state.createdStage ? {width: "455px"} : {display: "none"}} className="add-torrent-block">
                     {this.state.hash ? <div className="torrent-created">
                         <span className="header">Torrent successfully created!</span>
                         <input readOnly={true} onClick={(e)=>{ e.currentTarget.select()}} value={this.state.hash}/>
-                        <button className="second-button" style={{width:"170px"}} onClick={() => {
+                        <button className="second-button black" style={{width:"170px"}} onClick={() => {
                             ExportMeta(this.state.hash!).then((file) => {OpenFolderSelectFile(file).then()})}
                         }>Export torrent file</button>
                     </div> : <div className="files-selector">
                         <div className="loader-block"><span className="loader"/><span className="loader-text">Creating torrent..</span></div>
                     </div>}
                 </div>
-                <div style={this.state.createdStage ? {display: "none"} : {}} className="add-torrent-block">
+                <div style={this.state.createdStage ? {display: "none"} : {width: "330px"}} className="add-torrent-block">
                     <span className="title">Torrent name</span>
-                    <input onInput={(e) => {
+                    <input className="torrent-name-input" onInput={(e) => {
                         let val = e.currentTarget.value;
                         let can = val.length > 0 && this.state.path.length > 0;
                         this.setState((current) => ({...current, name: val, canContinue: can}));

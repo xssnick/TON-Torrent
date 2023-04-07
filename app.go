@@ -18,7 +18,6 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"time"
 )
 
 // App struct
@@ -31,6 +30,7 @@ type App struct {
 	loaded        bool
 
 	openFileData []byte
+	openFileHash string
 
 	mx sync.RWMutex
 }
@@ -38,12 +38,11 @@ type App struct {
 // NewApp creates a new App application struct
 func NewApp() *App {
 	a := &App{}
-	oshook.HookFileStartup(a.openFile)
+	oshook.HookStartup(a.openFile, a.openHash)
 	return a
 }
 
 func (a *App) exit(ctx context.Context) {
-	println("EXIT")
 	if a.daemonProcess != nil {
 		_ = a.daemonProcess.Kill()
 	}
@@ -66,8 +65,17 @@ func (a *App) Throw(err error) {
 	panic(err.Error())
 }
 
+func (a *App) ShowMsg(text string) {
+	runtime2.MessageDialog(a.ctx, runtime2.MessageDialogOptions{
+		Type:          runtime2.InfoDialog,
+		Title:         "Info",
+		Message:       text,
+		DefaultButton: "OK",
+	})
+}
+
 func (a *App) prepare() {
-	oshook.HookFileStartup(a.openFile)
+	oshook.HookStartup(a.openFile, a.openHash)
 
 	var err error
 	a.rootPath, err = PrepareRootPath()
@@ -124,14 +132,6 @@ func (a *App) ready(ctx context.Context) {
 	})
 	a.loaded = true
 
-	go func() {
-		time.Sleep(1 * time.Second)
-		if a.openFileData != nil {
-			// loading done
-			a.openFile(a.openFileData)
-		}
-	}()
-
 	runtime2.EventsOn(a.ctx, "refresh", func(optionalData ...interface{}) {
 		_ = a.api.SyncTorrents()
 	})
@@ -143,7 +143,31 @@ func (a *App) CheckOpenedFile() {
 	if a.openFileData != nil {
 		a.openFile(a.openFileData)
 		a.openFileData = nil
+	} else if a.openFileHash != "" {
+		a.openHash(a.openFileHash)
+		a.openFileHash = ""
 	}
+}
+
+func (a *App) SetSpeedLimit(down, up int64) string {
+	err := a.api.SetSpeedLimits(&api.SpeedLimits{
+		Download: down,
+		Upload:   up,
+	})
+	if err != nil {
+		log.Println(err.Error())
+		return err.Error()
+	}
+	return ""
+}
+
+func (a *App) GetSpeedLimit() *api.SpeedLimits {
+	limits, err := a.api.GetSpeedLimits()
+	if err != nil {
+		log.Println(err.Error())
+		return &api.SpeedLimits{}
+	}
+	return limits
 }
 
 func (a *App) openFile(data []byte) {
@@ -155,6 +179,18 @@ func (a *App) openFile(data []byte) {
 	} else {
 		// wait for loading
 		a.openFileData = data
+	}
+}
+
+func (a *App) openHash(hash string) {
+	if a.loaded {
+		res := a.AddTorrentByHash(hash)
+		if res == "" {
+			runtime2.EventsEmit(a.ctx, "open_torrent", hash)
+		}
+	} else {
+		// wait for loading
+		a.openFileHash = hash
 	}
 }
 
@@ -186,8 +222,18 @@ func (a *App) ExportMeta(hash string) string {
 		return ""
 	}
 
+	info, err := a.api.GetInfo(hash)
+	if err != nil {
+		log.Println(err.Error())
+		return ""
+	}
+	name := info.Description
+	if name == "" {
+		name = hash
+	}
+
 	path, err := runtime2.SaveFileDialog(a.ctx, runtime2.SaveDialogOptions{
-		DefaultFilename: hash + ".tonbag",
+		DefaultFilename: name + ".tonbag",
 		Title:           "Save .tonbag",
 	})
 	if err != nil {
@@ -306,6 +352,10 @@ func (a *App) CheckHeader(hash string) bool {
 	return hasHeader
 }
 
+func (a *App) WantRemoveTorrent(hash string) {
+	runtime2.EventsEmit(a.ctx, "want_remove_torrent", hash)
+}
+
 func (a *App) RemoveTorrent(hash string, withFiles, onlyNotInitiated bool) string {
 	err := a.api.RemoveTorrent(hash, withFiles, onlyNotInitiated)
 	if err != nil {
@@ -319,8 +369,12 @@ func (a *App) GetConfig() *Config {
 	return a.config
 }
 
-func (a *App) SaveConfig(downloads string) string {
+func (a *App) SaveConfig(downloads, extIP string) string {
 	a.config.DownloadsPath = downloads
+	if a.config.ListenAddr != extIP {
+		a.config.ListenAddr = extIP
+		a.ShowMsg("Listen address will be changed on the next launch.")
+	}
 	err := a.config.SaveConfig(a.rootPath)
 	if err != nil {
 		log.Println(err.Error())
@@ -330,7 +384,6 @@ func (a *App) SaveConfig(downloads string) string {
 }
 
 func (a *App) OpenFolder(path string) {
-	println("OPEN", path)
 	var cmd string
 	switch runtime.GOOS {
 	case "darwin", "linux":
@@ -343,7 +396,6 @@ func (a *App) OpenFolder(path string) {
 }
 
 func (a *App) OpenFolderSelectFile(path string) {
-	println("OPEN PATH", path)
 	switch runtime.GOOS {
 	case "darwin", "linux":
 		exec.Command("open", "-R", path).Start()

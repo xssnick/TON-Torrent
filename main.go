@@ -6,6 +6,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
+	"github.com/wailsapp/wails/v2/pkg/options/windows"
 )
 
 //go:embed all:frontend/dist
@@ -17,7 +18,7 @@ func main() {
 
 	// Create application with options
 	err := wails.Run(&options.App{
-		Title:            "TON Torrent Client",
+		Title:            "TON Torrent",
 		Width:            800,
 		Height:           487,
 		MinHeight:        487,
@@ -30,6 +31,7 @@ func main() {
 		Mac: &mac.Options{
 			Appearance: mac.NSAppearanceNameVibrantLight,
 		},
+		Windows:    &windows.Options{},
 		OnStartup:  app.startup,
 		OnDomReady: app.ready,
 		OnShutdown: app.exit,

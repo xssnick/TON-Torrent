@@ -218,27 +218,31 @@ html {
     padding-left: 4px;
     display: flex;
     flex-direction: row;
-}
 
-.torrent-menu button {
-    width: 80px;
-    height: 100%;
-    line-height: 100%;
-    background-color: white;
-    margin-left: 5px;
-    border-radius: 0 0 7px 7px;
-    border: solid 1px $border;
-    border-top: none;
-    font-size: 11px;
-}
-.torrent-menu button:hover {
-    border: solid 1px $borderHover;
-    border-top: none;
-}
-.torrent-menu button:disabled {
-    color: $text-black;
-    border: solid 1px $text-black;
-    border-top: none;
+    .buttons-block {
+        display: flex;
+        flex-direction: row;
+        button {
+            width: 60px;
+            height: 100%;
+            line-height: 100%;
+            background-color: white;
+            margin-left: 5px;
+            border-radius: 0 0 7px 7px;
+            border: solid 1px $border;
+            border-top: none;
+            font-size: 11px;
+        }
+        button:hover {
+            border: solid 1px $borderHover;
+            border-top: none;
+        }
+        button:disabled {
+            color: $text-black;
+            border: solid 1px $text-black;
+            border-top: none;
+        }
+    }
 }
 
 .torrent-body {
@@ -295,7 +299,6 @@ html {
 
     /* background-color: rgba(176, 176, 176, 0.75); */
 }
-
 
 .progress-block-small {
     min-width: 110px;
@@ -449,6 +452,7 @@ html {
     cursor: pointer;
     color: $text-black;
     background-color: white;
+    padding: 0;
 }
 
 .version-block .ver-info span {
@@ -473,14 +477,14 @@ html {
     border-radius: 4px;
     background-color: white;
 }
-.top-button:hover {
+.top-button:hover:enabled {
     border: solid 1px $borderHover;
 }
-.top-button:active {
+.top-button:active:enabled {
     box-shadow: inset 0 0 3px #00000042;
 }
 .top-button:disabled {
-    border: none;
+    background-color: transparent;
 }
 
 .top-button.stop {
@@ -492,12 +496,18 @@ html {
         filter: invert(47%) sepia(23%) saturate(3225%) hue-rotate(160deg) brightness(95%) contrast(102%);
     }
 }
+.top-button.stop.disabled {
+    background-image: url(assets/images/icons/pause-disabled.svg);
+}
 
 .top-button.remove {
     background-image: url(assets/images/icons/close.svg);
     background-position: center;
     background-repeat: no-repeat;
     background-size: 90% 90%;
+}
+.top-button.remove.disabled {
+    background-image: url(assets/images/icons/close-disabled.svg);
 }
 
 .top-button.start {
@@ -506,9 +516,12 @@ html {
     background-repeat: no-repeat;
     background-size: 90% 90%;
 }
+.top-button.start.disabled {
+    background-image: url(assets/images/icons/play-disabled.svg);
+}
 
 .create-input {
-    width: 300px;
+    width: 90%;
     height: 35px;
     border-radius: 30px;
     border: solid 1px rgba(0, 0, 0, 0.13);
@@ -573,7 +586,7 @@ html {
     background-color: $ton;
     border-radius: 10px 0 0 10px;
     box-shadow:inset 0 0px 2px 1px rgba(77, 77, 77, 0.07);
-    transition: width 0.2s;
+    /*transition: width 0.2s;*/
 }
 
 .info-data-block {

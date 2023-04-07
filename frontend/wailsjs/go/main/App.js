@@ -46,6 +46,10 @@ export function GetPlainFiles(arg1) {
   return window['go']['main']['App']['GetPlainFiles'](arg1);
 }
 
+export function GetSpeedLimit() {
+  return window['go']['main']['App']['GetSpeedLimit']();
+}
+
 export function GetTorrents() {
   return window['go']['main']['App']['GetTorrents']();
 }
@@ -66,12 +70,20 @@ export function RemoveTorrent(arg1, arg2, arg3) {
   return window['go']['main']['App']['RemoveTorrent'](arg1, arg2, arg3);
 }
 
-export function SaveConfig(arg1) {
-  return window['go']['main']['App']['SaveConfig'](arg1);
+export function SaveConfig(arg1, arg2) {
+  return window['go']['main']['App']['SaveConfig'](arg1, arg2);
 }
 
 export function SetActive(arg1, arg2) {
   return window['go']['main']['App']['SetActive'](arg1, arg2);
+}
+
+export function SetSpeedLimit(arg1, arg2) {
+  return window['go']['main']['App']['SetSpeedLimit'](arg1, arg2);
+}
+
+export function ShowMsg(arg1) {
+  return window['go']['main']['App']['ShowMsg'](arg1);
 }
 
 export function StartDownload(arg1, arg2) {
@@ -80,4 +92,8 @@ export function StartDownload(arg1, arg2) {
 
 export function Throw(arg1) {
   return window['go']['main']['App']['Throw'](arg1);
+}
+
+export function WantRemoveTorrent(arg1) {
+  return window['go']['main']['App']['WantRemoveTorrent'](arg1);
 }

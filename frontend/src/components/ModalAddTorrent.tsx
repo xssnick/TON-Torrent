@@ -35,7 +35,7 @@ export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
             hash: this.props.openHash,
             err: "",
             files: [],
-            canContinue: this.props.openHash ? true : false,
+            canContinue: false,
         }
     }
     inter?: number
@@ -192,7 +192,7 @@ export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
                             <div className="loader-block"><span className="loader"/><span className="loader-text">Loading torrent information..</span></div>}
                     </div>
                 </div>
-                <div style={this.state.selectFilesStage ? {display: "none"} : {}} className="add-torrent-block">
+                <div style={this.state.selectFilesStage ? {display: "none"} : {width: "455px"}} className="add-torrent-block">
                     <span className="title">Bag ID</span>
                     <input id="torrent-hash-field" required={true} placeholder="Insert Bag ID..." onChange={(v) => {
                         this.setState((current) => ({...current, err: this.state.err, fieldMeta: undefined, fieldHash: v.target.value,

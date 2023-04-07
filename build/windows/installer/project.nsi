@@ -91,13 +91,18 @@ Section
 SectionEnd
 
 !define ASSOC_EXT ".tonbag"
+!define ASSOC_URL1 "tonstorage"
+!define ASSOC_URL2 "tonbag"
 !define ASSOC_PROGID "TON.Torrent"
 !define ASSOC_VERB "TON Torrent"
 Section -ShellAssoc
-  # Register file type
+  # Register file type and url
   WriteRegStr ShCtx "Software\Classes\${ASSOC_PROGID}\DefaultIcon" "" "$InstDir\${PRODUCT_EXECUTABLE},0"
   WriteRegStr ShCtx "Software\Classes\${ASSOC_PROGID}\shell\${ASSOC_VERB}\command" "" '"$InstDir\${PRODUCT_EXECUTABLE}" "%1"'
   WriteRegStr ShCtx "Software\Classes\${ASSOC_EXT}" "" "${ASSOC_PROGID}"
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_URL1}" "" "${ASSOC_PROGID}"
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_URL2}" "" "${ASSOC_PROGID}"
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_PROGID}" "URL Protocol" ""
 
   # Register "Open With" [Optional]
   WriteRegNone ShCtx "Software\Classes\${ASSOC_EXT}\OpenWithList" "${PRODUCT_EXECUTABLE}" ; Win2000+ [Optional]

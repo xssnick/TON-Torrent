@@ -7,35 +7,50 @@ package oshook
 //#include "app_darwin.h"
 import "C"
 import (
+	"net/url"
 	"os"
 	"unsafe"
 )
 
-var cb func([]byte)
+var cbFile func([]byte)
+var cbHash func(string)
 
 //export OnLoadFile
 func OnLoadFile(data *C.char, length C.uint) {
-	if cb != nil && length < 1<<28 {
+	if cbFile != nil && length < 1<<28 {
 		dest := make([]byte, length)
 		// copy from c to go byte slice
 		copy(dest, (*(*[1<<31 - 1]byte)(unsafe.Pointer(data)))[:length:length])
-		cb(dest)
+		cbFile(dest)
 	}
 }
 
-//export OnLoadFileFromPath
-func OnLoadFileFromPath(path *C.char) {
-	if cb != nil {
+//export OnLoadURL
+func OnLoadURL(u *C.char) {
+	if cbHash != nil {
 		go func() { // to not block main thread
-			data, err := os.ReadFile(C.GoString(path))
+			ul, err := url.Parse(C.GoString(u))
 			if err == nil {
-				cb(data)
+				cbHash(ul.Host)
 			}
 		}()
 	}
 }
 
-func HookFileStartup(callback func([]byte)) {
-	cb = callback
+//export OnLoadFileFromPath
+func OnLoadFileFromPath(path *C.char) {
+	if cbFile != nil {
+		go func() { // to not block main thread
+			data, err := os.ReadFile(C.GoString(path))
+			if err == nil {
+				cbFile(data)
+			}
+		}()
+	}
+}
+
+func HookStartup(callbackFile func([]byte), callbackHash func(string)) {
+	cbFile = callbackFile
+	cbHash = callbackHash
 	C.HookDelegate()
 }
