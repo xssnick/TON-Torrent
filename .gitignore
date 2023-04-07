@@ -6,5 +6,5 @@ frontend/dist
 storage-daemon
 storage-db
 config.json
-global-config.json
+global.config.json
 ton-build
