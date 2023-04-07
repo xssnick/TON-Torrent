@@ -16,7 +16,6 @@ build-linux:
 	wget https://ton.org/global.config.json -P build/bin/
 
 build-windows:
-	mkdir -p "build/bin"
-	wget https://ton.org/global.config.json -P build/bin/
+	curl --create-dirs -O --output-dir build/bin https://ton.org/global.config.json
 	wails build -clean -nsis
 	cp ton-build/storage/storage-daemon/storage-daemon.exe build/bin/storage-daemon.exe
