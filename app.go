@@ -90,11 +90,14 @@ func (a *App) prepare() {
 
 	a.config = cfg
 
-	ex, err := os.Executable()
-	if err != nil {
-		a.Throw(err)
+	var exPath = CustomRoot // if we have defined root, use it for daemon path too
+	if exPath == "" {
+		ex, err := os.Executable()
+		if err != nil {
+			a.Throw(err)
+		}
+		exPath = filepath.Dir(ex)
 	}
-	exPath := filepath.Dir(ex)
 
 	a.daemonProcess, err = daemon.Run(a.ctx, a.rootPath, exPath, a.config.ListenAddr,
 		strings.SplitN(a.config.DaemonControlAddr, ":", 2)[1], func(err error) {
