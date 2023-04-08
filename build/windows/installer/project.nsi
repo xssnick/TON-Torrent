@@ -93,16 +93,25 @@ SectionEnd
 !define ASSOC_EXT ".tonbag"
 !define ASSOC_URL1 "tonstorage"
 !define ASSOC_URL2 "tonbag"
-!define ASSOC_PROGID "TON.Torrent"
-!define ASSOC_VERB "TON Torrent"
+!define ASSOC_PROGID "TON Torrent"
+!define ASSOC_VERB "open"
 Section -ShellAssoc
   # Register file type and url
   WriteRegStr ShCtx "Software\Classes\${ASSOC_PROGID}\DefaultIcon" "" "$InstDir\${PRODUCT_EXECUTABLE},0"
   WriteRegStr ShCtx "Software\Classes\${ASSOC_PROGID}\shell\${ASSOC_VERB}\command" "" '"$InstDir\${PRODUCT_EXECUTABLE}" "%1"'
   WriteRegStr ShCtx "Software\Classes\${ASSOC_EXT}" "" "${ASSOC_PROGID}"
+
   WriteRegStr ShCtx "Software\Classes\${ASSOC_URL1}" "" "${ASSOC_PROGID}"
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_URL1}" "URL Protocol" ""
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_URL1}" "Content Type" "application/ton-torrent"
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_URL1}\DefaultIcon" "" "$InstDir\${PRODUCT_EXECUTABLE},0"
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_URL1}\shell\${ASSOC_VERB}\command" "" '"$InstDir\${PRODUCT_EXECUTABLE}" "%1"'
+
   WriteRegStr ShCtx "Software\Classes\${ASSOC_URL2}" "" "${ASSOC_PROGID}"
-  WriteRegStr ShCtx "Software\Classes\${ASSOC_PROGID}" "URL Protocol" ""
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_URL2}" "URL Protocol" ""
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_URL2}" "Content Type" "application/ton-torrent"
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_URL2}\DefaultIcon" "" "$InstDir\${PRODUCT_EXECUTABLE},0"
+  WriteRegStr ShCtx "Software\Classes\${ASSOC_URL2}\shell\${ASSOC_VERB}\command" "" '"$InstDir\${PRODUCT_EXECUTABLE}" "%1"'
 
   # Register "Open With" [Optional]
   WriteRegNone ShCtx "Software\Classes\${ASSOC_EXT}\OpenWithList" "${PRODUCT_EXECUTABLE}" ; Win2000+ [Optional]
@@ -133,6 +142,20 @@ Section -un.ShellAssoc
   ${AndIf} $0 == "${ASSOC_PROGID}"
     DeleteRegValue ShCtx "Software\Classes\${ASSOC_EXT}" ""
     DeleteRegKey /IfEmpty ShCtx "Software\Classes\${ASSOC_EXT}"
+  ${EndIf}
+
+  ReadRegStr $0 ShCtx "Software\Classes\${ASSOC_URL1}" ""
+  DeleteRegKey ShCtx "Software\Classes\${ASSOC_URL1}"
+  ${IfNot} ${Errors}
+  ${AndIf} $0 == "${ASSOC_PROGID}"
+    DeleteRegKey ShCtx "Software\Classes\${ASSOC_URL1}"
+  ${EndIf}
+
+  ReadRegStr $0 ShCtx "Software\Classes\${ASSOC_URL2}" ""
+  DeleteRegKey ShCtx "Software\Classes\${ASSOC_URL2}"
+  ${IfNot} ${Errors}
+  ${AndIf} $0 == "${ASSOC_PROGID}"
+    DeleteRegKey ShCtx "Software\Classes\${ASSOC_URL2}"
   ${EndIf}
 
   # Unregister "Open With"
