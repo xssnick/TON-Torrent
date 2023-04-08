@@ -115,11 +115,6 @@ func checkCanSeed() (string, bool) {
 }
 
 func PrepareRootPath() (string, error) {
-	root, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
 	switch runtime.GOOS {
 	case "darwin":
 		home, err := os.UserHomeDir()
@@ -136,7 +131,12 @@ func PrepareRootPath() (string, error) {
 				return "", err
 			}
 		}
-		root = "" + home + "/Library/Application Support/org.tonutils.tontorrent"
+		return home + "/Library/Application Support/org.tonutils.tontorrent", nil
 	}
-	return root, nil
+
+	ex, err := os.Executable()
+	if err != nil {
+		panic(err)
+	}
+	return filepath.Dir(ex), nil
 }

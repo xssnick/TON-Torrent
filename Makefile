@@ -14,7 +14,8 @@ build-linux:
 	wails build -clean
 	cp ton-build/storage/storage-daemon/storage-daemon build/bin/storage-daemon
 	wget https://ton.org/global.config.json -P build/bin/
+	tar -czvf build/bin/ton-torrent.tar.gz -C build/bin .
 
 build-windows:
 	curl --create-dirs -O --output-dir build https://ton.org/global.config.json
-	wails build -clean -nsis
+	wails build -nsis
