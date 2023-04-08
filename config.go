@@ -114,7 +114,13 @@ func checkCanSeed() (string, bool) {
 	return ip, false
 }
 
+const CustomRoot = ""
+
 func PrepareRootPath() (string, error) {
+	if CustomRoot != "" {
+		return CustomRoot, nil
+	}
+
 	switch runtime.GOOS {
 	case "darwin":
 		home, err := os.UserHomeDir()

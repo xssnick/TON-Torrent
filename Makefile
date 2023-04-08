@@ -17,13 +17,14 @@ build-linux-tar:
 	tar -czvf build/bin/ton-torrent.tar.gz -C build/bin .
 
 build-linux-deb:
-	wails build -clean
+	wails build -clean -ldflags="-X 'github.com/tonutils/torrent-client/core/daemon.CustomRoot=/var/lib/ton-torrent'"
 	wget https://ton.org/global.config.json -P build/bin/
 	mkdir -p build/bin/ton-torrent/DEBIAN
 	mkdir -p build/bin/ton-torrent/usr/local/bin
 	mkdir -p build/bin/ton-torrent/var/lib/ton-torrent
 	mkdir -p build/bin/ton-torrent/usr/share/applications
-	cp ton-build/storage/storage-daemon/storage-daemon build/bin/ton-torrent/usr/local/bin/
+	cp ton-build/storage/storage-daemon/storage-daemon build/bin/ton-torrent/var/lib/ton-torrent/
+	cp build/bin/global.config.json build/bin/ton-torrent/var/lib/ton-torrent/
 	cp build/bin/TON\ Torrent build/bin/ton-torrent/usr/local/bin/ton-torrent
 	cp build/appicon.png build/bin/ton-torrent/var/lib/ton-torrent/
 	cp build/linux/TON\ Torrent.desktop build/bin/ton-torrent/usr/share/applications/
