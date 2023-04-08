@@ -1,0 +1,9 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Exec=/usr/local/bin/ton-torrent
+Name=TON Torrent
+Comment=TON Torrent
+Icon=/var/lib/ton-torrent/appicon.png

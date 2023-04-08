@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {EventsOff, EventsOn} from "../../wailsjs/runtime";
-import {GetPeers} from "../../wailsjs/go/main/App"; // let's also import Component
+import {GetPeers} from "../../wailsjs/go/main/App";
 
 export interface PeerItem {
     ip: string

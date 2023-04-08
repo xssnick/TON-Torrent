@@ -1,0 +1,5 @@
+Package: ton-torrent
+Version: 1.0
+Maintainer: Oleg Baranov
+Architecture: all
+Description: TON Storage GUI Client

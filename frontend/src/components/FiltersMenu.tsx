@@ -1,5 +1,4 @@
-import React, {FunctionComponent, MouseEvent, useState} from 'react';
-import ReactDOM from 'react-dom';
+import React, {FunctionComponent, useState} from 'react';
 import FilterCheck from "../assets/images/icons/check.svg";
 
 export interface FilterProps {

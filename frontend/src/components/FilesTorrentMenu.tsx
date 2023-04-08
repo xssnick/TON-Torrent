@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
-import {GetFiles, GetPlainFiles, GetTorrents, OpenFolder, OpenFolderSelectFile} from "../../wailsjs/go/main/App";
-import {EventsEmit, EventsOff, EventsOn} from "../../wailsjs/runtime"; // let's also import Component
+import { GetPlainFiles, OpenFolderSelectFile} from "../../wailsjs/go/main/App";
+import { EventsOff, EventsOn} from "../../wailsjs/runtime";
 
 export interface FileItem {
     path: string

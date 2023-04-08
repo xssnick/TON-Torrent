@@ -1,14 +1,12 @@
-import React, {Component, MouseEvent} from 'react';
+import React, {Component} from 'react';
 import {
     ExportMeta,
     GetTorrents,
     OpenFolder,
-    RemoveTorrent,
     SetActive,
     WantRemoveTorrent
 } from "../../wailsjs/go/main/App";
 import {EventsEmit, EventsOff, EventsOn} from "../../wailsjs/runtime";
-import Download from "../assets/images/icons/download.svg";
 import Play from "../assets/images/icons/play.svg";
 import Pause from "../assets/images/icons/pause.svg";
 import Close from "../assets/images/icons/close.svg";

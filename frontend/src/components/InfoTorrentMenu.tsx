@@ -49,8 +49,6 @@ export class InfoTorrentMenu extends Component<InfoProps,State> {
         return () => {navigator.clipboard.writeText(text).then()}
     }
 
-
-
     update() {
         GetInfo(this.props.torrent).then((tr: any)=>{
             this.setState({
@@ -78,7 +76,6 @@ export class InfoTorrentMenu extends Component<InfoProps,State> {
     componentWillUnmount() {
         EventsOff("update_info")
     }
-
 
     render() {
         return <div>

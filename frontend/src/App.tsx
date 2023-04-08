@@ -5,7 +5,7 @@ import './tooltip.css';
 import './modal.scss';
 import {Filter, Refresh, SelectedTorrent, Table} from "./components/Table";
 import {AddTorrentModal} from "./components/ModalAddTorrent";
-import {CheckOpenedFile, RemoveTorrent, SetActive, WantRemoveTorrent} from "../wailsjs/go/main/App";
+import {CheckOpenedFile, SetActive, WantRemoveTorrent} from "../wailsjs/go/main/App";
 import {FiltersMenu} from "./components/FiltersMenu";
 import {BrowserOpenURL, EventsOn} from "../wailsjs/runtime";
 import {FilesTorrentMenu} from "./components/FilesTorrentMenu";
