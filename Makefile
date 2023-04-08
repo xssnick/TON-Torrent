@@ -17,7 +17,7 @@ build-linux-tar:
 	tar -czvf build/bin/ton-torrent.tar.gz -C build/bin .
 
 build-linux-deb:
-	wails build -clean -ldflags="-X 'github.com/tonutils/torrent-client/core/daemon.CustomRoot=/var/lib/ton-torrent'"
+	wails build -clean -ldflags="-X 'main.CustomRoot=/var/lib/ton-torrent'"
 	wget https://ton.org/global.config.json -P build/bin/
 	mkdir -p build/bin/ton-torrent/DEBIAN
 	mkdir -p build/bin/ton-torrent/usr/local/bin

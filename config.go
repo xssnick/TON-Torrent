@@ -118,7 +118,10 @@ var CustomRoot = ""
 
 func PrepareRootPath() (string, error) {
 	if CustomRoot != "" {
+		println("CUSTOM ROOT", CustomRoot)
 		return CustomRoot, nil
+	} else {
+		println("ORIDINARY ROOT", CustomRoot)
 	}
 
 	switch runtime.GOOS {
