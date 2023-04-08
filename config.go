@@ -114,7 +114,7 @@ func checkCanSeed() (string, bool) {
 	return ip, false
 }
 
-const CustomRoot = ""
+var CustomRoot = ""
 
 func PrepareRootPath() (string, error) {
 	if CustomRoot != "" {
