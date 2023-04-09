@@ -3,9 +3,11 @@
 package oshook
 
 import (
+	"net/url"
 	"os"
 	"strings"
 	"sync"
+	"time"
 )
 
 var once sync.Once
