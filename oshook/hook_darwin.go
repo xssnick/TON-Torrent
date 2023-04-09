@@ -49,7 +49,7 @@ func OnLoadFileFromPath(path *C.char) {
 	}
 }
 
-func HookStartup(callbackFile func([]byte), callbackHash func(string)) {
+func HookStartup(callbackFile func([]byte), callbackHash func(string), dbg func(s string)) {
 	cbFile = callbackFile
 	cbHash = callbackHash
 	C.HookDelegate()
