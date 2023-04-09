@@ -417,6 +417,7 @@ func (a *App) OpenFolder(path string) {
 	case "darwin", "linux":
 		cmd = "open"
 	case "windows":
+		path = strings.ReplaceAll(path, "/", "\\")
 		cmd = "explorer"
 	}
 
@@ -428,6 +429,7 @@ func (a *App) OpenFolderSelectFile(path string) {
 	case "darwin", "linux":
 		exec.Command("open", "-R", path).Start()
 	case "windows":
+		path = strings.ReplaceAll(path, "/", "\\")
 		exec.Command("explorer", "/select,"+path).Start()
 	}
 }
