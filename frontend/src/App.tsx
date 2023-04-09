@@ -51,6 +51,8 @@ export class App extends Component<{}, State> {
             overallDownloadSpeed: "0 Bytes",
             torrentMenuSelected: -1,
         }
+
+
     }
 
     setSelectedTorrentMenu = (n: number) => {

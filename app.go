@@ -147,17 +147,29 @@ func (a *App) ready(ctx context.Context) {
 	runtime2.EventsEmit(a.ctx, "ready")
 }
 
+var onceCheck = sync.Once{}
+
 func (a *App) CheckOpenedFile() {
 	go func() {
-		// on windows it may require some time
-		time.Sleep(300 * time.Millisecond)
-		if a.openFileData != nil {
-			a.openFile(a.openFileData)
-			a.openFileData = nil
-		} else if a.openFileHash != "" {
-			a.openHash(a.openFileHash)
-			a.openFileHash = ""
+		// TODO: on windows it may require some time, need to find exact reason
+		//if runtime.GOOS == "windows" {
+		///	time.Sleep(1000 * time.Millisecond)
+		//}
+
+		// wait for daemon ready
+		for !a.loaded {
+			time.Sleep(50 * time.Millisecond)
 		}
+
+		onceCheck.Do(func() {
+			if a.openFileData != nil {
+				a.openFile(a.openFileData)
+				a.openFileData = nil
+			} else if a.openFileHash != "" {
+				a.openHash(a.openFileHash)
+				a.openFileHash = ""
+			}
+		})
 	}()
 }
 
