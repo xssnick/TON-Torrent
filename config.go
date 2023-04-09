@@ -118,10 +118,7 @@ var CustomRoot = ""
 
 func PrepareRootPath() (string, error) {
 	if CustomRoot != "" {
-		println("CUSTOM ROOT", CustomRoot)
 		return CustomRoot, nil
-	} else {
-		println("ORIDINARY ROOT", CustomRoot)
 	}
 
 	switch runtime.GOOS {
@@ -131,16 +128,34 @@ func PrepareRootPath() (string, error) {
 			return "", err
 		}
 
-		_, err = os.Stat(home + "/Library/Application Support/org.tonutils.tontorrent")
+		path := home + "/Library/Application Support/org.tonutils.tontorrent"
+		_, err = os.Stat(path)
 		if err != nil {
 			if os.IsNotExist(err) {
-				err = os.MkdirAll(home+"/Library/Application Support/org.tonutils.tontorrent", 0766)
+				err = os.MkdirAll(path, 0766)
 			}
 			if err != nil {
 				return "", err
 			}
 		}
-		return home + "/Library/Application Support/org.tonutils.tontorrent", nil
+		return path, nil
+	case "windows":
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+
+		path := home + "\\AppData\\Roaming\\TON Torrent.exe"
+		_, err = os.Stat(path)
+		if err != nil {
+			if os.IsNotExist(err) {
+				err = os.MkdirAll(path, 0766)
+			}
+			if err != nil {
+				return "", err
+			}
+		}
+		return path, nil
 	}
 
 	ex, err := os.Executable()

@@ -27,7 +27,7 @@ build-linux-deb:
 	cp build/bin/global.config.json build/bin/ton-torrent/var/lib/ton-torrent/
 	cp build/bin/TON\ Torrent build/bin/ton-torrent/usr/local/bin/ton-torrent
 	cp build/appicon.png build/bin/ton-torrent/var/lib/ton-torrent/
-	cp build/linux/TON\ Torrent.desktop build/bin/ton-torrent/usr/share/applications/
+	cp build/linux/ton-torrent.desktop build/bin/ton-torrent/usr/share/applications/
 	cp build/linux/control build/bin/ton-torrent/DEBIAN/
 	dpkg-deb --build build/bin/ton-torrent build/bin/ton-torrent.deb
 

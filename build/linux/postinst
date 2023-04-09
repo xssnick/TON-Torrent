@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "Registering .tonbag files"
+EXTMIME="application/ton-torrent                         tonbag"
+grep -qxF "$EXTMIME" /etc/mime.types || echo "$EXTMIME" >> /etc/mime.types
+echo "application/ton-torrent=ton-torrent.desktop" >> /usr/share/applications/defaults.list
+
+echo "Registering tonbag:// and tonstorage:// urls"
+echo "x-scheme-handler/tonbag=ton-torrent.desktop" >> /usr/share/applications/defaults.list
+echo "x-scheme-handler/tonstorage=ton-torrent.desktop" >> /usr/share/applications/defaults.list

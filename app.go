@@ -55,10 +55,14 @@ func (a *App) startup(ctx context.Context) {
 }
 
 func (a *App) Throw(err error) {
+	msg := err.Error()
+	if len(msg) > 800 {
+		msg = msg[:800]
+	}
 	runtime2.MessageDialog(a.ctx, runtime2.MessageDialogOptions{
 		Type:          runtime2.ErrorDialog,
 		Title:         "Fatal error",
-		Message:       err.Error(),
+		Message:       msg,
 		DefaultButton: "Exit",
 	})
 	a.exit(a.ctx)
