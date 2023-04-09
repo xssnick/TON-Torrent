@@ -182,6 +182,8 @@ func (a *App) openFile(data []byte) {
 		res := a.addByMeta(data)
 		if res.Err == "" {
 			runtime2.EventsEmit(a.ctx, "open_torrent", res.Hash)
+		} else {
+			a.ShowMsg("Error while parsing meta file: " + res.Err + "")
 		}
 	} else {
 		// wait for loading
@@ -194,6 +196,8 @@ func (a *App) openHash(hash string) {
 		res := a.AddTorrentByHash(hash)
 		if res == "" {
 			runtime2.EventsEmit(a.ctx, "open_torrent", hash)
+		} else {
+			a.ShowMsg("Error while parsing hash '" + hash + "': " + res + "")
 		}
 	} else {
 		// wait for loading
