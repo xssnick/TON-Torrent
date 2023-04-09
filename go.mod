@@ -9,6 +9,7 @@ require (
 )
 
 require (
+	github.com/audrenbdb/goforeground v0.0.0-20220126120304-39261aeee000 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/google/uuid v1.1.2 // indirect

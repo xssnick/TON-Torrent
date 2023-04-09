@@ -39,7 +39,7 @@ type App struct {
 // NewApp creates a new App application struct
 func NewApp() *App {
 	a := &App{}
-	oshook.HookStartup(a.openFile, a.openHash, a.ShowMsg)
+	oshook.HookStartup(a.openFile, a.openHash)
 	return a
 }
 
@@ -80,7 +80,7 @@ func (a *App) ShowMsg(text string) {
 }
 
 func (a *App) prepare() {
-	oshook.HookStartup(a.openFile, a.openHash, a.ShowMsg)
+	oshook.HookStartup(a.openFile, a.openHash)
 
 	var err error
 	a.rootPath, err = PrepareRootPath()
