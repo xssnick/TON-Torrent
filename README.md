@@ -11,4 +11,4 @@ to this in your browser, and you can call your Go code from devtools.
 
 1. `make git-modules`
 2. `make compile-storage`
-3. `make build-[mac|windows|linux]`
+3. `make build-[mac|windows|linux-[deb|tar]]`

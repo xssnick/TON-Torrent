@@ -3,13 +3,13 @@ module github.com/tonutils/torrent-client
 go 1.18
 
 require (
+	github.com/audrenbdb/goforeground v0.0.0-20220126120304-39261aeee000
 	github.com/jcuga/go-upnp v0.0.0-20160830125909-492b17f02cbb
 	github.com/wailsapp/wails/v2 v2.3.1
 	github.com/xssnick/tonutils-go v1.6.2
 )
 
 require (
-	github.com/audrenbdb/goforeground v0.0.0-20220126120304-39261aeee000 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/google/uuid v1.1.2 // indirect

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"runtime"
@@ -14,7 +15,29 @@ import (
 )
 
 func Run(ctx context.Context, root, path string, listen, controlPort string, onFinish func(error)) (*os.Process, error) {
-	args := []string{"-v", "1", "-C", path + "/global.config.json", "-I", listen, "-p", controlPort, "-D", root + "/storage-db"}
+	netConfigPath := root + "/global.config.json"
+	_, err := os.Stat(netConfigPath)
+	if os.IsNotExist(err) { // download network config if not exists
+		resp, err := http.Get("https://ton.org/global.config.json")
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		cfgData, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		err = os.WriteFile(netConfigPath, cfgData, 0644)
+		if err != nil {
+			return nil, err
+		}
+	} else if err != nil {
+		return nil, err
+	}
+
+	args := []string{"-v", "1", "-C", netConfigPath, "-I", listen, "-p", controlPort, "-D", root + "/storage-db"}
 
 	log.Println("starting daemon with args:", strings.Join(args, " "))
 	name := "storage-daemon"

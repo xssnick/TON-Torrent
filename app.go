@@ -102,6 +102,10 @@ func (a *App) prepare() {
 			a.Throw(err)
 		}
 		exPath = filepath.Dir(ex)
+
+		if runtime.GOOS == "darwin" {
+			exPath = filepath.Dir(exPath) + "/Resources/Storage.app/Contents/MacOS"
+		}
 	}
 
 	a.daemonProcess, err = daemon.Run(a.ctx, a.rootPath, exPath, a.config.ListenAddr,
