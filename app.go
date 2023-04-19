@@ -227,9 +227,10 @@ func (a *App) openHash(hash string) {
 }
 
 func (a *App) OpenDir() string {
-	str, _ := runtime2.OpenDirectoryDialog(a.ctx, runtime2.OpenDialogOptions{
-		Title: "Select directory to convert to torrent",
-	})
+	str, err := runtime2.OpenDirectoryDialog(a.ctx, runtime2.OpenDialogOptions{})
+	if err != nil {
+		log.Println(err.Error())
+	}
 	return str
 }
 

@@ -48,8 +48,10 @@ func Run(ctx context.Context, root, path string, listen, controlPort string, onF
 	errLogs := &bytes.Buffer{}
 
 	cmd := exec.CommandContext(ctx, path+"/"+name, args...)
+	log.Println("command: ", cmd.String())
+
 	cmd.SysProcAttr = daemonAttr()
-	cmd.Stdout = os.Stdout
+	cmd.Stdout = io.MultiWriter(os.Stdout, errLogs)
 	cmd.Stderr = io.MultiWriter(os.Stderr, errLogs)
 
 	if err := cmd.Start(); err != nil {

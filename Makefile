@@ -34,14 +34,14 @@ build-linux-tar:
 	tar -czvf build/bin/ton-torrent.tar.gz -C build/bin .
 
 build-linux-deb:
-	CGO_ENABLED=1 wails build -clean -ldflags="-X 'main.CustomRoot=/var/lib/ton-torrent'"
+	CGO_ENABLED=1 wails build -clean -ldflags="-X 'main.CustomRoot=/opt/ton-torrent'"
 	mkdir -p build/bin/ton-torrent/DEBIAN
 	mkdir -p build/bin/ton-torrent/usr/local/bin
-	mkdir -p build/bin/ton-torrent/var/lib/ton-torrent
+	mkdir -p build/bin/ton-torrent/opt/ton-torrent
 	mkdir -p build/bin/ton-torrent/usr/share/applications
-	cp ton-build/storage/storage-daemon/storage-daemon build/bin/ton-torrent/var/lib/ton-torrent/
+	cp ton-build/storage/storage-daemon/storage-daemon build/bin/ton-torrent/opt/ton-torrent/
 	cp build/bin/TON\ Torrent build/bin/ton-torrent/usr/local/bin/ton-torrent
-	cp build/appicon.png build/bin/ton-torrent/var/lib/ton-torrent/
+	cp build/appicon.png build/bin/ton-torrent/opt/ton-torrent/
 	cp build/linux/ton-torrent.desktop build/bin/ton-torrent/usr/share/applications/
 	cp build/linux/control build/bin/ton-torrent/DEBIAN/
 	dpkg-deb --build build/bin/ton-torrent build/bin/ton-torrent.deb

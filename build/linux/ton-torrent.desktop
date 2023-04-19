@@ -6,4 +6,4 @@ Terminal=false
 Exec=/usr/local/bin/ton-torrent %f
 Name=TON Torrent
 Comment=TON Torrent
-Icon=/var/lib/ton-torrent/appicon.png
+Icon=/opt/ton-torrent/appicon.png
