@@ -8,3 +8,6 @@ echo "application/ton-torrent=ton-torrent.desktop" >> /usr/share/applications/de
 echo "Registering tonbag:// and tonstorage:// urls"
 echo "x-scheme-handler/tonbag=ton-torrent.desktop" >> /usr/share/applications/defaults.list
 echo "x-scheme-handler/tonstorage=ton-torrent.desktop" >> /usr/share/applications/defaults.list
+
+echo "Set access to resources folder"
+chmod -R 777 /opt/ton-torrent
