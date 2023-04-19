@@ -82,7 +82,6 @@ Section
     SetOutPath $INSTDIR
     
     !insertmacro wails.files
-    File "..\..\..\build\global.config.json"
     File "..\..\..\ton-build\storage\storage-daemon\storage-daemon.exe"
     CreateShortcut "$SMPROGRAMS\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
     CreateShortCut "$DESKTOP\${INFO_PRODUCTNAME}.lnk" "$INSTDIR\${PRODUCT_EXECUTABLE}"
