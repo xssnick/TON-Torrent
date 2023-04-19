@@ -44,6 +44,7 @@ build-linux-deb:
 	cp build/appicon.png build/bin/ton-torrent/opt/ton-torrent/
 	cp build/linux/ton-torrent.desktop build/bin/ton-torrent/usr/share/applications/
 	cp build/linux/control build/bin/ton-torrent/DEBIAN/
+	cp build/linux/postinst build/bin/ton-torrent/DEBIAN/
 	dpkg-deb --build build/bin/ton-torrent build/bin/ton-torrent.deb
 
 build-windows:
