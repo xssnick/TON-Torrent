@@ -37,7 +37,7 @@ func Run(ctx context.Context, root, path string, listen, controlPort string, onF
 		return nil, err
 	}
 
-	args := []string{"-v", "1", "-C", netConfigPath, "-I", listen, "-p", controlPort, "-D", root + "/storage-db"}
+	args := []string{"-v", "5", "-C", "./global.config.json", "-I", listen, "-p", controlPort, "-D", "./storage-db"}
 
 	log.Println("starting daemon with args:", strings.Join(args, " "))
 	name := "storage-daemon"
@@ -50,6 +50,7 @@ func Run(ctx context.Context, root, path string, listen, controlPort string, onF
 	cmd := exec.CommandContext(ctx, path+"/"+name, args...)
 	log.Println("command: ", cmd.String())
 
+	cmd.Dir = root
 	cmd.SysProcAttr = daemonAttr()
 	// cmd.Stdout = io.MultiWriter(os.Stdout, errLogs)
 	// cmd.Stderr = io.MultiWriter(os.Stderr, errLogs)
