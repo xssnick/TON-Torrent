@@ -5,5 +5,5 @@ package daemon
 import "syscall"
 
 func daemonAttr() *syscall.SysProcAttr {
-	return &syscall.SysProcAttr{HideWindow: false}
+	return &syscall.SysProcAttr{HideWindow: true}
 }

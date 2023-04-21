@@ -139,7 +139,7 @@ func PrepareRootPath() (string, error) {
 			}
 		}
 		return path, nil
-	case "windows":
+		/*case "windows":
 		home, err := os.UserHomeDir()
 		if err != nil {
 			return "", err
@@ -155,7 +155,7 @@ func PrepareRootPath() (string, error) {
 				return "", err
 			}
 		}
-		return path, nil
+		return path, nil*/
 	}
 
 	ex, err := os.Executable()
