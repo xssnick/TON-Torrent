@@ -21,7 +21,6 @@ func LoadConfig(dir string) (*Config, error) {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		cfg := &Config{
-			// DaemonPath:        exPath,
 			DaemonControlAddr: "127.0.0.1:15555",
 			DownloadsPath:     downloadsPath(),
 			ListenAddr:        ":13333",
@@ -139,7 +138,7 @@ func PrepareRootPath() (string, error) {
 			}
 		}
 		return path, nil
-		/*case "windows":
+	case "windows":
 		home, err := os.UserHomeDir()
 		if err != nil {
 			return "", err
@@ -155,7 +154,7 @@ func PrepareRootPath() (string, error) {
 				return "", err
 			}
 		}
-		return path, nil*/
+		return path, nil
 	}
 
 	ex, err := os.Executable()
