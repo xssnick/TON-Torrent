@@ -15,8 +15,17 @@ import (
 )
 
 func Run(ctx context.Context, root, path string, listen, controlPort string, onFinish func(error)) (*os.Process, error) {
+	dbPath := root + "/storage-db"
+	_, err := os.Stat(dbPath)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(dbPath, os.ModePerm)
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	netConfigPath := root + "/global.config.json"
-	_, err := os.Stat(netConfigPath)
+	_, err = os.Stat(netConfigPath)
 	if os.IsNotExist(err) { // download network config if not exists
 		resp, err := http.Get("https://ton.org/global.config.json")
 		if err != nil {
@@ -43,8 +52,7 @@ func Run(ctx context.Context, root, path string, listen, controlPort string, onF
 	log.Println("starting daemon with args:", strings.Join(args, " "))
 
 	if runtime.GOOS == "windows" {
-		log.Println("RUNNING")
-		cmd = exec.Command(path+"\\storage-daemon.exe", args...)
+		cmd = exec.CommandContext(ctx, path+"\\storage-daemon.exe", args...)
 	} else {
 		cmd = exec.CommandContext(ctx, path+"/storage-daemon", args...)
 	}
