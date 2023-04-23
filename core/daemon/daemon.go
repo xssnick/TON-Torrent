@@ -37,15 +37,14 @@ func Run(ctx context.Context, root, path string, listen, controlPort string, onF
 		return nil, err
 	}
 
-	args := []string{"-v", "1", "-C", "./global.config.json", "-I", listen, "-p", controlPort, "-D", "./storage-db"}
+	args := []string{"-v", "4", "-C", "global.config.json", "-I", listen, "-p", controlPort, "-D", "storage-db"}
 
 	var cmd *exec.Cmd
 	log.Println("starting daemon with args:", strings.Join(args, " "))
 
 	if runtime.GOOS == "windows" {
-		arg := `start "` + path + `\storage-daemon.exe" "-v 4 -C global.config.json -I ` + listen + ` -p ` + controlPort + ` -D storage-db"`
-		log.Println("RUNNING", arg)
-		cmd = exec.Command("cmd", arg)
+		log.Println("RUNNING")
+		cmd = exec.Command(path+"\\storage-daemon.exe", args...)
 	} else {
 		cmd = exec.CommandContext(ctx, path+"/storage-daemon", args...)
 	}
