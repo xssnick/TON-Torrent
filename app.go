@@ -128,8 +128,12 @@ func (a *App) prepare() {
 	}()*/
 }
 
+var oncePrepare sync.Once
+
 func (a *App) ready(ctx context.Context) {
-	a.prepare()
+	oncePrepare.Do(func() {
+		a.prepare()
+	})
 
 	// loading done, hook again to steal it from webview
 	a.api = api.NewAPI(ctx, a.config.DaemonControlAddr, a.rootPath)
