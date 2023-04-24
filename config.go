@@ -85,8 +85,10 @@ func downloadsPath() string {
 func checkIPAddress(ip string) string {
 	p := net.ParseIP(ip)
 	if len(p) != net.IPv4len {
+		println("bad ip len", len(p))
 		return ""
 	}
+	println("ip ok", p.To4().String())
 	return p.To4().String()
 }
 
@@ -122,8 +124,9 @@ func checkCanSeed() (string, bool) {
 			return
 		}
 
-		println("got from server:", string(ipData[:n]))
-		ip = checkIPAddress(string(ipData[:n]))
+		ip = string(ipData[:n])
+		println("got from server:", "'"+ip+"'")
+		ip = checkIPAddress(ip)
 		_ = conn.Close()
 	}()
 
