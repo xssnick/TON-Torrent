@@ -1,12 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
-	"io"
-	"net/http"
+	"net"
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 )
 
 type Config struct {
@@ -81,36 +82,73 @@ func downloadsPath() string {
 	return filepath.Join(homeDir, "Downloads")
 }
 
-func getPublicIP() (string, error) {
-	req, err := http.Get("http://ip-api.com/json/")
-	if err != nil {
-		return "", err
+func checkIPAddress(ip string) string {
+	p := net.ParseIP(ip)
+	if len(p) != net.IPv4len {
+		return ""
 	}
-	defer req.Body.Close()
-
-	body, err := io.ReadAll(req.Body)
-	if err != nil {
-		return "", err
-	}
-
-	var ip struct {
-		Query string
-	}
-	err = json.Unmarshal(body, &ip)
-	if err != nil {
-		return "", err
-	}
-
-	return ip.Query, nil
+	return p.To4().String()
 }
 
 func checkCanSeed() (string, bool) {
-	ip, err := getPublicIP()
+	ch := make(chan bool, 1)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	ip := ""
+	go func() {
+		defer func() {
+			ch <- ip != ""
+		}()
+
+		listen, err := net.Listen("tcp", "0.0.0.0:18889")
+		if err != nil {
+			return
+		}
+		defer listen.Close()
+
+		conn, err := listen.Accept()
+		if err != nil {
+			return
+		}
+
+		ipData := make([]byte, 256)
+		n, err := conn.Read(ipData)
+		if err != nil {
+			return
+		}
+
+		ip = checkIPAddress(string(ipData[:n]))
+		_ = conn.Close()
+	}()
+
+	ips, err := net.LookupIP("tonutils.com")
+	if err != nil || len(ips) == 0 {
+		return "", false
+	}
+
+	println("port checker at:", ips[0].String())
+	conn, err := net.Dial("tcp", ips[0].String()+":9099")
 	if err != nil {
 		return "", false
 	}
 
-	return ip, false
+	_, err = conn.Write([]byte("ME"))
+	if err != nil {
+		return "", false
+	}
+
+	ok := false
+	select {
+	case k := <-ch:
+		ok = k
+		println("port result:", ok, "public ip:", ip)
+	case <-ctx.Done():
+		println("port check timeout, will use client mode")
+	}
+
+	return ip, ok
 }
 
 var CustomRoot = ""

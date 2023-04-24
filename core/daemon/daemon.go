@@ -46,7 +46,7 @@ func Run(ctx context.Context, root, path string, listen, controlPort string, onF
 		return nil, err
 	}
 
-	args := []string{"-v", "4", "-C", "global.config.json", "-I", listen, "-p", controlPort, "-D", "storage-db"}
+	args := []string{"-v", "1", "-C", "global.config.json", "-I", listen, "-p", controlPort, "-D", "storage-db"}
 
 	var cmd *exec.Cmd
 	log.Println("starting daemon with args:", strings.Join(args, " "))

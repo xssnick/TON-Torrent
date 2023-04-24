@@ -25,7 +25,7 @@ func (s *StorageClient) GetTorrents(ctx context.Context) (*TorrentsList, error) 
 	var res tl.Serializable
 	err := s.client.QueryADNL(ctx, GetTorrents{}, &res)
 	if err != nil {
-		return nil, fmt.Errorf("faled to query torrents list: %w", err)
+		return nil, fmt.Errorf("failed to query torrents list: %w", err)
 	}
 
 	switch t := res.(type) {
@@ -47,7 +47,7 @@ func (s *StorageClient) AddByHash(ctx context.Context, hash []byte, dir string) 
 		Priorities:    []any{PriorityActionAll{0}}, // download only header
 	}, &res)
 	if err != nil {
-		return nil, fmt.Errorf("faled to query add by hash: %w", err)
+		return nil, fmt.Errorf("failed to query add by hash: %w", err)
 	}
 
 	switch t := res.(type) {
@@ -69,7 +69,7 @@ func (s *StorageClient) AddByMeta(ctx context.Context, meta []byte, dir string) 
 		Priorities:    []any{PriorityActionAll{0}}, // download only header
 	}, &res)
 	if err != nil {
-		return nil, fmt.Errorf("faled to query add by meta: %w", err)
+		return nil, fmt.Errorf("failed to query add by meta: %w", err)
 	}
 
 	switch t := res.(type) {
@@ -90,7 +90,7 @@ func (s *StorageClient) CreateTorrent(ctx context.Context, dir, description stri
 		CopyInside:  false,
 	}, &res)
 	if err != nil {
-		return nil, fmt.Errorf("faled to query create torrent: %w", err)
+		return nil, fmt.Errorf("failed to query create torrent: %w", err)
 	}
 
 	switch t := res.(type) {
@@ -108,7 +108,7 @@ func (s *StorageClient) GetTorrentFull(ctx context.Context, hash []byte) (*Torre
 		Hash: hash,
 	}, &res)
 	if err != nil {
-		return nil, fmt.Errorf("faled to query get torrent full: %w", err)
+		return nil, fmt.Errorf("failed to query get torrent full: %w", err)
 	}
 
 	switch t := res.(type) {
@@ -126,7 +126,7 @@ func (s *StorageClient) GetTorrentMeta(ctx context.Context, hash []byte) ([]byte
 		Hash: hash,
 	}, &res)
 	if err != nil {
-		return nil, fmt.Errorf("faled to query get torrent meta: %w", err)
+		return nil, fmt.Errorf("failed to query get torrent meta: %w", err)
 	}
 
 	switch t := res.(type) {
@@ -144,7 +144,7 @@ func (s *StorageClient) GetPeers(ctx context.Context, hash []byte) (*PeersList, 
 		Hash: hash,
 	}, &res)
 	if err != nil {
-		return nil, fmt.Errorf("faled to query get peers: %w", err)
+		return nil, fmt.Errorf("failed to query get peers: %w", err)
 	}
 
 	switch t := res.(type) {
@@ -163,7 +163,7 @@ func (s *StorageClient) RemoveTorrent(ctx context.Context, hash []byte, withFile
 		RemoveFiles: withFiles,
 	}, &res)
 	if err != nil {
-		return fmt.Errorf("faled to query remove torrent: %w", err)
+		return fmt.Errorf("failed to query remove torrent: %w", err)
 	}
 
 	switch t := res.(type) {
@@ -182,7 +182,7 @@ func (s *StorageClient) SetActive(ctx context.Context, hash []byte, active bool)
 		Active: active,
 	}, &res)
 	if err != nil {
-		return fmt.Errorf("faled to query set active download torrent: %w", err)
+		return fmt.Errorf("failed to query set active download torrent: %w", err)
 	}
 
 	switch t := res.(type) {
@@ -193,7 +193,7 @@ func (s *StorageClient) SetActive(ctx context.Context, hash []byte, active bool)
 			Active: active,
 		}, &res)
 		if err != nil {
-			return fmt.Errorf("faled to query set active upload torrent: %w", err)
+			return fmt.Errorf("failed to query set active upload torrent: %w", err)
 		}
 
 		switch t := res.(type) {
@@ -217,7 +217,7 @@ func (s *StorageClient) SetFilePriority(ctx context.Context, hash []byte, name s
 		Priority: priority,
 	}, &res)
 	if err != nil {
-		return fmt.Errorf("faled to query set file priority by name: %w", err)
+		return fmt.Errorf("failed to query set file priority by name: %w", err)
 	}
 
 	switch t := res.(type) {
@@ -236,7 +236,7 @@ func (s *StorageClient) GetSpeedLimits(ctx context.Context) (*SpeedLimits, error
 		Flags: 0b11,
 	}, &res)
 	if err != nil {
-		return nil, fmt.Errorf("faled to query get speed limits: %w", err)
+		return nil, fmt.Errorf("failed to query get speed limits: %w", err)
 	}
 
 	switch t := res.(type) {
@@ -260,7 +260,7 @@ func (s *StorageClient) SetSpeedLimits(ctx context.Context, download, upload int
 		},
 	}, &res)
 	if err != nil {
-		return fmt.Errorf("faled to query get speed limits: %w", err)
+		return fmt.Errorf("failed to query get speed limits: %w", err)
 	}
 
 	switch t := res.(type) {

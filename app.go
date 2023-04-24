@@ -133,23 +133,23 @@ var oncePrepare sync.Once
 func (a *App) ready(ctx context.Context) {
 	oncePrepare.Do(func() {
 		a.prepare()
-	})
 
-	// loading done, hook again to steal it from webview
-	a.api = api.NewAPI(ctx, a.config.DaemonControlAddr, a.rootPath)
-	a.api.SetOnListRefresh(func() {
-		runtime2.EventsEmit(a.ctx, "update")
-		runtime2.EventsEmit(a.ctx, "update_peers")
-		runtime2.EventsEmit(a.ctx, "update_files")
-		runtime2.EventsEmit(a.ctx, "update_info")
-	})
-	a.api.SetSpeedRefresh(func(speed api.Speed) {
-		runtime2.EventsEmit(a.ctx, "speed", speed)
-	})
-	a.loaded = true
+		// loading done, hook again to steal it from webview
+		a.api = api.NewAPI(ctx, a.config.DaemonControlAddr, a.rootPath)
+		a.api.SetOnListRefresh(func() {
+			runtime2.EventsEmit(a.ctx, "update")
+			runtime2.EventsEmit(a.ctx, "update_peers")
+			runtime2.EventsEmit(a.ctx, "update_files")
+			runtime2.EventsEmit(a.ctx, "update_info")
+		})
+		a.api.SetSpeedRefresh(func(speed api.Speed) {
+			runtime2.EventsEmit(a.ctx, "speed", speed)
+		})
+		a.loaded = true
 
-	runtime2.EventsOn(a.ctx, "refresh", func(optionalData ...interface{}) {
-		_ = a.api.SyncTorrents()
+		runtime2.EventsOn(a.ctx, "refresh", func(optionalData ...interface{}) {
+			_ = a.api.SyncTorrents()
+		})
 	})
 
 	runtime2.EventsEmit(a.ctx, "ready")
@@ -159,11 +159,6 @@ var onceCheck = sync.Once{}
 
 func (a *App) CheckOpenedFile() {
 	go func() {
-		// TODO: on windows it may require some time, need to find exact reason
-		//if runtime.GOOS == "windows" {
-		///	time.Sleep(1000 * time.Millisecond)
-		//}
-
 		// wait for daemon ready
 		for !a.loaded {
 			time.Sleep(50 * time.Millisecond)
