@@ -34,7 +34,7 @@ func handle(conn net.Conn) {
 		return
 	}
 
-	if string(buffer) == "ME" {
+	if string(buffer[:2]) == "ME" {
 		println("check request from", conn.RemoteAddr().String())
 
 		conn.Write([]byte("OK"))

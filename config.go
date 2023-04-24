@@ -104,21 +104,25 @@ func checkCanSeed() (string, bool) {
 
 		listen, err := net.Listen("tcp", "0.0.0.0:18889")
 		if err != nil {
+			println("listen err", err.Error())
 			return
 		}
 		defer listen.Close()
 
 		conn, err := listen.Accept()
 		if err != nil {
+			println("accept err", err.Error())
 			return
 		}
 
 		ipData := make([]byte, 256)
 		n, err := conn.Read(ipData)
 		if err != nil {
+			println("read err", err.Error())
 			return
 		}
 
+		println("got from server:", string(ipData[:n]))
 		ip = checkIPAddress(string(ipData[:n]))
 		_ = conn.Close()
 	}()
