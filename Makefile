@@ -12,8 +12,9 @@ download-storage-mac-amd:
 	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/job/TON_macOS_10.15_x86-64_master/lastSuccessfulBuild/artifact/artifacts/storage-daemon
 
 download-storage-windows-amd:
-	curl --create-dirs -O --output-dir build/windows/ https://aka.ms/vs/17/release/vc_redist.x64.exe
 	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/job/TON_Windows_x86-64_master/lastSuccessfulBuild/artifact/artifacts/storage-daemon.exe
+	start https://aka.ms/vs/17/release/vc_redist.x64.exe
+	echo "Put it to build/windows/vc_redist.x64.exe"
 
 download-storage-linux-amd:
 	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/job/TON_Linux_x86-64/lastSuccessfulBuild/artifact/artifacts/storage-daemon
