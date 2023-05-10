@@ -151,20 +151,20 @@ func (a *App) ready(ctx context.Context) {
 			_ = a.api.SyncTorrents()
 		})
 	})
-
-	runtime2.EventsEmit(a.ctx, "ready")
 }
 
 var onceCheck = sync.Once{}
 
-func (a *App) CheckOpenedFile() {
-	go func() {
-		// wait for daemon ready
-		for !a.loaded {
-			time.Sleep(50 * time.Millisecond)
-		}
+func (a *App) WaitReady() {
+	onceCheck.Do(func() {
+		go func() {
+			// wait for daemon ready
+			for !a.loaded {
+				time.Sleep(50 * time.Millisecond)
+			}
 
-		onceCheck.Do(func() {
+			runtime2.EventsEmit(a.ctx, "daemon_ready")
+
 			if a.openFileData != nil {
 				a.openFile(a.openFileData)
 				a.openFileData = nil
@@ -172,8 +172,8 @@ func (a *App) CheckOpenedFile() {
 				a.openHash(a.openFileHash)
 				a.openFileHash = ""
 			}
-		})
-	}()
+		}()
+	})
 }
 
 func (a *App) SetSpeedLimit(down, up int64) string {

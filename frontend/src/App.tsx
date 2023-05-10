@@ -1,11 +1,11 @@
-import {MouseEvent, Component} from 'react';
+import React, {MouseEvent, Component} from 'react';
 import Logo from "./assets/images/logo.svg"
 import Download from "./assets/images/icons/download.svg"
 import './tooltip.css';
 import './modal.scss';
 import {Filter, Refresh, SelectedTorrent, Table} from "./components/Table";
 import {AddTorrentModal} from "./components/ModalAddTorrent";
-import {CheckOpenedFile, SetActive, WantRemoveTorrent} from "../wailsjs/go/main/App";
+import {WaitReady, SetActive, WantRemoveTorrent} from "../wailsjs/go/main/App";
 import {FiltersMenu} from "./components/FiltersMenu";
 import {BrowserOpenURL, EventsOn} from "../wailsjs/runtime";
 import {FilesTorrentMenu} from "./components/FilesTorrentMenu";
@@ -27,6 +27,8 @@ interface State {
     overallUploadSpeed: string
     overallDownloadSpeed: string
     torrentMenuSelected: number
+
+    ready: boolean
 
     openFileHash?: string
     removeHash?: string
@@ -50,9 +52,8 @@ export class App extends Component<{}, State> {
             overallUploadSpeed: "0 Bytes",
             overallDownloadSpeed: "0 Bytes",
             torrentMenuSelected: -1,
+            ready: false,
         }
-
-
     }
 
     setSelectedTorrentMenu = (n: number) => {
@@ -96,7 +97,10 @@ export class App extends Component<{}, State> {
         EventsOn("open_torrent", (hash: string) => {
             this.setState((current)=>({...current, showAddTorrentModal: true, openFileHash: hash}))
         })
-        CheckOpenedFile().then()
+        EventsOn("daemon_ready", (data)=> {
+            this.setState((current)=>({...current, ready: true}));
+        })
+        WaitReady().then()
 
         window.addEventListener('resize', () => {
             let inf = document.getElementsByClassName("torrent-info");
@@ -147,6 +151,11 @@ export class App extends Component<{}, State> {
     render() {
         return (
             <div id="App">
+                <div className="daemon-waiter" style={this.state.ready ? {display: "none"} : {}}>
+                    <div className="loader-block">
+                        <span className="loader"/><span className="loader-text">Initializing storage daemon...</span>
+                    </div>
+                </div>
                 {this.state.showAddTorrentModal ? <AddTorrentModal openHash={this.state.openFileHash} onExit={this.toggleAddTorrentModal}/> : null}
                 {this.state.showCreateTorrentModal ? <CreateTorrentModal onExit={this.toggleCreateTorrentModal}/> : null}
                 {this.state.showSettingsModal ? <SettingsModal onExit={this.toggleSettingsModal}/> : null}

@@ -14,10 +14,6 @@ export function CheckHeader(arg1) {
   return window['go']['main']['App']['CheckHeader'](arg1);
 }
 
-export function CheckOpenedFile() {
-  return window['go']['main']['App']['CheckOpenedFile']();
-}
-
 export function CreateTorrent(arg1, arg2) {
   return window['go']['main']['App']['CreateTorrent'](arg1, arg2);
 }
@@ -92,6 +88,10 @@ export function StartDownload(arg1, arg2) {
 
 export function Throw(arg1) {
   return window['go']['main']['App']['Throw'](arg1);
+}
+
+export function WaitReady() {
+  return window['go']['main']['App']['WaitReady']();
 }
 
 export function WantRemoveTorrent(arg1) {

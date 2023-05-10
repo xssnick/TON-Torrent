@@ -81,8 +81,23 @@ type Speed struct {
 	Download string
 }
 
+type StorageClient interface {
+	GetTorrents(ctx context.Context) (*client.TorrentsList, error)
+	AddByHash(ctx context.Context, hash []byte, dir string) (*client.TorrentFull, error)
+	AddByMeta(ctx context.Context, meta []byte, dir string) (*client.TorrentFull, error)
+	CreateTorrent(ctx context.Context, dir, description string) (*client.TorrentFull, error)
+	GetTorrentFull(ctx context.Context, hash []byte) (*client.TorrentFull, error)
+	GetTorrentMeta(ctx context.Context, hash []byte) ([]byte, error)
+	GetPeers(ctx context.Context, hash []byte) (*client.PeersList, error)
+	RemoveTorrent(ctx context.Context, hash []byte, withFiles bool) error
+	SetActive(ctx context.Context, hash []byte, active bool) error
+	SetFilePriority(ctx context.Context, hash []byte, name string, priority int32) error
+	GetSpeedLimits(ctx context.Context) (*client.SpeedLimits, error)
+	SetSpeedLimits(ctx context.Context, download, upload int64) error
+}
+
 type API struct {
-	daemon   *client.StorageClient
+	daemon   StorageClient
 	torrents []*Torrent
 
 	onSpeedsRefresh func(Speed)

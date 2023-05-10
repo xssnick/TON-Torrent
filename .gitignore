@@ -8,3 +8,4 @@ storage-db
 config.json
 global.config.json
 ton-build
+build/gon

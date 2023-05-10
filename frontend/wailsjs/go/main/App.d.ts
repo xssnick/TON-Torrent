@@ -9,8 +9,6 @@ export function AddTorrentByMeta(arg1:string):Promise<main.TorrentAddResult>;
 
 export function CheckHeader(arg1:string):Promise<boolean>;
 
-export function CheckOpenedFile():Promise<void>;
-
 export function CreateTorrent(arg1:string,arg2:string):Promise<main.TorrentCreateResult>;
 
 export function ExportMeta(arg1:string):Promise<string>;
@@ -48,5 +46,7 @@ export function ShowMsg(arg1:string):Promise<void>;
 export function StartDownload(arg1:string,arg2:Array<string>):Promise<void>;
 
 export function Throw(arg1:Error):Promise<void>;
+
+export function WaitReady():Promise<void>;
 
 export function WantRemoveTorrent(arg1:string):Promise<void>;

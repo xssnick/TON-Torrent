@@ -6,12 +6,13 @@ compile-storage:
 	cd ton-build; CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Release ../ton; make storage-daemon -j8
 
 download-storage-mac-arm:
-	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/job/TON_macOS_12.6_arm64_master/12/artifact/artifacts/storage-daemon
+	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/view/neodiX/job/TON_macOS_aarch64_arm64_neodix/17/artifact/artifacts/storage-daemon
 
 download-storage-mac-amd:
 	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/job/TON_macOS_10.15_x86-64_master/lastSuccessfulBuild/artifact/artifacts/storage-daemon
 
 download-storage-windows-amd:
+	curl --create-dirs -O --output-dir build/windows/ https://aka.ms/vs/17/release/vc_redist.x64.exe
 	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/job/TON_Windows_x86-64_master/lastSuccessfulBuild/artifact/artifacts/storage-daemon.exe
 
 download-storage-linux-amd:
