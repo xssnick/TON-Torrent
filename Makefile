@@ -13,8 +13,9 @@ download-storage-mac-amd:
 
 download-storage-windows-amd:
 	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/job/TON_Windows_x86-64_master/lastSuccessfulBuild/artifact/artifacts/storage-daemon.exe
+	echo "Browser will be opened now to download vcredist, put it to build/windows/vc_redist.x64.exe"
+	sleep 3
 	start https://aka.ms/vs/17/release/vc_redist.x64.exe
-	echo "Put it to build/windows/vc_redist.x64.exe"
 
 download-storage-linux-amd:
 	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/job/TON_Linux_x86-64/lastSuccessfulBuild/artifact/artifacts/storage-daemon
