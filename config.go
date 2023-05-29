@@ -43,7 +43,7 @@ func LoadConfig(dir string) (*Config, error) {
 		ip, seed := checkCanSeed()
 		if seed {
 			cfg.ListenAddr = ip + cfg.ListenAddr
-			cfg.GoStorage.ExternalIP = ip + cfg.GoStorage.ListenAddr
+			cfg.GoStorage.ExternalIP = ip
 		}
 
 		err = cfg.SaveConfig(dir)
