@@ -7,8 +7,8 @@ require (
 	github.com/jcuga/go-upnp v0.0.0-20160830125909-492b17f02cbb
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/wailsapp/wails/v2 v2.3.1
-	github.com/xssnick/tonutils-go v1.7.3
-	github.com/xssnick/tonutils-storage v0.1.0
+	github.com/xssnick/tonutils-go v1.7.4-0.20230529064646-1cc5332bf1e4
+	github.com/xssnick/tonutils-storage v0.0.0-20230529065408-ea8c3ee06af1
 )
 
 require (
@@ -53,9 +53,4 @@ require (
 	golang.org/x/term v0.6.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-)
-
-replace (
-	github.com/xssnick/tonutils-go v1.7.3 => /Users/xssnick/dev/ton/tonutils-go
-	github.com/xssnick/tonutils-storage v0.1.0 => /Users/xssnick/dev/ton/tonutils-storage
 )
