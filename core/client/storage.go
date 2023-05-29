@@ -2,9 +2,14 @@ package client
 
 import (
 	"context"
+	"crypto/ed25519"
+	"encoding/base64"
 	"fmt"
+	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/tl"
 	"log"
+	"os"
+	"time"
 )
 
 type ADNL interface {
@@ -15,9 +20,44 @@ type StorageClient struct {
 	client ADNL
 }
 
-func NewStorageClient(client ADNL) *StorageClient {
+func ConnectToStorageDaemon(addr string, rootPath string) *StorageClient {
+	var authKey ed25519.PrivateKey
+	var serverKey string
+	for {
+		clientKey, err := os.ReadFile(rootPath + "/storage-db/cli-keys/client")
+		if err != nil {
+			log.Println("storage-db/client read err:", err.Error(), "retrying...")
+			time.Sleep(300 * time.Millisecond)
+			continue
+		}
+		authKey = ed25519.NewKeyFromSeed(clientKey[4:])
+		break
+	}
+
+	for {
+		key, err := os.ReadFile(rootPath + "/storage-db/cli-keys/server.pub")
+		if err != nil {
+			log.Println("storage-db/server.pub read err:", err.Error(), "retrying...")
+			time.Sleep(300 * time.Millisecond)
+			continue
+		}
+		serverKey = base64.StdEncoding.EncodeToString(key[4:])
+		break
+	}
+
+	pool := liteclient.NewConnectionPoolWithAuth(authKey)
+	for {
+		// try to connect to daemon
+		err := pool.AddConnection(context.Background(), addr, serverKey)
+		if err != nil {
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+		break
+	}
+
 	return &StorageClient{
-		client: client,
+		client: pool,
 	}
 }
 
@@ -207,6 +247,16 @@ func (s *StorageClient) SetActive(ctx context.Context, hash []byte, active bool)
 		return fmt.Errorf("%s", t.Message)
 	}
 	return fmt.Errorf("unexpected response")
+}
+
+func (s *StorageClient) SetFilesPriority(ctx context.Context, hash []byte, names []string, priority int32) error {
+	for _, name := range names {
+		err := s.SetFilePriority(ctx, hash, name, priority)
+		if err != nil {
+			return fmt.Errorf("failed to set priority for %s: %w", name, err)
+		}
+	}
+	return nil
 }
 
 func (s *StorageClient) SetFilePriority(ctx context.Context, hash []byte, name string, priority int32) error {

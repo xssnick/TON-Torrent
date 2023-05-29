@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
 	"encoding/json"
+	"github.com/tonutils/torrent-client/core/gostorage"
 	"net"
 	"os"
 	"path/filepath"
@@ -15,21 +17,33 @@ type Config struct {
 	DaemonControlAddr string
 	DownloadsPath     string
 	ListenAddr        string
+	GoStorage         gostorage.Config
 }
 
 func LoadConfig(dir string) (*Config, error) {
 	path := dir + "/config.json"
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
+		_, priv, err := ed25519.GenerateKey(nil)
+		if err != nil {
+			return nil, err
+		}
+
 		cfg := &Config{
 			DaemonControlAddr: "127.0.0.1:15555",
 			DownloadsPath:     downloadsPath(),
 			ListenAddr:        ":13333",
+			GoStorage: gostorage.Config{
+				Key:           priv,
+				ListenAddr:    ":17777",
+				DownloadsPath: downloadsPath(),
+			},
 		}
 
 		ip, seed := checkCanSeed()
 		if seed {
 			cfg.ListenAddr = ip + cfg.ListenAddr
+			cfg.GoStorage.ExternalIP = ip + cfg.GoStorage.ListenAddr
 		}
 
 		err = cfg.SaveConfig(dir)

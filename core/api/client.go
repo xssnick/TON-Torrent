@@ -2,14 +2,10 @@ package api
 
 import (
 	"context"
-	"crypto/ed25519"
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"github.com/tonutils/torrent-client/core/client"
-	"github.com/xssnick/tonutils-go/liteclient"
 	"log"
-	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -91,13 +87,13 @@ type StorageClient interface {
 	GetPeers(ctx context.Context, hash []byte) (*client.PeersList, error)
 	RemoveTorrent(ctx context.Context, hash []byte, withFiles bool) error
 	SetActive(ctx context.Context, hash []byte, active bool) error
-	SetFilePriority(ctx context.Context, hash []byte, name string, priority int32) error
+	SetFilesPriority(ctx context.Context, hash []byte, names []string, priority int32) error
 	GetSpeedLimits(ctx context.Context) (*client.SpeedLimits, error)
 	SetSpeedLimits(ctx context.Context, download, upload int64) error
 }
 
 type API struct {
-	daemon   StorageClient
+	client   StorageClient
 	torrents []*Torrent
 
 	onSpeedsRefresh func(Speed)
@@ -107,47 +103,11 @@ type API struct {
 	mx              sync.RWMutex
 }
 
-func NewAPI(globalCtx context.Context, addr string, rootPath string) *API {
+func NewAPI(globalCtx context.Context, client StorageClient) *API {
 	api := &API{
 		globalCtx: globalCtx,
+		client:    client,
 	}
-
-	var authKey ed25519.PrivateKey
-	var serverKey string
-	for {
-		clientKey, err := os.ReadFile(rootPath + "/storage-db/cli-keys/client")
-		if err != nil {
-			log.Println("storage-db/client read err:", err.Error(), "retrying...")
-			time.Sleep(300 * time.Millisecond)
-			continue
-		}
-		authKey = ed25519.NewKeyFromSeed(clientKey[4:])
-		break
-	}
-
-	for {
-		key, err := os.ReadFile(rootPath + "/storage-db/cli-keys/server.pub")
-		if err != nil {
-			log.Println("storage-db/server.pub read err:", err.Error(), "retrying...")
-			time.Sleep(300 * time.Millisecond)
-			continue
-		}
-		serverKey = base64.StdEncoding.EncodeToString(key[4:])
-		break
-	}
-
-	pool := liteclient.NewConnectionPoolWithAuth(authKey)
-	for {
-		// try to connect to daemon
-		err := pool.AddConnection(context.Background(), addr, serverKey)
-		if err != nil {
-			time.Sleep(100 * time.Millisecond)
-			continue
-		}
-		break
-	}
-
-	api.daemon = client.NewStorageClient(pool)
 
 	go func() {
 		for {
@@ -171,7 +131,7 @@ func (a *API) SetSpeedRefresh(handler func(Speed)) {
 }
 
 func (a *API) SyncTorrents() error {
-	torr, err := a.daemon.GetTorrents(a.globalCtx)
+	torr, err := a.client.GetTorrents(a.globalCtx)
 	if err != nil {
 		log.Println("sync err", err.Error())
 		return err
@@ -180,7 +140,7 @@ func (a *API) SyncTorrents() error {
 	var download, upload float64
 	var list []*Torrent
 	for _, torrent := range torr.Torrents {
-		full, err := a.daemon.GetTorrentFull(a.globalCtx, torrent.Hash)
+		full, err := a.client.GetTorrentFull(a.globalCtx, torrent.Hash)
 		if err != nil {
 			continue
 		}
@@ -329,7 +289,7 @@ func (a *API) CheckTorrentHeader(hash string) (bool, error) {
 		return false, err
 	}
 
-	t, err := a.daemon.GetTorrentFull(a.globalCtx, hashBytes)
+	t, err := a.client.GetTorrentFull(a.globalCtx, hashBytes)
 	if err != nil {
 		return false, err
 	}
@@ -344,7 +304,7 @@ func (a *API) AddTorrentByHash(hash, rootDir string) error {
 		return err
 	}
 
-	_, err = a.daemon.AddByHash(a.globalCtx, hashBytes, rootDir)
+	_, err = a.client.AddByHash(a.globalCtx, hashBytes, rootDir)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate hash") {
 			// if we already have it - still ok, maybe use wants to load more files,
@@ -358,7 +318,7 @@ func (a *API) AddTorrentByHash(hash, rootDir string) error {
 }
 
 func (a *API) AddTorrentByMeta(meta []byte, rootDir string) error {
-	_, err := a.daemon.AddByMeta(a.globalCtx, meta, rootDir)
+	_, err := a.client.AddByMeta(a.globalCtx, meta, rootDir)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate hash") {
 			// if we already have it - still ok, maybe use wants to load more files,
@@ -371,7 +331,7 @@ func (a *API) AddTorrentByMeta(meta []byte, rootDir string) error {
 }
 
 func (a *API) CreateTorrent(dir, description string) (string, error) {
-	t, err := a.daemon.CreateTorrent(a.globalCtx, dir, description)
+	t, err := a.client.CreateTorrent(a.globalCtx, dir, description)
 	if err != nil {
 		return "", err
 	}
@@ -384,7 +344,7 @@ func (a *API) GetTorrentMeta(hash string) ([]byte, error) {
 		return nil, err
 	}
 
-	m, err := a.daemon.GetTorrentMeta(a.globalCtx, hashBytes)
+	m, err := a.client.GetTorrentMeta(a.globalCtx, hashBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -397,7 +357,7 @@ func (a *API) GetPeers(hash string) ([]Peer, error) {
 		return nil, err
 	}
 
-	m, err := a.daemon.GetPeers(a.globalCtx, hashBytes)
+	m, err := a.client.GetPeers(a.globalCtx, hashBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -415,7 +375,7 @@ func (a *API) GetPeers(hash string) ([]Peer, error) {
 }
 
 func (a *API) GetSpeedLimits() (*SpeedLimits, error) {
-	limits, err := a.daemon.GetSpeedLimits(a.globalCtx)
+	limits, err := a.client.GetSpeedLimits(a.globalCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -435,7 +395,7 @@ func (a *API) SetSpeedLimits(limits *SpeedLimits) error {
 		up = limits.Upload * 1024
 	}
 
-	return a.daemon.SetSpeedLimits(a.globalCtx, dow, up)
+	return a.client.SetSpeedLimits(a.globalCtx, dow, up)
 }
 
 func (a *API) GetTorrentFiles(hash string) ([]*File, error) {
@@ -444,7 +404,7 @@ func (a *API) GetTorrentFiles(hash string) ([]*File, error) {
 		return nil, err
 	}
 
-	t, err := a.daemon.GetTorrentFull(a.globalCtx, hashBytes)
+	t, err := a.client.GetTorrentFull(a.globalCtx, hashBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -501,7 +461,7 @@ func (a *API) GetPlainFiles(hash string) ([]PlainFile, error) {
 		return nil, err
 	}
 
-	t, err := a.daemon.GetTorrentFull(a.globalCtx, hashBytes)
+	t, err := a.client.GetTorrentFull(a.globalCtx, hashBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -536,12 +496,12 @@ func (a *API) GetInfo(hash string) (*TorrentInfo, error) {
 		return nil, err
 	}
 
-	peers, err := a.daemon.GetPeers(a.globalCtx, hashBytes)
+	peers, err := a.client.GetPeers(a.globalCtx, hashBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	t, err := a.daemon.GetTorrentFull(a.globalCtx, hashBytes)
+	t, err := a.client.GetTorrentFull(a.globalCtx, hashBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -593,7 +553,7 @@ func (a *API) RemoveTorrent(hash string, withFiles, onlyNotInitiated bool) error
 	}
 
 	if onlyNotInitiated {
-		full, err := a.daemon.GetTorrentFull(a.globalCtx, hashBytes)
+		full, err := a.client.GetTorrentFull(a.globalCtx, hashBytes)
 		if err != nil {
 			return err
 		}
@@ -610,7 +570,7 @@ func (a *API) RemoveTorrent(hash string, withFiles, onlyNotInitiated bool) error
 		}
 	}
 
-	err = a.daemon.RemoveTorrent(a.globalCtx, hashBytes, withFiles)
+	err = a.client.RemoveTorrent(a.globalCtx, hashBytes, withFiles)
 	if err != nil {
 		return err
 	}
@@ -623,7 +583,7 @@ func (a *API) SetActive(hash string, active bool) error {
 		return err
 	}
 
-	err = a.daemon.SetActive(a.globalCtx, hashBytes, active)
+	err = a.client.SetActive(a.globalCtx, hashBytes, active)
 	if err != nil {
 		return err
 	}
@@ -636,11 +596,9 @@ func (a *API) SetPriorities(hash string, list []string, priority int) error {
 		return err
 	}
 
-	for _, f := range list {
-		err = a.daemon.SetFilePriority(a.globalCtx, hashBytes, f, int32(priority))
-		if err != nil {
-			return err
-		}
+	err = a.client.SetFilesPriority(a.globalCtx, hashBytes, list, int32(priority))
+	if err != nil {
+		return err
 	}
 	return nil
 }

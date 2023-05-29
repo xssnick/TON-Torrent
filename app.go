@@ -8,6 +8,7 @@ import (
 	"github.com/tonutils/torrent-client/core/api"
 	"github.com/tonutils/torrent-client/core/client"
 	"github.com/tonutils/torrent-client/core/daemon"
+	"github.com/tonutils/torrent-client/core/gostorage"
 	"github.com/tonutils/torrent-client/oshook"
 	runtime2 "github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/xssnick/tonutils-go/tl"
@@ -29,6 +30,8 @@ type App struct {
 	rootPath      string
 	config        *Config
 	loaded        bool
+
+	useDaemon bool
 
 	openFileData []byte
 	openFileHash string
@@ -108,14 +111,16 @@ func (a *App) prepare() {
 		}
 	}
 
-	a.daemonProcess, err = daemon.Run(a.ctx, a.rootPath, exPath, a.config.ListenAddr,
-		strings.SplitN(a.config.DaemonControlAddr, ":", 2)[1], func(err error) {
-			if err != nil {
-				a.Throw(fmt.Errorf("storage daemon crashed with error:\n%w", err))
-			}
-		})
-	if err != nil {
-		a.Throw(err)
+	if a.useDaemon {
+		a.daemonProcess, err = daemon.Run(a.ctx, a.rootPath, exPath, a.config.ListenAddr,
+			strings.SplitN(a.config.DaemonControlAddr, ":", 2)[1], func(err error) {
+				if err != nil {
+					a.Throw(fmt.Errorf("storage daemon crashed with error:\n%w", err))
+				}
+			})
+		if err != nil {
+			a.Throw(err)
+		}
 	}
 
 	/*go func() {
@@ -134,22 +139,35 @@ func (a *App) ready(ctx context.Context) {
 	oncePrepare.Do(func() {
 		a.prepare()
 
-		// loading done, hook again to steal it from webview
-		a.api = api.NewAPI(ctx, a.config.DaemonControlAddr, a.rootPath)
-		a.api.SetOnListRefresh(func() {
-			runtime2.EventsEmit(a.ctx, "update")
-			runtime2.EventsEmit(a.ctx, "update_peers")
-			runtime2.EventsEmit(a.ctx, "update_files")
-			runtime2.EventsEmit(a.ctx, "update_info")
-		})
-		a.api.SetSpeedRefresh(func(speed api.Speed) {
-			runtime2.EventsEmit(a.ctx, "speed", speed)
-		})
-		a.loaded = true
+		go func() {
+			var cl api.StorageClient
+			if a.useDaemon {
+				cl = client.ConnectToStorageDaemon(a.config.DaemonControlAddr, a.rootPath)
+			} else {
+				var err error
+				cl, err = gostorage.NewClient(a.rootPath+"/db", a.config.GoStorage)
+				if err != nil {
+					a.Throw(fmt.Errorf("failed to init go storage: %w", err))
+				}
+			}
 
-		runtime2.EventsOn(a.ctx, "refresh", func(optionalData ...interface{}) {
-			_ = a.api.SyncTorrents()
-		})
+			// loading done, hook again to steal it from webview
+			a.api = api.NewAPI(ctx, cl)
+			a.api.SetOnListRefresh(func() {
+				runtime2.EventsEmit(a.ctx, "update")
+				runtime2.EventsEmit(a.ctx, "update_peers")
+				runtime2.EventsEmit(a.ctx, "update_files")
+				runtime2.EventsEmit(a.ctx, "update_info")
+			})
+			a.api.SetSpeedRefresh(func(speed api.Speed) {
+				runtime2.EventsEmit(a.ctx, "speed", speed)
+			})
+			a.loaded = true
+
+			runtime2.EventsOn(a.ctx, "refresh", func(optionalData ...interface{}) {
+				_ = a.api.SyncTorrents()
+			})
+		}()
 	})
 }
 

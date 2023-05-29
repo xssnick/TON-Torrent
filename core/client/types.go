@@ -3,10 +3,10 @@ package client
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/xssnick/tonutils-go/adnl/storage"
 	"github.com/xssnick/tonutils-go/tl"
 	"github.com/xssnick/tonutils-go/tlb"
 	"github.com/xssnick/tonutils-go/tvm/cell"
+	"github.com/xssnick/tonutils-storage/storage"
 	"math"
 )
 
@@ -207,8 +207,10 @@ type TorrentsList struct {
 }
 
 type MetaFile struct {
-	Hash []byte
-	Info storage.TorrentInfo
+	Hash      []byte
+	Info      storage.TorrentInfo
+	RootProof *cell.Cell
+	Header    *storage.TorrentHeader
 }
 
 func (t *Torrent) Parse(data []byte) (_ []byte, err error) {
@@ -309,6 +311,12 @@ func (d *Double) Serialize() ([]byte, error) {
 }
 
 func (d *MetaFile) Parse(data []byte) (_ []byte, err error) {
+	// torrent_file#6a7181e0 flags:(## 32) info_boc_size:uint32
+	//   root_proof_boc_size:flags.0?uint32
+	//   info_boc:(info_boc_size * [uint8])
+	//   root_proof_boc:flags.0?(root_proof_boc_size * [uint8])
+	//   header:flags.1?TorrentHeader = TorrentMeta;
+
 	if len(data) < 8 {
 		return nil, fmt.Errorf("too short data")
 	}
@@ -317,8 +325,11 @@ func (d *MetaFile) Parse(data []byte) (_ []byte, err error) {
 	data = data[4:]
 	infoSz := binary.LittleEndian.Uint32(data)
 	data = data[4:]
+
+	var rootProofSz uint32
 	if flags&1 > 0 {
 		// skip
+		rootProofSz = binary.LittleEndian.Uint32(data)
 		data = data[4:]
 	}
 	if uint32(len(data)) < infoSz {
@@ -329,18 +340,73 @@ func (d *MetaFile) Parse(data []byte) (_ []byte, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load info cell: %w", err)
 	}
+	data = data[infoSz:]
 
-	d.Hash = info.Hash()
 	err = tlb.LoadFromCell(&d.Info, info.BeginParse())
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse info: %w", err)
 	}
 
-	// WARN: do not use it as part of another struct, it is not completely parsed
+	if flags&1 > 0 {
+		// skip
+		if len(data) < int(rootProofSz) {
+			return nil, fmt.Errorf("invalid root proof")
+		}
+
+		proof, err := cell.FromBOC(data[:rootProofSz])
+		if err != nil {
+			return nil, fmt.Errorf("failed to load info cell: %w", err)
+		}
+		data = data[rootProofSz:]
+		d.RootProof = proof
+	}
+
+	if flags&2 > 0 {
+		var hdr storage.TorrentHeader
+		_, err = tl.Parse(&hdr, data, false)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load header: %w", err)
+		}
+		d.Header = &hdr
+	}
+
+	d.Hash = info.Hash()
+
 	return nil, nil
 }
 
-func (d *MetaFile) Serialize() ([]byte, error) {
-	//TODO implement me
-	return nil, fmt.Errorf("not implemented")
+func (d *MetaFile) Serialize() (data []byte, err error) {
+	var flags uint32
+
+	var proof, info, header []byte
+	infoCell, err := tlb.ToCell(d.Info)
+	if err != nil {
+		return nil, fmt.Errorf("failed to serialize info to cell: %w", err)
+	}
+	info = infoCell.ToBOC()
+
+	if d.RootProof != nil {
+		flags |= 1
+		proof = d.RootProof.ToBOC()
+	}
+	if d.Header != nil {
+		flags |= 2
+		header, err = tl.Serialize(d.Header, false)
+		if err != nil {
+			return nil, fmt.Errorf("failed to serialize header: %w", err)
+		}
+	}
+
+	data = make([]byte, 8)
+	binary.LittleEndian.PutUint32(data, flags)
+	binary.LittleEndian.PutUint32(data[4:], uint32(len(info)))
+	if d.RootProof != nil {
+		tmp := make([]byte, 4)
+		binary.LittleEndian.PutUint32(tmp, uint32(len(proof)))
+		data = append(data, tmp...)
+	}
+	data = append(data, info...)
+	data = append(data, proof...)
+	data = append(data, header...)
+	return data, nil
 }
