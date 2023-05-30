@@ -15,6 +15,7 @@ import (
 	"github.com/xssnick/tonutils-storage/server"
 	"github.com/xssnick/tonutils-storage/storage"
 	"net"
+	"sort"
 )
 
 type Config struct {
@@ -163,8 +164,6 @@ func (c *Client) AddByMeta(ctx context.Context, meta []byte, dir string) (*clien
 }
 
 func (c *Client) CreateTorrent(ctx context.Context, dir, description string) (*client.TorrentFull, error) {
-	println("CREATE", dir)
-
 	it, err := storage.CreateTorrent(dir, description, c.storage, c.connector)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bag: %w", err)
@@ -298,7 +297,7 @@ func (c *Client) GetPeers(ctx context.Context, hash []byte) (*client.PeersList, 
 		adnlAddr, _ := hex.DecodeString(s)
 		list.Peers = append(list.Peers, client.Peer{
 			ADNL: adnlAddr,
-			IP:   "",
+			IP:   p.Addr,
 			DownloadSpeed: client.Double{
 				Value: float64(p.GetDownloadSpeed()),
 			},
@@ -310,6 +309,10 @@ func (c *Client) GetPeers(ctx context.Context, hash []byte) (*client.PeersList, 
 		list.DownloadSpeed.Value += float64(p.GetDownloadSpeed())
 		list.UploadSpeed.Value += float64(p.GetUploadSpeed())
 	}
+	sort.Slice(list.Peers, func(i, j int) bool {
+		return list.Peers[i].DownloadSpeed.Value+list.Peers[i].UploadSpeed.Value >
+			list.Peers[j].DownloadSpeed.Value+list.Peers[j].UploadSpeed.Value
+	})
 	return &list, nil
 }
 

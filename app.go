@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -11,7 +12,9 @@ import (
 	"github.com/tonutils/torrent-client/core/gostorage"
 	"github.com/tonutils/torrent-client/oshook"
 	runtime2 "github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/xssnick/tonutils-go/adnl"
 	"github.com/xssnick/tonutils-go/tl"
+	"github.com/xssnick/tonutils-storage/storage"
 	"log"
 	"os"
 	"os/exec"
@@ -43,6 +46,8 @@ type App struct {
 func NewApp() *App {
 	a := &App{}
 	oshook.HookStartup(a.openFile, a.openHash)
+	adnl.Logger = func(v ...any) {}
+	storage.Logger = log.Println
 	return a
 }
 
@@ -144,8 +149,22 @@ func (a *App) ready(ctx context.Context) {
 			if a.useDaemon {
 				cl = client.ConnectToStorageDaemon(a.config.DaemonControlAddr, a.rootPath)
 			} else {
+				addr := strings.Split(a.config.ListenAddr, ":")
+
+				lAddr := "127.0.0.1"
+				if len(addr[0]) > 0 {
+					lAddr = "0.0.0.0"
+				}
+
+				cfg := gostorage.Config{
+					Key:           ed25519.NewKeyFromSeed(a.config.Key),
+					ListenAddr:    lAddr + ":" + addr[1],
+					ExternalIP:    addr[0],
+					DownloadsPath: a.config.DownloadsPath,
+				}
+
 				var err error
-				cl, err = gostorage.NewClient(a.rootPath+"/db", a.config.GoStorage)
+				cl, err = gostorage.NewClient(a.rootPath+"/tonutils-storage-db", cfg)
 				if err != nil {
 					a.Throw(fmt.Errorf("failed to init go storage: %w", err))
 				}
