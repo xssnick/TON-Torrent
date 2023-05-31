@@ -118,7 +118,6 @@ func (c *Client) AddByHash(ctx context.Context, hash []byte, dir string) (*clien
 
 	tor := c.storage.GetTorrent(hash)
 	if tor == nil {
-		println("ADD", dir)
 		tor = storage.NewTorrent(dir, c.storage, c.connector)
 		tor.BagID = hash
 	}
@@ -230,7 +229,6 @@ func (c *Client) getTorrent(hash []byte, withFiles bool) (*client.TorrentFull, e
 
 		completed := true
 		mask := t.PiecesMask()
-		// println(hex.EncodeToString(hash), hex.EncodeToString(mask))
 		for _, u := range t.GetActiveFilesIDs() {
 			fi, err := t.GetFileOffsetsByID(u)
 			if err != nil {
@@ -310,8 +308,12 @@ func (c *Client) GetPeers(ctx context.Context, hash []byte) (*client.PeersList, 
 		list.UploadSpeed.Value += float64(p.GetUploadSpeed())
 	}
 	sort.Slice(list.Peers, func(i, j int) bool {
-		return list.Peers[i].DownloadSpeed.Value+list.Peers[i].UploadSpeed.Value >
-			list.Peers[j].DownloadSpeed.Value+list.Peers[j].UploadSpeed.Value
+		a := list.Peers[i].DownloadSpeed.Value + list.Peers[i].UploadSpeed.Value
+		b := list.Peers[j].DownloadSpeed.Value + list.Peers[j].UploadSpeed.Value
+		if a != b {
+			return a > b
+		}
+		return list.Peers[i].IP > list.Peers[j].IP
 	})
 	return &list, nil
 }

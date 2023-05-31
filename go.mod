@@ -8,7 +8,7 @@ require (
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/wailsapp/wails/v2 v2.3.1
 	github.com/xssnick/tonutils-go v1.7.4-0.20230530063638-b7bd1ee14a16
-	github.com/xssnick/tonutils-storage v0.0.0-20230530071156-161038c005f2
+	github.com/xssnick/tonutils-storage v0.0.0-20230531052252-3c0abd3b14df
 )
 
 require (
