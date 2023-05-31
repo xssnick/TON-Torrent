@@ -122,7 +122,7 @@ func (c *Client) AddByHash(ctx context.Context, hash []byte, dir string) (*clien
 		tor.BagID = hash
 	}
 
-	if err := tor.Start(true); err != nil {
+	if err := tor.Start(false); err != nil {
 		return nil, fmt.Errorf("download error: %w", err)
 	}
 
@@ -152,7 +152,7 @@ func (c *Client) AddByMeta(ctx context.Context, meta []byte, dir string) (*clien
 		tor.Header = ti.Header
 	}
 
-	if err = tor.Start(true); err != nil {
+	if err = tor.Start(false); err != nil {
 		return nil, fmt.Errorf("download error: %w", err)
 	}
 
