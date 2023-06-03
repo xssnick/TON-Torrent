@@ -39,28 +39,6 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
                     this.setState((current) => ({...current, canContinue: true, createdStage: false, err: res.Err}))
                 }
             })
-
-            /* let hash = this.state.field;
-             this.setState((current) => ({ ...current, hash, canContinue: false }))
-             AddTorrentByHash(hash).then((err) => {
-                 if (err == "") {
-                     this.setState((current) => ({ ...current, selectFilesStage: true }))
-                     // check header availability every 100 ms, and load files list when we get it
-                     this.inter = setInterval(() => {
-                         CheckHeader(hash).then(has => {
-                             if (has) {
-                                 GetFiles(hash).then((tree)=> {
-                                     clearInterval(this.inter)
-                                     this.setState((current) => ({ ...current, files: tree, canContinue: true }))
-                                 })
-                             }
-                         })
-                     }, 100)
-
-                     return
-                 }
-                 this.setState((current) => ({ ...current, err, canContinue: true }))
-             })*/
         } else {
             this.props.onExit()
         }
@@ -82,7 +60,7 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
                 </div>
                 <div style={this.state.createdStage ? {display: "none"} : {width: "330px"}} className="add-torrent-block">
                     <span className="title">Torrent name</span>
-                    <input className="torrent-name-input" onInput={(e) => {
+                    <input className="torrent-name-input" maxLength={100} onInput={(e) => {
                         let val = e.currentTarget.value;
                         let can = val.length > 0 && this.state.path.length > 0;
                         this.setState((current) => ({...current, name: val, canContinue: can}));

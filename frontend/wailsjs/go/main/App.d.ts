@@ -49,4 +49,4 @@ export function Throw(arg1:Error):Promise<void>;
 
 export function WaitReady():Promise<void>;
 
-export function WantRemoveTorrent(arg1:string):Promise<void>;
+export function WantRemoveTorrent(arg1:Array<string>):Promise<void>;

@@ -219,7 +219,7 @@ export class Table extends Component<TableProps,State> {
                                    }}><img src={Pause} alt=""/><span>Pause</span></div>)
                                }
                                elems.push(<div onClick={() => {
-                                   WantRemoveTorrent(t.id).then()
+                                   WantRemoveTorrent([t.id]).then(Refresh)
                                }}><img src={Close} alt=""/><span>Remove</span></div>)
                                elems.push(<div onClick={() => {
                                    ExportMeta(t.id).then()

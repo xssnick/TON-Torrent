@@ -473,7 +473,7 @@ func (a *API) GetPlainFiles(hash string) ([]PlainFile, error) {
 			dir = *t.Torrent.DirName
 		}
 
-		var progress float64
+		var progress float64 = 100
 		if file.Size > 0 {
 			progress = float64(int64(float64(file.DownloadedSize)/float64(file.Size)*1000)) / 10
 		}

@@ -31,7 +31,7 @@ interface State {
     ready: boolean
 
     openFileHash?: string
-    removeHash?: string
+    removeHashes?: string[]
 }
 
 export class App extends Component<{}, State> {
@@ -87,12 +87,12 @@ export class App extends Component<{}, State> {
         this.setState((current)=>({...current, showSettingsModal: !this.state.showSettingsModal}))
     }
     toggleRemoveConfirmModal = () => {
-        this.setState((current)=>({...current, showRemoveConfirmModal: !this.state.showRemoveConfirmModal, removeHash: undefined}))
+        this.setState((current)=>({...current, showRemoveConfirmModal: !this.state.showRemoveConfirmModal, removeHashes: undefined}))
     }
 
     componentDidMount() {
-        EventsOn("want_remove_torrent", (hash: string) => {
-            this.setState((current)=>({...current, removeHash: hash, showRemoveConfirmModal: true}))
+        EventsOn("want_remove_torrent", (hashes: string[]) => {
+            this.setState((current)=>({...current, removeHashes: hashes, showRemoveConfirmModal: true}))
         })
         EventsOn("open_torrent", (hash: string) => {
             this.setState((current)=>({...current, showAddTorrentModal: true, openFileHash: hash}))
@@ -159,7 +159,7 @@ export class App extends Component<{}, State> {
                 {this.state.showAddTorrentModal ? <AddTorrentModal openHash={this.state.openFileHash} onExit={this.toggleAddTorrentModal}/> : null}
                 {this.state.showCreateTorrentModal ? <CreateTorrentModal onExit={this.toggleCreateTorrentModal}/> : null}
                 {this.state.showSettingsModal ? <SettingsModal onExit={this.toggleSettingsModal}/> : null}
-                {this.state.showRemoveConfirmModal ? <RemoveConfirmModal hash={this.state.removeHash!}  onExit={this.toggleRemoveConfirmModal}/> : null}
+                {this.state.showRemoveConfirmModal ? <RemoveConfirmModal hashes={this.state.removeHashes!}  onExit={this.toggleRemoveConfirmModal}/> : null}
                 <div className="left-bar">
                     <div className="logo-block">
                         <img className="logo-img" src={Logo} alt=""/>
@@ -208,12 +208,7 @@ export class App extends Component<{}, State> {
                                 })
                             }}/>
                             <button className={this.state.selectedItems.length > 0 ? "top-button remove" : "top-button remove disabled"} disabled={this.state.selectedItems.length == 0} onClick={() => {
-                                this.state.selectedItems.forEach((t) => {
-                                    WantRemoveTorrent(t.hash).then(()=>{
-                                      //  Refresh()
-                                      //  this.setState((current) => ({ ...current, selectedItems: []}))
-                                    })
-                                })
+                                WantRemoveTorrent(this.state.selectedItems.map(s => s.hash)).then(Refresh);
                             }}/>
                         </div>
                         <input type="text" className="search-input" placeholder="Search..." onChange={(e) => {

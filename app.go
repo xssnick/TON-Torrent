@@ -304,13 +304,17 @@ func (a *App) ExportMeta(hash string) string {
 	path, err := runtime2.SaveFileDialog(a.ctx, runtime2.SaveDialogOptions{
 		DefaultFilename: name + ".tonbag",
 		Title:           "Save .tonbag",
+		Filters: []runtime2.FileFilter{{
+			DisplayName: "TON Torrent (*.tonbag)",
+			Pattern:     "*.tonbag",
+		}},
 	})
 	if err != nil {
 		log.Println(err.Error())
 		return ""
 	}
 
-	err = os.WriteFile(path, m, 0766)
+	err = os.WriteFile(path, m, 0666)
 	if err != nil {
 		log.Println(err.Error())
 		return ""
@@ -421,8 +425,8 @@ func (a *App) CheckHeader(hash string) bool {
 	return hasHeader
 }
 
-func (a *App) WantRemoveTorrent(hash string) {
-	runtime2.EventsEmit(a.ctx, "want_remove_torrent", hash)
+func (a *App) WantRemoveTorrent(hashes []string) {
+	runtime2.EventsEmit(a.ctx, "want_remove_torrent", hashes)
 }
 
 func (a *App) RemoveTorrent(hash string, withFiles, onlyNotInitiated bool) string {

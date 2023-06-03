@@ -83,11 +83,18 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 	}
 
 	c.connector = storage.NewConnector(downloadGate, dhtClient)
-
 	c.storage, err = db.NewStorage(ldb, c.connector)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init storage: %w", err)
 	}
+
+	d, u, err := c.storage.GetSpeedLimits()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load speed limits: %w", err)
+	}
+
+	c.connector.SetDownloadLimit(d)
+	c.connector.SetUploadLimit(u)
 
 	err = server.NewServer(c.storage, dhtClient, gate, cfg.Key, serverMode)
 	if err != nil {
@@ -150,6 +157,7 @@ func (c *Client) AddByMeta(ctx context.Context, meta []byte, dir string) (*clien
 	}
 	if tor.Header == nil && ti.Header != nil {
 		tor.Header = ti.Header
+		tor.InitMask()
 	}
 
 	if err = tor.Start(true); err != nil {
@@ -384,11 +392,26 @@ func (c *Client) SetFilesPriority(ctx context.Context, hash []byte, names []stri
 
 func (c *Client) GetSpeedLimits(ctx context.Context) (*client.SpeedLimits, error) {
 	return &client.SpeedLimits{
-		Download: client.Double{},
-		Upload:   client.Double{},
+		Download: client.Double{
+			Value: float64(c.connector.GetDownloadLimit()),
+		},
+		Upload: client.Double{
+			Value: float64(c.connector.GetUploadLimit()),
+		},
 	}, nil
 }
 
 func (c *Client) SetSpeedLimits(ctx context.Context, download, upload int64) error {
+	if download < 0 {
+		download = 0
+	}
+	if upload < 0 {
+		upload = 0
+	}
+
+	c.connector.SetDownloadLimit(uint64(download))
+	c.connector.SetUploadLimit(uint64(upload))
+	_ = c.storage.SetSpeedLimits(uint64(download), uint64(upload))
+
 	return nil
 }
