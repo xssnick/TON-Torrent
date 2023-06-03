@@ -7,8 +7,8 @@ require (
 	github.com/jcuga/go-upnp v0.0.0-20160830125909-492b17f02cbb
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/wailsapp/wails/v2 v2.3.1
-	github.com/xssnick/tonutils-go v1.7.4-0.20230603070817-a86793de15de
-	github.com/xssnick/tonutils-storage v0.0.0-20230603071005-624ca838beb8
+	github.com/xssnick/tonutils-go v1.7.4-0.20230603142307-e14073a0805c
+	github.com/xssnick/tonutils-storage v0.0.0-20230603142944-cf13c44bee0d
 )
 
 require (

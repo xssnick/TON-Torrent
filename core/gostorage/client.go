@@ -14,6 +14,7 @@ import (
 	"github.com/xssnick/tonutils-storage/db"
 	"github.com/xssnick/tonutils-storage/server"
 	"github.com/xssnick/tonutils-storage/storage"
+	"log"
 	"net"
 	"sort"
 )
@@ -411,7 +412,10 @@ func (c *Client) SetSpeedLimits(ctx context.Context, download, upload int64) err
 
 	c.connector.SetDownloadLimit(uint64(download))
 	c.connector.SetUploadLimit(uint64(upload))
-	_ = c.storage.SetSpeedLimits(uint64(download), uint64(upload))
+	err := c.storage.SetSpeedLimits(uint64(download), uint64(upload))
+	if err != nil {
+		log.Println("UI SET LIMITS ERR:", err)
+	}
 
 	return nil
 }
