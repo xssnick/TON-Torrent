@@ -66,8 +66,8 @@ export function RemoveTorrent(arg1, arg2, arg3) {
   return window['go']['main']['App']['RemoveTorrent'](arg1, arg2, arg3);
 }
 
-export function SaveConfig(arg1, arg2) {
-  return window['go']['main']['App']['SaveConfig'](arg1, arg2);
+export function SaveConfig(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['SaveConfig'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
 export function SetActive(arg1, arg2) {
@@ -80,6 +80,10 @@ export function SetSpeedLimit(arg1, arg2) {
 
 export function ShowMsg(arg1) {
   return window['go']['main']['App']['ShowMsg'](arg1);
+}
+
+export function ShowWarnMsg(arg1) {
+  return window['go']['main']['App']['ShowWarnMsg'](arg1);
 }
 
 export function StartDownload(arg1, arg2) {

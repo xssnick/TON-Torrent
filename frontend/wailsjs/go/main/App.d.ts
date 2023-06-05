@@ -35,13 +35,15 @@ export function OpenFolderSelectFile(arg1:string):Promise<void>;
 
 export function RemoveTorrent(arg1:string,arg2:boolean,arg3:boolean):Promise<string>;
 
-export function SaveConfig(arg1:string,arg2:string):Promise<string>;
+export function SaveConfig(arg1:string,arg2:boolean,arg3:boolean,arg4:string,arg5:string,arg6:string):Promise<string>;
 
 export function SetActive(arg1:string,arg2:boolean):Promise<string>;
 
 export function SetSpeedLimit(arg1:number,arg2:number):Promise<string>;
 
 export function ShowMsg(arg1:string):Promise<void>;
+
+export function ShowWarnMsg(arg1:string):Promise<void>;
 
 export function StartDownload(arg1:string,arg2:Array<string>):Promise<void>;
 

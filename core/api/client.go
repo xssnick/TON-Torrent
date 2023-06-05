@@ -39,6 +39,7 @@ type Torrent struct {
 	Upload         string
 	Download       string
 	Path           string
+	PeersNum       int
 
 	rawDowSpeed    int64
 	rawDownloaded  int64
@@ -147,7 +148,12 @@ func (a *API) SyncTorrents() error {
 		download += full.Torrent.DownloadSpeed
 		upload += full.Torrent.UploadSpeed
 
-		tr := formatTorrent(full, true)
+		peers, err := a.client.GetPeers(a.globalCtx, torrent.Hash)
+		if err != nil {
+			continue
+		}
+
+		tr := formatTorrent(full, len(peers.Peers), true)
 		if tr == nil {
 			continue
 		}
@@ -201,7 +207,7 @@ func toSpeed(speed int64, zeroEmpty bool) string {
 	}
 }
 
-func formatTorrent(full *client.TorrentFull, hide0Speed bool) *Torrent {
+func formatTorrent(full *client.TorrentFull, peersNum int, hide0Speed bool) *Torrent {
 	torrent := full.Torrent // newer object
 	var dataSz, downloadedSz int64
 	for _, file := range full.Files {
@@ -273,6 +279,7 @@ func formatTorrent(full *client.TorrentFull, hide0Speed bool) *Torrent {
 		rawDownloaded:  downloadedSz,
 		rawSize:        dataSz,
 		rawDescription: rawDesc,
+		PeersNum:       peersNum,
 	}
 }
 
@@ -506,7 +513,7 @@ func (a *API) GetInfo(hash string) (*TorrentInfo, error) {
 		return nil, err
 	}
 
-	tr := formatTorrent(t, false)
+	tr := formatTorrent(t, len(peers.Peers), false)
 	if tr == nil {
 		return nil, fmt.Errorf("not initialized torrent")
 	}

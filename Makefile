@@ -1,39 +1,13 @@
-git-modules:
-	git submodule update --remote --init --recursive
-
-compile-storage:
-	mkdir -p ton-build
-	cd ton-build; CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=Release ../ton; make storage-daemon -j8
-
-download-storage-mac-arm:
-	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/view/neodiX/job/TON_macOS_aarch64_arm64_neodix/lastSuccessfulBuild/artifact/artifacts/storage-daemon
-
-download-storage-mac-amd:
-	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/job/TON_macOS_10.15_x86-64_master/lastSuccessfulBuild/artifact/artifacts/storage-daemon
-
-download-storage-windows-amd:
-	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/job/TON_Windows_x86-64_master/lastSuccessfulBuild/artifact/artifacts/storage-daemon.exe
+download-windows-vc:
 	echo "Browser will be opened now to download vcredist, put it to build/windows/vc_redist.x64.exe"
-	sleep 3
+	sleep 2
 	start https://aka.ms/vs/17/release/vc_redist.x64.exe
-
-download-storage-linux-amd:
-	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/job/TON_Linux_x86-64/lastSuccessfulBuild/artifact/artifacts/storage-daemon
-
-download-storage-linux-arm:
-	curl --create-dirs -O --output-dir ton-build/storage/storage-daemon/ https://cicd.neodix.io/job/TON_Linux_arm64/lastSuccessfulBuild/artifact/artifacts/storage-daemon
 
 build-mac:
 	CGO_ENABLED=1 wails build -clean
-	mkdir -p build/bin/TON\ Torrent.app/Contents/Resources/Storage.app/Contents/MacOS
-	mkdir -p build/bin/TON\ Torrent.app/Contents/Resources/Storage.app/Contents/Resources
-	cp ton-build/storage/storage-daemon/storage-daemon build/bin/TON\ Torrent.app/Contents/Resources/Storage.app/Contents/MacOS/
-	cp build/darwin/daemon/Info.plist build/bin/TON\ Torrent.app/Contents/Resources/Storage.app/Contents/
-	cp build/bin/TON\ Torrent.app/Contents/Resources/iconfile.icns build/bin/TON\ Torrent.app/Contents/Resources/Storage.app/Contents/Resources/
 
 build-linux-tar:
 	CGO_ENABLED=1 wails build -clean
-	cp ton-build/storage/storage-daemon/storage-daemon build/bin/storage-daemon
 	tar -czvf build/bin/ton-torrent.tar.gz -C build/bin .
 
 build-linux-deb:
@@ -42,7 +16,6 @@ build-linux-deb:
 	mkdir -p build/bin/ton-torrent/usr/local/bin
 	mkdir -p build/bin/ton-torrent/opt/ton-torrent
 	mkdir -p build/bin/ton-torrent/usr/share/applications
-	cp ton-build/storage/storage-daemon/storage-daemon build/bin/ton-torrent/opt/ton-torrent/
 	cp build/bin/TON\ Torrent build/bin/ton-torrent/usr/local/bin/ton-torrent
 	cp build/appicon.png build/bin/ton-torrent/opt/ton-torrent/
 	cp build/linux/ton-torrent.desktop build/bin/ton-torrent/usr/share/applications/

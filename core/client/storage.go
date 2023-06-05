@@ -9,7 +9,6 @@ import (
 	"github.com/xssnick/tonutils-go/tl"
 	"log"
 	"os"
-	"time"
 )
 
 type ADNL interface {
@@ -20,45 +19,32 @@ type StorageClient struct {
 	client ADNL
 }
 
-func ConnectToStorageDaemon(addr string, rootPath string) *StorageClient {
-	var authKey ed25519.PrivateKey
-	var serverKey string
-	for {
-		clientKey, err := os.ReadFile(rootPath + "/storage-db/cli-keys/client")
-		if err != nil {
-			log.Println("storage-db/client read err:", err.Error(), "retrying...")
-			time.Sleep(300 * time.Millisecond)
-			continue
-		}
-		authKey = ed25519.NewKeyFromSeed(clientKey[4:])
-		break
+func ConnectToStorageDaemon(addr string, dbPath string) (*StorageClient, error) {
+	clientKey, err := os.ReadFile(dbPath + "/cli-keys/client")
+	if err != nil {
+		log.Println(dbPath+"/client read err:", err.Error())
+		return nil, fmt.Errorf(dbPath+"/cli-keys/client read err: %w", err)
 	}
+	authKey := ed25519.NewKeyFromSeed(clientKey[4:])
 
-	for {
-		key, err := os.ReadFile(rootPath + "/storage-db/cli-keys/server.pub")
-		if err != nil {
-			log.Println("storage-db/server.pub read err:", err.Error(), "retrying...")
-			time.Sleep(300 * time.Millisecond)
-			continue
-		}
-		serverKey = base64.StdEncoding.EncodeToString(key[4:])
-		break
+	key, err := os.ReadFile(dbPath + "/cli-keys/server.pub")
+	if err != nil {
+		log.Println(dbPath+"/cli-keys/server.pub read err:", err.Error())
+		return nil, fmt.Errorf(dbPath+"/cli-keys/server.pub read err: %w", err)
+
 	}
+	serverKey := base64.StdEncoding.EncodeToString(key[4:])
 
 	pool := liteclient.NewConnectionPoolWithAuth(authKey)
-	for {
-		// try to connect to daemon
-		err := pool.AddConnection(context.Background(), addr, serverKey)
-		if err != nil {
-			time.Sleep(100 * time.Millisecond)
-			continue
-		}
-		break
+	err = pool.AddConnection(context.Background(), addr, serverKey)
+	if err != nil {
+		log.Println("connect to daemon err:", err.Error())
+		return nil, fmt.Errorf("connect to daemon err: %w", err)
 	}
 
 	return &StorageClient{
 		client: pool,
-	}
+	}, nil
 }
 
 func (s *StorageClient) GetTorrents(ctx context.Context) (*TorrentsList, error) {

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/tonutils/torrent-client/core/api"
 	"github.com/tonutils/torrent-client/core/client"
-	"github.com/tonutils/torrent-client/core/daemon"
 	"github.com/tonutils/torrent-client/core/gostorage"
 	"github.com/tonutils/torrent-client/oshook"
 	runtime2 "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -33,8 +32,6 @@ type App struct {
 	rootPath      string
 	config        *Config
 	loaded        bool
-
-	useDaemon bool
 
 	openFileData []byte
 	openFileHash string
@@ -79,9 +76,18 @@ func (a *App) Throw(err error) {
 }
 
 func (a *App) ShowMsg(text string) {
-	runtime2.MessageDialog(a.ctx, runtime2.MessageDialogOptions{
+	_, _ = runtime2.MessageDialog(a.ctx, runtime2.MessageDialogOptions{
 		Type:          runtime2.InfoDialog,
 		Title:         "Info",
+		Message:       text,
+		DefaultButton: "OK",
+	})
+}
+
+func (a *App) ShowWarnMsg(text string) {
+	_, _ = runtime2.MessageDialog(a.ctx, runtime2.MessageDialogOptions{
+		Type:          runtime2.WarningDialog,
+		Title:         "Warning",
 		Message:       text,
 		DefaultButton: "OK",
 	})
@@ -116,18 +122,6 @@ func (a *App) prepare() {
 		}
 	}
 
-	if a.useDaemon {
-		a.daemonProcess, err = daemon.Run(a.ctx, a.rootPath, exPath, a.config.ListenAddr,
-			strings.SplitN(a.config.DaemonControlAddr, ":", 2)[1], func(err error) {
-				if err != nil {
-					a.Throw(fmt.Errorf("storage daemon crashed with error:\n%w", err))
-				}
-			})
-		if err != nil {
-			a.Throw(err)
-		}
-	}
-
 	/*go func() {
 		// TODO: forward port
 		up, err := upnp.NewUPnP()
@@ -145,10 +139,16 @@ func (a *App) ready(ctx context.Context) {
 		a.prepare()
 
 		go func() {
+			var err error
 			var cl api.StorageClient
-			if a.useDaemon {
-				cl = client.ConnectToStorageDaemon(a.config.DaemonControlAddr, a.rootPath)
-			} else {
+			if a.config.UseDaemon {
+				cl, err = client.ConnectToStorageDaemon(a.config.DaemonControlAddr, a.config.DaemonDBPath)
+				if err != nil {
+					a.ShowWarnMsg("Failed to connect to storage daemon, falling back to tonutils-storage.\n\n" + err.Error())
+				}
+			}
+
+			if !a.config.UseDaemon || err != nil {
 				addr := strings.Split(a.config.ListenAddr, ":")
 
 				lAddr := "127.0.0.1"
@@ -161,6 +161,9 @@ func (a *App) ready(ctx context.Context) {
 					ListenAddr:    lAddr + ":" + addr[1],
 					ExternalIP:    addr[0],
 					DownloadsPath: a.config.DownloadsPath,
+				}
+				if !a.config.SeedMode {
+					cfg.ExternalIP = ""
 				}
 
 				var err error
@@ -442,17 +445,46 @@ func (a *App) GetConfig() *Config {
 	return a.config
 }
 
-func (a *App) SaveConfig(downloads, extIP string) string {
+func (a *App) SaveConfig(downloads string, useTonutilsStorage, seedMode bool, storageExtIP, daemonControlAddr, daemonDB string) string {
+	notify := false
 	a.config.DownloadsPath = downloads
-	if a.config.ListenAddr != extIP {
-		a.config.ListenAddr = extIP
-		a.ShowMsg("Listen address will be changed on the next launch.")
+
+	if useTonutilsStorage != !a.config.UseDaemon {
+		a.config.UseDaemon = !useTonutilsStorage
+		notify = true
 	}
+
+	if useTonutilsStorage {
+		if a.config.SeedMode != seedMode {
+			notify = true
+			a.config.SeedMode = seedMode
+		}
+
+		if a.config.SeedMode && a.config.ListenAddr != storageExtIP {
+			a.config.ListenAddr = storageExtIP
+			notify = true
+		}
+	} else {
+		if a.config.DaemonDBPath != daemonDB {
+			a.config.DaemonDBPath = daemonDB
+			notify = true
+		}
+		if a.config.DaemonControlAddr != daemonControlAddr {
+			a.config.DaemonControlAddr = daemonControlAddr
+			notify = true
+		}
+	}
+
 	err := a.config.SaveConfig(a.rootPath)
 	if err != nil {
 		log.Println(err.Error())
 		return err.Error()
 	}
+
+	if notify {
+		a.ShowMsg("Some settings will be changed on the next launch.\nPlease restart the app to apply them.")
+	}
+
 	return ""
 }
 

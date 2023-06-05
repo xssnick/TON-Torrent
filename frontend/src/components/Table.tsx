@@ -27,6 +27,7 @@ export interface TorrentItem {
     downloadSpeed: string
     path: string
     progress: number
+    peersNum: number
     selected: boolean
 }
 
@@ -50,12 +51,12 @@ export function Refresh() {
     EventsEmit("refresh");
 }
 
-export function textState(state: string) {
+export function textState(state: string, peers: number) {
     switch (state) {
         case "seeding":
             return "Seeding";
         case "downloading":
-            return "Downloading";
+            return peers > 0 ? "Downloading" : "Searching for peers";
         case "fail":
             return "Failed";
         case "inactive":
@@ -94,6 +95,7 @@ export class Table extends Component<TableProps,State> {
                     downloadSpeed: t.Download,
                     path: t.Path,
                     progress: t.Progress,
+                    peersNum: t.PeersNum,
                     selected:  selected,
                 })
             })
@@ -225,17 +227,17 @@ export class Table extends Component<TableProps,State> {
                                    ExportMeta(t.id).then()
                                }}><img src={Export} alt=""/><span>Export .tonbag</span></div>)
 
-                               this.setState((current) => ({ ...current, contextShow: true, contextItems: elems}))
+                               this.setState((current) => ({ ...current, contextShow: true, contextItems: elems}));
 
                                document.body.addEventListener("click", () => {
                                   this.setState((current) => ({ ...current, contextShow: false, contextItems: []}))
                               }, { once: true });
                            }}>
                 <td onMouseEnter={(e) =>{
-                    let tip = document.getElementById("tip")
-                    tip!.textContent = textState(t.state);
+                    let tip = document.getElementById("tip");
+                    tip!.textContent = textState(t.state, t.peersNum);
                     let rectItem = document.getElementById("state-"+t.id)!.getBoundingClientRect()
-                    let rectTip = tip!.getBoundingClientRect()
+                    let rectTip = tip!.getBoundingClientRect();
 
                     tip!.style.top =  (rectItem.y - (rectTip.height + 5)).toString()+"px";
                     tip!.style.left = (rectItem.x - (rectTip.width/2 - rectItem.width/2)).toString()+"px";
@@ -244,13 +246,14 @@ export class Table extends Component<TableProps,State> {
                     tip!.style.visibility = "visible";
                 }} onMouseLeave={
                     (e)=> {
-                        let tip = document.getElementById("tip")
+                        let tip = document.getElementById("tip");
                         tip!.style.opacity = "0";
                         tip!.style.visibility = "hidden";
                     }
-                }><div id={"state-"+t.id} className={"item-state "+t.state}></div></td>
+                }><div id={"state-"+t.id} className={"item-state "+(t.state == 'downloading' && t.peersNum == 0 ? 'searching' : t.state)}></div></td>
                 <td style={{maxWidth:"197px"}}>{t.name}</td>
                 <td className={"small"}>{t.size}</td>
+                <td className={"small"}>{t.peersNum}</td>
                 <td><div className="progress-block-small">
                     <span style={{textAlign:"left", width:"27px"}}>{t.progress}%</span>
                     <div className="progress-bar-small-form">
@@ -275,6 +278,7 @@ export class Table extends Component<TableProps,State> {
                 <th style={{width:"23px"}}></th>
                 <th>Description</th>
                 <th style={{width:"80px"}}>Size</th>
+                <th style={{width:"60px"}}>Peers</th>
                 <th style={{width:"150px"}}>Progress</th>
                 <th style={{width:"90px"}}>Download</th>
                 <th style={{width:"90px"}}>Upload</th>

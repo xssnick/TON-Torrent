@@ -97,9 +97,11 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 	c.connector.SetDownloadLimit(d)
 	c.connector.SetUploadLimit(u)
 
-	err = server.NewServer(c.storage, dhtClient, gate, cfg.Key, serverMode)
-	if err != nil {
-		return nil, fmt.Errorf("failed to start adnl server: %w", err)
+	if serverMode {
+		err = server.NewServer(c.storage, dhtClient, gate, cfg.Key, serverMode)
+		if err != nil {
+			return nil, fmt.Errorf("failed to start adnl server: %w", err)
+		}
 	}
 
 	return c, nil
@@ -295,6 +297,10 @@ func (c *Client) GetPeers(ctx context.Context, hash []byte) (*client.PeersList, 
 	t := c.storage.GetTorrent(hash)
 	if t == nil {
 		return nil, fmt.Errorf("torrent is not found")
+	}
+
+	if t.Info == nil {
+		return &client.PeersList{}, nil
 	}
 
 	var list client.PeersList

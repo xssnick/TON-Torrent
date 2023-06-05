@@ -63,6 +63,17 @@ $text-black: #232328;
   }
 }
 
+.daemon-config {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+hr.config {
+  color: $borderHover;
+  margin: 10px 0 0;
+}
+
 .set-speed {
   margin-top: 10px;
   display: flex;
@@ -261,6 +272,13 @@ $text-black: #232328;
   padding-left: 20px;
   font-size: 12px;
   line-height: 14px;
+}
+
+.checkbox-file.daemon {
+  margin: 10px auto auto;
+  font-size: 11px;
+
+  font-weight: bold;
 }
 
 .checkbox-file.folder {

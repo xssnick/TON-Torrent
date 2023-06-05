@@ -189,7 +189,7 @@ export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
                 <div style={this.state.selectFilesStage ? {} : {display: "none"}} className="add-torrent-block">
                     <div className="files-selector">
                         {this.state.files.length > 0 ? this.renderFiles(this.state.files) :
-                            <div className="loader-block"><span className="loader"/><span className="loader-text">Loading torrent information..</span></div>}
+                            <div className="loader-block"><span className="loader"/><span className="loader-text">Searching for torrent info...</span></div>}
                     </div>
                 </div>
                 <div style={this.state.selectFilesStage ? {display: "none"} : {width: "455px"}} className="add-torrent-block">

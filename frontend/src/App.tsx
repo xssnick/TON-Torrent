@@ -153,7 +153,7 @@ export class App extends Component<{}, State> {
             <div id="App">
                 <div className="daemon-waiter" style={this.state.ready ? {display: "none"} : {}}>
                     <div className="loader-block">
-                        <span className="loader"/><span className="loader-text">Initializing storage daemon...</span>
+                        <span className="loader"/><span className="loader-text">Preparing TON Storage...</span>
                     </div>
                 </div>
                 {this.state.showAddTorrentModal ? <AddTorrentModal openHash={this.state.openFileHash} onExit={this.toggleAddTorrentModal}/> : null}

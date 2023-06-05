@@ -105,7 +105,7 @@ export class InfoTorrentMenu extends Component<InfoProps,State> {
                     <div className="item" style={{width: "66%"}}><span className="field">Added at: </span><span className="value">{this.state.added}</span></div>
                 </div>
                 <div className="basic">
-                    <div className="item"><span className="field">Status: </span><span className="value">{textState(this.state.status)}</span></div>
+                    <div className="item"><span className="field">Status: </span><span className="value">{textState(this.state.status, Number(this.state.peers))}</span></div>
                 </div>
                 {this.state.description != "" ?
                     <div className="basic">

@@ -12,11 +12,14 @@ import (
 )
 
 type Config struct {
-	// DaemonPath        string
+	DownloadsPath string
+	SeedMode      bool
+	ListenAddr    string
+	Key           []byte
+
+	UseDaemon         bool
+	DaemonDBPath      string
 	DaemonControlAddr string
-	DownloadsPath     string
-	ListenAddr        string
-	Key               []byte
 }
 
 func LoadConfig(dir string) (*Config, error) {
@@ -33,11 +36,13 @@ func LoadConfig(dir string) (*Config, error) {
 			DownloadsPath:     downloadsPath(),
 			ListenAddr:        ":13333",
 			Key:               priv.Seed(),
+			UseDaemon:         false,
 		}
 
 		ip, seed := checkCanSeed()
 		if seed {
-			cfg.ListenAddr = ip + cfg.ListenAddr
+			cfg.SeedMode = true
+			cfg.ListenAddr = ip + ":13333"
 		}
 
 		err = cfg.SaveConfig(dir)
