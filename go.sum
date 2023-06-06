@@ -133,8 +133,12 @@ github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e h1:JVG44RsyaB9T2KIHavM
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e/go.mod h1:RbqR21r5mrJuqunuUZ/Dhy/avygyECGrLceyNeo4LiM=
 github.com/xssnick/tonutils-go v1.7.4-0.20230606063440-ae5a45458d3a h1:Fl5XdkKbBcE6Vk+oJlLaDkNehNl4uRF64wpfF88GUog=
 github.com/xssnick/tonutils-go v1.7.4-0.20230606063440-ae5a45458d3a/go.mod h1:wH8ldhLueyfXW15r3MyaIq9YzA+8bzvL6UMU2BLp08g=
+github.com/xssnick/tonutils-go v1.7.4-0.20230606081500-665842dea4d4 h1:ANRpL6anlwlnSyLppjRKdI+fyWgvAVc7etM8iO9u7e4=
+github.com/xssnick/tonutils-go v1.7.4-0.20230606081500-665842dea4d4/go.mod h1:wH8ldhLueyfXW15r3MyaIq9YzA+8bzvL6UMU2BLp08g=
 github.com/xssnick/tonutils-storage v0.0.0-20230606063542-e8a8ed7bd0c9 h1:48M7q6FjwlHVqCgYQa07e7LQuujr2m69F0TKHGd/78k=
 github.com/xssnick/tonutils-storage v0.0.0-20230606063542-e8a8ed7bd0c9/go.mod h1:RD4JW5Ew4EyDBvN+CW2Kn6CMO66QHtEvllkA9GfovqY=
+github.com/xssnick/tonutils-storage v0.0.0-20230606081707-5bc59648de92 h1:5myJJnO26MZb1FYy1kDaXT679/GRdtcacjZe9PvFqZU=
+github.com/xssnick/tonutils-storage v0.0.0-20230606081707-5bc59648de92/go.mod h1:CRbhggHehaYyA++9jfWF9sS1qwFhPXbsNjtYVE25iVg=
 golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064 h1:S25/rfnfsMVgORT4/J61MJ7rdyseOZOyvLIrZEZ7s6s=
 golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 golang.org/x/exp v0.0.0-20220909182711-5c715a9e8561 h1:MDc5xs78ZrZr3HMQugiXOAkSZtfTpbJLDr/lwfgO53E=
