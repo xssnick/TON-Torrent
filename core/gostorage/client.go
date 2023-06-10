@@ -12,7 +12,6 @@ import (
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/tl"
 	"github.com/xssnick/tonutils-storage/db"
-	"github.com/xssnick/tonutils-storage/server"
 	"github.com/xssnick/tonutils-storage/storage"
 	"log"
 	"net"
@@ -83,11 +82,14 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to init downloader gateway: %w", err)
 	}
 
-	c.connector = storage.NewConnector(downloadGate, dhtClient)
-	c.storage, err = db.NewStorage(ldb, c.connector)
+	srv := storage.NewServer(dhtClient, gate, cfg.Key, serverMode)
+
+	c.connector = storage.NewConnector(srv)
+	c.storage, err = db.NewStorage(ldb, c.connector, false)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init storage: %w", err)
 	}
+	srv.SetStorage(c.storage)
 
 	d, u, err := c.storage.GetSpeedLimits()
 	if err != nil {
@@ -96,13 +98,6 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 
 	c.connector.SetDownloadLimit(d)
 	c.connector.SetUploadLimit(u)
-
-	if serverMode {
-		err = server.NewServer(c.storage, dhtClient, gate, cfg.Key, serverMode)
-		if err != nil {
-			return nil, fmt.Errorf("failed to start adnl server: %w", err)
-		}
-	}
 
 	return c, nil
 }
