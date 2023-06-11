@@ -72,7 +72,7 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to init dht adnl gateway: %w", err)
 	}
 
-	dhtClient, err := dht.NewClientFromConfig(context.Background(), dhtGate, lsCfg)
+	dhtClient, err := dht.NewClientFromConfig(dhtGate, lsCfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init dht client: %w", err)
 	}
