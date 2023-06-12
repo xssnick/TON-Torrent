@@ -5,7 +5,7 @@ TON Storage UI based on [tonutils-storage](https://github.com/xssnick/tonutils-s
 
 ## Getting started
 
-<img align="right"  width="670" alt="Screen Shot 2023-06-12 at 22 03 21" src="https://github.com/xssnick/TON-Torrent/assets/9332353/627b6327-910e-4b27-b1fa-9fcf2fc9bf32">
+<img align="right"  width="500" alt="Screen Shot 2023-06-12 at 22 03 21" src="https://github.com/xssnick/TON-Torrent/assets/9332353/627b6327-910e-4b27-b1fa-9fcf2fc9bf32">
 
 **Download**
 * Windows x64
