@@ -46,7 +46,7 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 		}
 	}
 
-	lsCfg, err := liteclient.GetConfigFromUrl(context.Background(), "https://ton-blockchain.github.io/global.config.json")
+	lsCfg, err := liteclient.GetConfigFromUrl(context.Background(), "https://ton.org/global.config.json")
 	if err != nil {
 		return nil, fmt.Errorf("failed to download ton config: %w", err)
 	}
@@ -127,7 +127,7 @@ func (c *Client) AddByHash(ctx context.Context, hash []byte, dir string) (*clien
 		tor.BagID = hash
 	}
 
-	if err := tor.Start(true); err != nil {
+	if err := tor.Start(true, false); err != nil {
 		return nil, fmt.Errorf("download error: %w", err)
 	}
 
@@ -158,7 +158,7 @@ func (c *Client) AddByMeta(ctx context.Context, meta []byte, dir string) (*clien
 		tor.InitMask()
 	}
 
-	if err = tor.Start(true); err != nil {
+	if err = tor.Start(true, false); err != nil {
 		return nil, fmt.Errorf("download error: %w", err)
 	}
 
@@ -173,7 +173,7 @@ func (c *Client) CreateTorrent(ctx context.Context, dir, description string) (*c
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bag: %w", err)
 	}
-	it.Start(true)
+	it.Start(true, false)
 
 	err = c.storage.SetTorrent(it)
 	if err != nil {
@@ -345,7 +345,7 @@ func (c *Client) SetActive(ctx context.Context, hash []byte, active bool) error 
 	if !active {
 		t.Stop()
 	} else {
-		err := t.Start(true)
+		err := t.Start(true, false)
 		if err != nil {
 			return err
 		}

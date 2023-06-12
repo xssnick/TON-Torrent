@@ -1,4 +1,0 @@
-[submodule "ton"]
-	path = ton
-	url = https://github.com/SpyCheese/ton.git
-	branch = tonstorage
