@@ -19,12 +19,6 @@ TON Storage UI based on [tonutils-storage](https://github.com/xssnick/tonutils-s
 * For Mac drag icon to Applications
 * For Linux install .deb with `dpkg -i`
 
-**Use**
-
-Open it and try to download or create some torrents
-
-<br>
-
 ------
 After installation, you could click **Add Torrent** and download `85d0998dcf325b6fee4f529d4dcf66fb253fc39c59687c82a0ef7fc96fed4c9f` to see how it works.
 
