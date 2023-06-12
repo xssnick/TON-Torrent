@@ -88,13 +88,6 @@ Section
     !insertmacro wails.writeUninstaller
 SectionEnd
 
-Section "Visual Studio Runtime"
-  SetOutPath "$INSTDIR"
-  File "..\..\..\build\windows\vc_redist.x64.exe"
-  ExecWait '"$INSTDIR\vc_redist.x64.exe" /quiet'
-  Delete "$INSTDIR\vc_redist.x64.exe"
-SectionEnd
-
 !define ASSOC_EXT ".tonbag"
 !define ASSOC_URL1 "tonstorage"
 !define ASSOC_URL2 "tonbag"
