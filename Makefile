@@ -1,8 +1,3 @@
-download-windows-vc:
-	echo "Browser will be opened now to download vcredist, put it to build/windows/vc_redist.x64.exe"
-	sleep 2
-	start https://aka.ms/vs/17/release/vc_redist.x64.exe
-
 build-mac:
 	CGO_ENABLED=1 wails build -clean
 
@@ -28,29 +23,23 @@ build-windows:
 	CGO_ENABLED=1 wails build -nsis
 
 sign-mac:
-	gon ./build/gon/config-storage.json
 	gon ./build/gon/config.json
 
 mac-arm64-all:
-	make download-storage-mac-arm
 	GOOS=darwin GOARCH=arm64 make build-mac
 	sleep 1
 	make sign-mac
 
 mac-amd64-all:
-	make download-storage-mac-amd
 	GOOS=darwin GOARCH=amd64 make build-mac
 	sleep 1
 	make sign-mac
 
 windows-amd64-all:
-	make download-storage-windows-amd
 	GOOS=windows GOARCH=amd64 make build-windows
 
 linux-amd64-all:
-	make download-storage-linux-amd
 	GOOS=linux GOARCH=amd64 make build-linux-deb
 
 linux-arm64-all:
-	make download-storage-linux-arm
 	GOOS=linux GOARCH=arm64 make build-linux-deb
