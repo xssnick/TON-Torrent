@@ -1,7 +1,7 @@
 # TON Torrent
 [![Based on TON][ton-svg]][ton] [![Join our group][join-svg]][tg]
 
-TON Storage UI based on [tonutils-storage](https://github.com/xssnick/tonutils-storage), with optional storage-daemon support mode.
+TON Storage UI based on [tonutils-storage](https://github.com/xssnick/tonutils-storage), with storage-daemon support mode.
 
 ## Getting started
 
