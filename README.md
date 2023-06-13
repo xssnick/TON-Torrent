@@ -22,10 +22,10 @@ TON Storage UI based on [tonutils-storage](https://github.com/xssnick/tonutils-s
 ------
 After installation, you could click **Add Torrent** and download `85d0998dcf325b6fee4f529d4dcf66fb253fc39c59687c82a0ef7fc96fed4c9f` to see how it works.
 
-You could also create torrent from some of your folders and share bag id or meta file with any of your friends, but keep in mind that one of you should have public ip address, alternatively you could use one of the storage providers to host your files.
+You could also create torrent from some of your folders and share bag id or meta file with your friends, but keep in mind, that at least one of you should have public ip address, alternatively you could use one of the storage providers to host your files.
 
 On the first start, this program will try to resolve your external IP and check port availability, if ports are closen then you can download only from peers with public IP (similar to regular torrent).
-You could always enable seed mode in settings and set external ip manualy, for example if check failed because of something else. 
+You could always enable seed mode in settings and set external ip manualy, for example, if check failed because of something else. 
 
 ## Switching to original storage-daemon
 
