@@ -117,7 +117,7 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                         </label>
                     </div>
                     <hr className="config"/>
-                    <label className="checkbox-file daemon" style={{display: this.state.useTonutils ? 'block' : 'none'}}>Seed mode
+                    <label className="checkbox-file daemon" style={{display: this.state.useTonutils ? 'block' : 'none'}}>Static seed mode
                         <input type="checkbox" className="file-to-download" checked={this.state.seedFiles} onChange={(e) => {
                             this.setState((current) => ({...current, seedFiles: !this.state.seedFiles}))
                         }}/>

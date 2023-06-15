@@ -82,7 +82,7 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to init downloader gateway: %w", err)
 	}
 
-	srv := storage.NewServer(dhtClient, gate, cfg.Key, serverMode)
+	srv := storage.NewServer(dhtClient, gate, cfg.Key, serverMode, true)
 
 	c.connector = storage.NewConnector(srv)
 	c.storage, err = db.NewStorage(ldb, c.connector, false)
@@ -127,7 +127,7 @@ func (c *Client) AddByHash(ctx context.Context, hash []byte, dir string) (*clien
 		tor.BagID = hash
 	}
 
-	if err := tor.Start(true, false); err != nil {
+	if err := tor.Start(true, false, false); err != nil {
 		return nil, fmt.Errorf("download error: %w", err)
 	}
 
@@ -158,7 +158,7 @@ func (c *Client) AddByMeta(ctx context.Context, meta []byte, dir string) (*clien
 		tor.InitMask()
 	}
 
-	if err = tor.Start(true, false); err != nil {
+	if err = tor.Start(true, false, false); err != nil {
 		return nil, fmt.Errorf("download error: %w", err)
 	}
 
@@ -168,12 +168,17 @@ func (c *Client) AddByMeta(ctx context.Context, meta []byte, dir string) (*clien
 	return c.GetTorrentFull(ctx, tor.BagID)
 }
 
-func (c *Client) CreateTorrent(ctx context.Context, dir, description string) (*client.TorrentFull, error) {
-	it, err := storage.CreateTorrent(dir, description, c.storage, c.connector)
+func (c *Client) CreateTorrent(ctx context.Context, path, description string) (*client.TorrentFull, error) {
+	rootPath, dir, files, err := c.storage.DetectFileRefs(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read files: %w", err)
+	}
+
+	it, err := storage.CreateTorrent(ctx, rootPath, dir, description, c.storage, c.connector, files)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bag: %w", err)
 	}
-	it.Start(true, false)
+	it.Start(true, false, false)
 
 	err = c.storage.SetTorrent(it)
 	if err != nil {
@@ -345,7 +350,7 @@ func (c *Client) SetActive(ctx context.Context, hash []byte, active bool) error 
 	if !active {
 		t.Stop()
 	} else {
-		err := t.Start(true, false)
+		err := t.Start(true, false, false)
 		if err != nil {
 			return err
 		}
