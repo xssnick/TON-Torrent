@@ -194,7 +194,7 @@ export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
                 </div>
                 <div style={this.state.selectFilesStage ? {display: "none"} : {width: "455px"}} className="add-torrent-block">
                     <span className="title">Bag ID</span>
-                    <input id="torrent-hash-field" required={true} placeholder="Insert Bag ID..." onChange={(v) => {
+                    <input id="torrent-hash-field" required={true} autoFocus={true} placeholder="Insert Bag ID..." onChange={(v) => {
                         this.setState((current) => ({...current, err: this.state.err, fieldMeta: undefined, fieldHash: v.target.value,
                             canContinue: v.target.value.length == 64}));
                         (document.getElementById("file-select") as HTMLInputElement).value = "";
