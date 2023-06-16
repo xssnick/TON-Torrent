@@ -60,7 +60,7 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
                 </div>
                 <div style={this.state.createdStage ? {display: "none"} : {width: "330px"}} className="add-torrent-block">
                     <span className="title">Torrent name</span>
-                    <input className="torrent-name-input" maxLength={100} onInput={(e) => {
+                    <input className="torrent-name-input" maxLength={100} autoFocus={true} onInput={(e) => {
                         let val = e.currentTarget.value;
                         let can = val.length > 0 && this.state.path.length > 0;
                         this.setState((current) => ({...current, name: val, canContinue: can}));
