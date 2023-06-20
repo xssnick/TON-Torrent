@@ -4,7 +4,7 @@
 
 // read file runtime
 - (BOOL) application:(NSApplication *)sender openFile:(NSString *)filename {
-    OnLoadFileFromPath([filename UTF8String]);
+    OnLoadFileFromPath((char*)[filename UTF8String]);
     return YES;
 }
 
@@ -21,7 +21,7 @@
 // read file on init
 - (BOOL) readFromData:(NSData *)data ofType:(NSString *)typeName error:(NSError **)outError {
     NSData *dataFromFile = [data retain];
-    OnLoadFile([dataFromFile bytes], (unsigned int)[dataFromFile length]);
+    OnLoadFile((char*)[dataFromFile bytes], (unsigned int)[dataFromFile length]);
     return YES;
 }
 
@@ -32,7 +32,7 @@
 
 // read url
 - (void)getURL:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)reply {
-    OnLoadURL([[[event paramDescriptorForKeyword:keyDirectObject] stringValue] UTF8String]);
+    OnLoadURL((char*)[[[event paramDescriptorForKeyword:keyDirectObject] stringValue] UTF8String]);
 }
 
 @end

@@ -5,6 +5,10 @@
 
 extern void HookDelegate();
 
+extern void OnLoadFileFromPath(char* path);
+extern void OnLoadFile(char* data, uint length);
+extern void OnLoadURL(char* u);
+
 @interface AppDelegateHooked : NSResponder<NSTouchBarProvider>
 
 @end
