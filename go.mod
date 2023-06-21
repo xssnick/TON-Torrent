@@ -6,9 +6,9 @@ require (
 	github.com/audrenbdb/goforeground v0.0.0-20220126120304-39261aeee000
 	github.com/jcuga/go-upnp v0.0.0-20160830125909-492b17f02cbb
 	github.com/syndtr/goleveldb v1.0.0
-	github.com/wailsapp/wails/v2 v2.3.1
+	github.com/wailsapp/wails/v2 v2.5.1
 	github.com/xssnick/tonutils-go v1.7.4-0.20230615165235-bfa3f0fb7dbc
-	github.com/xssnick/tonutils-storage v0.2.1
+	github.com/xssnick/tonutils-storage v0.2.4
 )
 
 require (
@@ -21,7 +21,6 @@ require (
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/gookit/color v1.5.3 // indirect
 	github.com/huin/goupnp v1.1.0 // indirect
-	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
 	github.com/labstack/echo/v4 v4.9.0 // indirect
 	github.com/labstack/gommon v0.3.1 // indirect
@@ -45,9 +44,9 @@ require (
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064 // indirect
+	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/exp v0.0.0-20220909182711-5c715a9e8561 // indirect
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/term v0.6.0 // indirect
