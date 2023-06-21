@@ -187,7 +187,7 @@ export class App extends Component<{}, State> {
                     </div>
                     <div className="version-block">
                         <div className="ver-info">
-                            <span>v0.1.2</span>
+                            <span>v0.1.3</span>
                             <button className="updates" onClick={()=>{
                                 BrowserOpenURL("https://github.com/xssnick/TON-Torrent/releases")
                             }}>Check updates</button>
