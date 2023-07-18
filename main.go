@@ -7,6 +7,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
+	"runtime"
 )
 
 //go:embed all:frontend/dist
@@ -16,6 +17,12 @@ func main() {
 	// Create an instance of the app structure
 	app := NewApp()
 
+	hideOnClose := false
+	if runtime.GOOS == "darwin" {
+		// TODO: it works fine only on mac, implement it for other os too
+		hideOnClose = true
+	}
+
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:             "TON Torrent",
@@ -24,7 +31,7 @@ func main() {
 		MinHeight:         487,
 		MinWidth:          800,
 		DisableResize:     false,
-		HideWindowOnClose: true,
+		HideWindowOnClose: hideOnClose,
 		BackgroundColour:  &options.RGBA{R: 0, G: 0, B: 0, A: 1},
 		AssetServer: &assetserver.Options{
 			Assets: assets,
