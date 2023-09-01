@@ -172,17 +172,17 @@ export class App extends Component<{}, State> {
             document.documentElement.style.setProperty('--table-border', "#4F4F53");
             document.documentElement.style.setProperty('--button-back', "rgba(255, 255, 255, 0.07)");
 
-            document.documentElement.style.setProperty("--search-img", "url(dark/search.svg)");
-            document.documentElement.style.setProperty("--close-img", "url(dark/close.svg)");
-            document.documentElement.style.setProperty("--play-img", "url(dark/play.svg)");
-            document.documentElement.style.setProperty("--pause-img", "url(dark/pause.svg)");
-            document.documentElement.style.setProperty("--close-disabled-img", "url(dark/close-disabled.svg)");
-            document.documentElement.style.setProperty("--play-disabled-img", "url(dark/play-disabled.svg)");
-            document.documentElement.style.setProperty("--pause-disabled-img", "url(dark/pause-disabled.svg)");
-            document.documentElement.style.setProperty("--settings-img", "url(dark/settings.svg)");
-            document.documentElement.style.setProperty("--theme-img", "url(dark/theme.svg)");
-            document.documentElement.style.setProperty("--copy-img", "url(dark/copy.svg)");
-            document.documentElement.style.setProperty("--expand-img", "url(dark/expand.svg)");
+            document.documentElement.style.setProperty("--search-img", "url(../dark/search.svg)");
+            document.documentElement.style.setProperty("--close-img", "url(../dark/close.svg)");
+            document.documentElement.style.setProperty("--play-img", "url(../dark/play.svg)");
+            document.documentElement.style.setProperty("--pause-img", "url(../dark/pause.svg)");
+            document.documentElement.style.setProperty("--close-disabled-img", "url(../dark/close-disabled.svg)");
+            document.documentElement.style.setProperty("--play-disabled-img", "url(../dark/play-disabled.svg)");
+            document.documentElement.style.setProperty("--pause-disabled-img", "url(../dark/pause-disabled.svg)");
+            document.documentElement.style.setProperty("--settings-img", "url(../dark/settings.svg)");
+            document.documentElement.style.setProperty("--theme-img", "url(../dark/theme.svg)");
+            document.documentElement.style.setProperty("--copy-img", "url(../dark/copy.svg)");
+            document.documentElement.style.setProperty("--expand-img", "url(../dark/expand.svg)");
         } else {
             document.documentElement.style.setProperty('--back', "#FFFFFF");
             document.documentElement.style.setProperty('--table-back', "#F7F9FB");
@@ -198,17 +198,17 @@ export class App extends Component<{}, State> {
             document.documentElement.style.setProperty('--table-border', "rgba(0, 0, 0, 0.16)");
             document.documentElement.style.setProperty('--button-back', "rgba(118, 152, 187, 0.12)");
 
-            document.documentElement.style.setProperty("--search-img", "url(light/search.svg)");
-            document.documentElement.style.setProperty("--close-img", "url(light/close.svg)");
-            document.documentElement.style.setProperty("--play-img", "url(light/play.svg)");
-            document.documentElement.style.setProperty("--pause-img", "url(light/pause.svg)");
-            document.documentElement.style.setProperty("--close-disabled-img", "url(light/close-disabled.svg)");
-            document.documentElement.style.setProperty("--play-disabled-img", "url(light/play-disabled.svg)");
-            document.documentElement.style.setProperty("--pause-disabled-img", "url(light/pause-disabled.svg)");
-            document.documentElement.style.setProperty("--settings-img", "url(light/settings.svg)");
-            document.documentElement.style.setProperty("--theme-img", "url(light/theme.svg)");
-            document.documentElement.style.setProperty("--copy-img", "url(light/copy.svg)");
-            document.documentElement.style.setProperty("--expand-img", "url(light/expand.svg)");
+            document.documentElement.style.setProperty("--search-img", "url(../light/search.svg)");
+            document.documentElement.style.setProperty("--close-img", "url(../light/close.svg)");
+            document.documentElement.style.setProperty("--play-img", "url(../light/play.svg)");
+            document.documentElement.style.setProperty("--pause-img", "url(../light/pause.svg)");
+            document.documentElement.style.setProperty("--close-disabled-img", "url(../light/close-disabled.svg)");
+            document.documentElement.style.setProperty("--play-disabled-img", "url(../light/play-disabled.svg)");
+            document.documentElement.style.setProperty("--pause-disabled-img", "url(../light/pause-disabled.svg)");
+            document.documentElement.style.setProperty("--settings-img", "url(../light/settings.svg)");
+            document.documentElement.style.setProperty("--theme-img", "url(../light/theme.svg)");
+            document.documentElement.style.setProperty("--copy-img", "url(../light/copy.svg)");
+            document.documentElement.style.setProperty("--expand-img", "url(../light/expand.svg)");
         }
 
         return (
