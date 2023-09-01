@@ -50,6 +50,10 @@ export function GetTorrents() {
   return window['go']['main']['App']['GetTorrents']();
 }
 
+export function IsDarkTheme() {
+  return window['go']['main']['App']['IsDarkTheme']();
+}
+
 export function OpenDir() {
   return window['go']['main']['App']['OpenDir']();
 }
@@ -88,6 +92,10 @@ export function ShowWarnMsg(arg1) {
 
 export function StartDownload(arg1, arg2) {
   return window['go']['main']['App']['StartDownload'](arg1, arg2);
+}
+
+export function SwitchTheme() {
+  return window['go']['main']['App']['SwitchTheme']();
 }
 
 export function Throw(arg1) {

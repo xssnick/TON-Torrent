@@ -9,10 +9,14 @@ import {
 } from "../../wailsjs/go/main/App";
 import {Refresh} from "./Table";
 import {baseModal} from "./Modal";
+import Upload from "../assets/images/icons/upload.svg";
+import FileLight from "../../public/light/file-popup.svg";
+import FileDark from "../../public/dark/file-popup.svg";
 
 interface State {
     selectFilesStage: boolean
     fieldHash?: string
+    fileName?: string
     fieldMeta?: ArrayBuffer
     err: string
 
@@ -24,6 +28,7 @@ interface State {
 interface AddTorrentModalProps {
     onExit: () => void
     openHash?: string
+    isDark: boolean
 }
 
 export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
@@ -186,33 +191,49 @@ export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
     render() {
         return baseModal(this.cancel, (
             <>
-                <div style={this.state.selectFilesStage ? {} : {display: "none"}} className="add-torrent-block">
+                <div style={(this.state.selectFilesStage && this.state.files.length == 0) ? {} : {display: "none"}} className="add-torrent-block">
+                    <span className="title">Searching for torrent info...</span>
                     <div className="files-selector">
-                        {this.state.files.length > 0 ? this.renderFiles(this.state.files) :
-                            <div className="loader-block"><span className="loader"/><span className="loader-text">Searching for torrent info...</span></div>}
+                        <div className="loader-block"><span className="loader"/></div>
                     </div>
                 </div>
-                <div style={this.state.selectFilesStage ? {display: "none"} : {width: "455px"}} className="add-torrent-block">
-                    <span className="title">Bag ID</span>
+                <div style={(this.state.selectFilesStage && this.state.files.length > 0) ? {} : {display: "none"}} className="add-torrent-block">
+                    <span className="title" style={{marginBottom: "5px"}}>Select files</span>
+                    <div className="files-selector">
+                        {this.renderFiles(this.state.files)}
+                    </div>
+                </div>
+                <div style={this.state.selectFilesStage ? {display: "none"} : {width: "287px"}} className="add-torrent-block">
+                    <span className="title">Add Torrent</span>
                     <input id="torrent-hash-field" required={true} autoFocus={true} placeholder="Insert Bag ID..." onChange={(v) => {
                         this.setState((current) => ({...current, err: this.state.err, fieldMeta: undefined, fieldHash: v.target.value,
                             canContinue: v.target.value.length == 64}));
                         (document.getElementById("file-select") as HTMLInputElement).value = "";
                     }} value={this.state.fieldHash} type="text"/>
-                    <span className="error">{this.state.err}</span>
-                    <hr className="hr-text" data-content="OR"/>
+                    <hr className="hr-text" data-content="or"/>
+                    <div className={"file-selector-ui "+ (this.state.fieldMeta !== undefined ? "selected" : "" )}>
+                        <img src={this.state.fieldMeta !== undefined ? (this.props.isDark ? FileDark : FileLight) : Upload}/>
+                        <label className="big">{this.state.fieldMeta !== undefined ? "File added" : "Select .tonbag file" }</label>
+                        <label>{this.state.fieldMeta !== undefined ? this.state.fileName : "Click or drag and drop file here."}</label>
+                    </div>
                     <input id="file-select" type="file" className="file" accept=".tonbag" required={true} onInput={(e)=> {
                         let reader = new FileReader();
                         let fileInput = e.target as HTMLInputElement;
                         if (fileInput && fileInput.files) {
+                            let name = fileInput.files[0].name;
+                            if(!name.endsWith(".tonbag")) {
+                                return;
+                            }
+
                             reader.readAsArrayBuffer(fileInput.files[0]);
                             reader.onload = (ev) => {
                                 if (ev.type === "load") {
-                                    this.setState((current) => ({...current, fieldHash: undefined, fieldMeta: reader.result as ArrayBuffer, canContinue: true}))
+                                    this.setState((current) => ({...current, fileName: name, fieldHash: undefined, fieldMeta: reader.result as ArrayBuffer, canContinue: true}))
                                 }
                             }
                         }
                     }}/>
+                    <span className="error">{this.state.err}</span>
                 </div>
                 <div className="modal-control">
                     <button className="second-button" onClick={this.cancel}>

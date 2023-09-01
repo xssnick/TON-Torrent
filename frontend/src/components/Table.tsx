@@ -7,9 +7,9 @@ import {
     WantRemoveTorrent
 } from "../../wailsjs/go/main/App";
 import {EventsEmit, EventsOff, EventsOn} from "../../wailsjs/runtime";
-import Play from "../assets/images/icons/play.svg";
-import Pause from "../assets/images/icons/pause.svg";
-import Close from "../assets/images/icons/close.svg";
+import Play from "../../public/light/play.svg";
+import Pause from "../../public/light/pause.svg";
+import Close from "../../public/light/close.svg";
 import OpenDir from "../assets/images/icons/open-folder.svg";
 import Export from "../assets/images/icons/export.svg";
 
@@ -233,13 +233,13 @@ export class Table extends Component<TableProps,State> {
                                   this.setState((current) => ({ ...current, contextShow: false, contextItems: []}))
                               }, { once: true });
                            }}>
-                <td onMouseEnter={(e) =>{
+                <td style={{flexGrow:"1", width: "70px"}}><div className={"item-name"}><div className={"item-state-container"} onMouseEnter={(e) =>{
                     let tip = document.getElementById("tip");
                     tip!.textContent = textState(t.state, t.peersNum);
                     let rectItem = document.getElementById("state-"+t.id)!.getBoundingClientRect()
                     let rectTip = tip!.getBoundingClientRect();
 
-                    tip!.style.top =  (rectItem.y - (rectTip.height + 5)).toString()+"px";
+                    tip!.style.top =  (rectItem.y - (rectTip.height + 12)).toString()+"px";
                     tip!.style.left = (rectItem.x - (rectTip.width/2 - rectItem.width/2)).toString()+"px";
 
                     tip!.style.opacity = "1";
@@ -250,17 +250,17 @@ export class Table extends Component<TableProps,State> {
                         tip!.style.opacity = "0";
                         tip!.style.visibility = "hidden";
                     }
-                }><div id={"state-"+t.id} className={"item-state "+(t.state == 'downloading' && t.peersNum == 0 ? 'searching' : t.state)}></div></td>
-                <td style={{maxWidth:"197px"}}>{t.name}</td>
-                <td className={"small"}>{t.size}</td>
-                <td className={"small"}>{t.peersNum}</td>
-                <td><div className="progress-block-small">
-                    <span style={{textAlign:"left", width:"27px"}}>{t.progress}%</span>
+                }><div id={"state-"+t.id} className={"item-state "+(t.state == 'downloading' && t.peersNum == 0 ? 'searching' : t.state)}></div></div><span>{t.name}</span></div></td>
+                <td style={{width:"130px"}}><div className="progress-block-small">
+                    <span style={{textAlign:"left", width:"38px"}}>{t.progress}%</span>
                     <div className="progress-bar-small-form">
                         <div className="progress-bar-small" style={{width: t.progress+"%"}}></div>
-                    </div></div></td>
-                <td className={"small"}>{t.downloadSpeed}</td>
-                <td className={"small"}>{t.uploadSpeed}</td>
+                    </div></div>
+                </td>
+                <td style={{width:"80px"}}>{t.size}</td>
+                <td style={{width:"60px", justifyContent: "flex-end"}}>{t.peersNum}</td>
+                <td style={{width:"95px", justifyContent: "flex-end"}}>{t.downloadSpeed}</td>
+                <td style={{width:"95px", justifyContent: "flex-end", paddingRight:"12px"}}>{t.uploadSpeed}</td>
             </tr>);
         }
         return items;
@@ -275,16 +275,15 @@ export class Table extends Component<TableProps,State> {
             </div>
             <thead>
             <tr>
-                <th style={{width:"23px"}}></th>
-                <th>Description</th>
-                <th style={{width:"80px"}}>Size</th>
-                <th style={{width:"60px"}}>Peers</th>
-                <th style={{width:"150px"}}>Progress</th>
-                <th style={{width:"90px"}}>Download</th>
-                <th style={{width:"90px"}}>Upload</th>
+                <th style={{flexGrow:"1"}}>Name</th>
+                <th style={{width:"130px"}}>Progress</th>
+                <th style={{width:"80px", justifyContent: "flex-end"}}>Size</th>
+                <th style={{width:"60px", justifyContent: "flex-end"}}>Peers</th>
+                <th style={{width:"95px", justifyContent: "flex-end"}}>Download</th>
+                <th style={{width:"95px", justifyContent: "flex-end", paddingRight:"12px"}}>Upload</th>
             </tr>
             </thead>
-            <tbody>
+            <tbody style={{overflowX: "auto"}}>
             {this.renderTorrentsList()}
             </tbody>
         </table>

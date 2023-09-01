@@ -1,11 +1,14 @@
 import React, {MouseEvent, Component} from 'react';
-import Logo from "./assets/images/logo.svg"
-import Download from "./assets/images/icons/download.svg"
+import LogoLight from "../public/light/logo.svg"
+import ResizerLight from "../public/light/resizer.svg"
+import DownloadLight from "../public/light/download.svg"
+import LogoDark from "../public/dark/logo.svg"
+import ResizerDark from "../public/dark/resizer.svg"
+import DownloadDark from "../public/dark/download.svg"
 import './tooltip.css';
-import './modal.scss';
 import {Filter, Refresh, SelectedTorrent, Table} from "./components/Table";
 import {AddTorrentModal} from "./components/ModalAddTorrent";
-import {WaitReady, SetActive, WantRemoveTorrent} from "../wailsjs/go/main/App";
+import {WaitReady, SetActive, WantRemoveTorrent, SwitchTheme, IsDarkTheme} from "../wailsjs/go/main/App";
 import {FiltersMenu} from "./components/FiltersMenu";
 import {BrowserOpenURL, EventsOn} from "../wailsjs/runtime";
 import {FilesTorrentMenu} from "./components/FilesTorrentMenu";
@@ -16,6 +19,7 @@ import {SettingsModal} from "./components/ModalSettings";
 import {RemoveConfirmModal} from "./components/ModalRemoveConfirm";
 
 interface State {
+    isDark: boolean
     selectedItems:  SelectedTorrent[]
     infoSize: number
     tableFilter: Filter
@@ -39,6 +43,7 @@ export class App extends Component<{}, State> {
         super(props, state);
 
         this.state = {
+            isDark: false,
             selectedItems: [],
             infoSize: 150,
             tableFilter: {
@@ -90,7 +95,10 @@ export class App extends Component<{}, State> {
         this.setState((current)=>({...current, showRemoveConfirmModal: !this.state.showRemoveConfirmModal, removeHashes: undefined}))
     }
 
-    componentDidMount() {
+    async componentDidMount() {
+        let dark = await IsDarkTheme();
+        this.setState((current)=>({...current, isDark: dark}))
+
         EventsOn("want_remove_torrent", (hashes: string[]) => {
             this.setState((current)=>({...current, removeHashes: hashes, showRemoveConfirmModal: true}))
         })
@@ -128,7 +136,7 @@ export class App extends Component<{}, State> {
         const startPosition = { x: mouseDownEvent.pageX, y: mouseDownEvent.pageY };
 
         const onMouseMove = (mouseMoveEvent: any) => {
-            let topH = document.getElementsByClassName("top-bar")![0].getBoundingClientRect().height;
+            let topH = document.getElementsByClassName("top-bar")![0].getBoundingClientRect().height+50;
             let botH = document.getElementsByClassName("foot-bar")![0].getBoundingClientRect().height;
 
             let sz = startSize + startPosition.y - mouseMoveEvent.pageY;
@@ -136,8 +144,8 @@ export class App extends Component<{}, State> {
                 sz = window.innerHeight-(topH+botH)
             }
 
-            if (sz < 20) {
-                sz = 20
+            if (sz < 40) {
+                sz = 40
             }
             this.setState((current)=>({...current, infoSize: sz}));
         }
@@ -149,21 +157,74 @@ export class App extends Component<{}, State> {
     }
 
     render() {
+        if (this.state.isDark) {
+            document.documentElement.style.setProperty('--back', "#232328");
+            document.documentElement.style.setProperty('--table-back', "#2D2D32");
+            document.documentElement.style.setProperty('--card-border', "transparent");
+            document.documentElement.style.setProperty('--text-primary', "#F3F3F6");
+            document.documentElement.style.setProperty('--text-secondary', "#ACACAF");
+            document.documentElement.style.setProperty('--torrent-menu-active', "rgba(255, 255, 255, 0.07)");
+            document.documentElement.style.setProperty('--torrent-menu-inactive', "#36363C");
+            document.documentElement.style.setProperty('--button-stroke', "#303035");
+            document.documentElement.style.setProperty('--separator-alpha', "#4F4F53");
+            document.documentElement.style.setProperty('--drop-border', "#303035");
+            document.documentElement.style.setProperty('--drop-back', "transparent");
+            document.documentElement.style.setProperty('--table-border', "#4F4F53");
+            document.documentElement.style.setProperty('--button-back', "rgba(255, 255, 255, 0.07)");
+
+            document.documentElement.style.setProperty("--search-img", "url(dark/search.svg)");
+            document.documentElement.style.setProperty("--close-img", "url(dark/close.svg)");
+            document.documentElement.style.setProperty("--play-img", "url(dark/play.svg)");
+            document.documentElement.style.setProperty("--pause-img", "url(dark/pause.svg)");
+            document.documentElement.style.setProperty("--close-disabled-img", "url(dark/close-disabled.svg)");
+            document.documentElement.style.setProperty("--play-disabled-img", "url(dark/play-disabled.svg)");
+            document.documentElement.style.setProperty("--pause-disabled-img", "url(dark/pause-disabled.svg)");
+            document.documentElement.style.setProperty("--settings-img", "url(dark/settings.svg)");
+            document.documentElement.style.setProperty("--theme-img", "url(dark/theme.svg)");
+            document.documentElement.style.setProperty("--copy-img", "url(dark/copy.svg)");
+            document.documentElement.style.setProperty("--expand-img", "url(dark/expand.svg)");
+        } else {
+            document.documentElement.style.setProperty('--back', "#FFFFFF");
+            document.documentElement.style.setProperty('--table-back', "#F7F9FB");
+            document.documentElement.style.setProperty('--card-border', "#DDE3E6");
+            document.documentElement.style.setProperty('--text-primary', "#04060B");
+            document.documentElement.style.setProperty('--text-secondary', "#728A96");
+            document.documentElement.style.setProperty('--torrent-menu-active', "rgba(118, 152, 187, 0.12)");
+            document.documentElement.style.setProperty('--torrent-menu-inactive', "#EDF1F6");
+            document.documentElement.style.setProperty('--button-stroke', "#E9EEF1");
+            document.documentElement.style.setProperty('--separator-alpha', "#DFE5E8");
+            document.documentElement.style.setProperty('--drop-border', "#E9EEF1");
+            document.documentElement.style.setProperty('--drop-back', "#EDF1F6");
+            document.documentElement.style.setProperty('--table-border', "rgba(0, 0, 0, 0.16)");
+            document.documentElement.style.setProperty('--button-back', "rgba(118, 152, 187, 0.12)");
+
+            document.documentElement.style.setProperty("--search-img", "url(light/search.svg)");
+            document.documentElement.style.setProperty("--close-img", "url(light/close.svg)");
+            document.documentElement.style.setProperty("--play-img", "url(light/play.svg)");
+            document.documentElement.style.setProperty("--pause-img", "url(light/pause.svg)");
+            document.documentElement.style.setProperty("--close-disabled-img", "url(light/close-disabled.svg)");
+            document.documentElement.style.setProperty("--play-disabled-img", "url(light/play-disabled.svg)");
+            document.documentElement.style.setProperty("--pause-disabled-img", "url(light/pause-disabled.svg)");
+            document.documentElement.style.setProperty("--settings-img", "url(light/settings.svg)");
+            document.documentElement.style.setProperty("--theme-img", "url(light/theme.svg)");
+            document.documentElement.style.setProperty("--copy-img", "url(light/copy.svg)");
+            document.documentElement.style.setProperty("--expand-img", "url(light/expand.svg)");
+        }
+
         return (
             <div id="App">
                 <div className="daemon-waiter" style={this.state.ready ? {display: "none"} : {}}>
                     <div className="loader-block">
-                        <span className="loader"/><span className="loader-text">Preparing TON Storage...</span>
+                        <span className="loader"/>
                     </div>
                 </div>
-                {this.state.showAddTorrentModal ? <AddTorrentModal openHash={this.state.openFileHash} onExit={this.toggleAddTorrentModal}/> : null}
+                {this.state.showAddTorrentModal ? <AddTorrentModal openHash={this.state.openFileHash} onExit={this.toggleAddTorrentModal} isDark={this.state.isDark}/> : null}
                 {this.state.showCreateTorrentModal ? <CreateTorrentModal onExit={this.toggleCreateTorrentModal}/> : null}
                 {this.state.showSettingsModal ? <SettingsModal onExit={this.toggleSettingsModal}/> : null}
-                {this.state.showRemoveConfirmModal ? <RemoveConfirmModal hashes={this.state.removeHashes!}  onExit={this.toggleRemoveConfirmModal}/> : null}
+                {this.state.showRemoveConfirmModal ? <RemoveConfirmModal hashes={this.state.removeHashes!}  onExit={this.toggleRemoveConfirmModal} isDark={this.state.isDark}/> : null}
                 <div className="left-bar">
                     <div className="logo-block">
-                        <img className="logo-img" src={Logo} alt=""/>
-                        <label className="logo-text">TON Torrent</label>
+                        <img className="logo-img" src={this.state.isDark ? LogoDark : LogoLight} alt=""/>
                     </div>
                     <div className="menu-block">
                         <FiltersMenu onChanged={(v) => {
@@ -173,31 +234,20 @@ export class App extends Component<{}, State> {
                                 }}));
                             Refresh();
                         }}/>
-                        <div className="actions-menu">
-                            <button className="menu-item main" onClick={this.toggleAddTorrentModal}>
-                                Add Torrent
-                            </button>
-                            <button className="menu-item" onClick={this.toggleCreateTorrentModal}>
-                                Create Torrent
-                            </button>
-                            <button className="menu-item" onClick={this.toggleSettingsModal}>
-                                Settings
-                            </button>
-                        </div>
                     </div>
-                    <div className="version-block">
-                        <div className="ver-info">
-                            <span>v0.1.4</span>
-                            <button className="updates" onClick={()=>{
-                                BrowserOpenURL("https://github.com/xssnick/TON-Torrent/releases")
-                            }}>Check updates</button>
-                        </div>
+                    <div className="actions-menu">
+                        <button className="menu-item main" onClick={this.toggleAddTorrentModal}>
+                            Add
+                        </button>
+                        <button className="menu-item secondary" onClick={this.toggleCreateTorrentModal}>
+                            Create
+                        </button>
                     </div>
                 </div>
                 <div className="right-screen">
                     <div className="top-bar">
                         <div className="top-buttons-container">
-                            <button className={this.hasInactiveTorrents() ? "top-button start" : "top-button start disabled"} disabled={!this.hasInactiveTorrents()} onClick={() => {
+                            <button className={this.hasInactiveTorrents() ? "top-button start" : "top-button start disabled"} style={{marginLeft: 0}} disabled={!this.hasInactiveTorrents()} onClick={() => {
                                 this.state.selectedItems.forEach((t) => {
                                     SetActive(t.hash, true).then(Refresh)
                                 })
@@ -207,18 +257,27 @@ export class App extends Component<{}, State> {
                                     SetActive(t.hash, false).then(Refresh)
                                 })
                             }}/>
-                            <button className={this.state.selectedItems.length > 0 ? "top-button remove" : "top-button remove disabled"} disabled={this.state.selectedItems.length == 0} onClick={() => {
+                            <button className={this.state.selectedItems.length > 0 ? "top-button remove" : "top-button remove disabled"} style={{marginRight: 0}} disabled={this.state.selectedItems.length == 0} onClick={() => {
                                 WantRemoveTorrent(this.state.selectedItems.map(s => s.hash)).then(Refresh);
                             }}/>
                         </div>
-                        <input type="text" className="search-input" placeholder="Search..." onChange={(e) => {
-                            this.setState((current)=>({...current, tableFilter: {
-                                    type: this.state.tableFilter.type,
-                                    search: e.target.value,
-                                }}));
-                        }}/>
+                        <div className={"top-right"}>
+                            <input type="text" className="search-input" placeholder="Search..." onChange={(e) => {
+                                this.setState((current)=>({...current, tableFilter: {
+                                        type: this.state.tableFilter.type,
+                                        search: e.target.value,
+                                    }}));
+                            }}/>
+                            <div className="top-buttons-container-right">
+                                <button className={"top-button settings"} style={{marginLeft: 0}} onClick={this.toggleSettingsModal}/>
+                                <button className={"top-button theme"} style={{marginRight: 0}} onClick={() => {
+                                    SwitchTheme().then();
+                                    this.setState((current)=>({...current, isDark: !this.state.isDark}));
+                                }}/>
+                            </div>
+                        </div>
                     </div>
-                    <div className="torrents-table" style={{height: "50%", maxWidth: '100%', overflowX: "auto"}}>
+                    <div className="torrents-table">
                         <Table filter={this.state.tableFilter} onSelect={(sl) => {
                             let menu = this.state.torrentMenuSelected;
                             if (menu == -1 && sl.length > 0) {
@@ -238,6 +297,9 @@ export class App extends Component<{}, State> {
                                 <button disabled={this.state.torrentMenuSelected == 2 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(2)}>Peers</button>
                             </div>
                             <div onMouseDown={this.extendInfoEvent} className="size-scroller"></div>
+                            <div className="buttons-block">
+                                <img style={{cursor: "ns-resize"}} onMouseDown={this.extendInfoEvent} src={this.state.isDark ? ResizerDark : ResizerLight}/>
+                            </div>
                         </div>
                         <div className="torrent-body">
                             {this.state.torrentMenuSelected == 0 ? <InfoTorrentMenu torrent={this.state.selectedItems[0].hash}/> : ""}
@@ -247,8 +309,8 @@ export class App extends Component<{}, State> {
                     </div> : ""}
                     <div className="foot-bar">
                         <div className="speed">
-                            <span><img src={Download} alt=""/>{this.state.overallDownloadSpeed}</span>
-                            <span><img className="upload" src={Download} alt=""/>{this.state.overallUploadSpeed}</span>
+                            <span><img src={this.state.isDark ? DownloadDark : DownloadLight} alt=""/>{this.state.overallDownloadSpeed}</span>
+                            <span><img className="upload" src={this.state.isDark ? DownloadDark : DownloadLight} alt=""/>{this.state.overallUploadSpeed}</span>
                         </div>
                     </div>
                 </div>

@@ -441,6 +441,15 @@ func (a *App) RemoveTorrent(hash string, withFiles, onlyNotInitiated bool) strin
 	return ""
 }
 
+func (a *App) IsDarkTheme() bool {
+	return a.config.IsDarkTheme
+}
+
+func (a *App) SwitchTheme() {
+	a.config.IsDarkTheme = !a.config.IsDarkTheme
+	a.config.SaveConfig(a.rootPath)
+}
+
 func (a *App) GetConfig() *Config {
 	return a.config
 }

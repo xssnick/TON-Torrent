@@ -1,5 +1,4 @@
 import React, {FunctionComponent, useState} from 'react';
-import FilterCheck from "../assets/images/icons/check.svg";
 
 export interface FilterProps {
     onChanged: (filter: string) => void;
@@ -18,12 +17,11 @@ export const FiltersMenu: FunctionComponent<FilterProps> = (props: FilterProps) 
 
             if (selected == i) {
                 items.push(<button className={"menu-item selected"} onClick={menuClick}>
-                    <img style={{width: "6%"}} src={FilterCheck} alt=""/>
-                    <span style={{width:"85%", textAlign:"center", marginRight:"6%"}}>{str}</span>
+                    <span style={{width:"100%", textAlign:"left", marginLeft:"16px"}}>{str}</span>
                 </button>)
             } else {
                 items.push(<button className={"menu-item not-selected"} onClick={menuClick}>
-                    <span style={{width:"100%", textAlign:"center"}}>{str}</span>
+                    <span style={{width:"100%", textAlign:"left", marginLeft:"16px"}}>{str}</span>
                 </button>)
             }
         })
@@ -31,8 +29,6 @@ export const FiltersMenu: FunctionComponent<FilterProps> = (props: FilterProps) 
     }
 
     return (<div className="filters-menu">
-            <h6>Torrents</h6>
-            <hr/>
             {renderTorrentsList()}
         </div>);
     };

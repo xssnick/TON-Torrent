@@ -27,6 +27,8 @@ export function GetSpeedLimit():Promise<api.SpeedLimits>;
 
 export function GetTorrents():Promise<Array<api.Torrent>>;
 
+export function IsDarkTheme():Promise<boolean>;
+
 export function OpenDir():Promise<string>;
 
 export function OpenFolder(arg1:string):Promise<void>;
@@ -46,6 +48,8 @@ export function ShowMsg(arg1:string):Promise<void>;
 export function ShowWarnMsg(arg1:string):Promise<void>;
 
 export function StartDownload(arg1:string,arg2:Array<string>):Promise<void>;
+
+export function SwitchTheme():Promise<void>;
 
 export function Throw(arg1:Error):Promise<void>;
 
