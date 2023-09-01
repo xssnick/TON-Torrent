@@ -140,6 +140,10 @@ img {
     flex-direction: row;
 }
 
+::-webkit-scrollbar {
+    display: none;
+}
+
 .torrents-table table tbody {
     display: block;
     overflow-x: auto;
