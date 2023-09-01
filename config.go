@@ -17,6 +17,7 @@ type Config struct {
 	ListenAddr    string
 	Key           []byte
 
+	IsDarkTheme       bool
 	UseDaemon         bool
 	DaemonDBPath      string
 	DaemonControlAddr string

@@ -1,10 +1,4 @@
 
-$baseBack: #F7F9FB;
-$ton: rgba(0, 136, 204, 0.85);
-$border: #dadada;
-$borderHover: #969696;
-$text-black: #232328;
-
 .modal-wrap {
   position: fixed;
   top: 50%;
@@ -20,7 +14,7 @@ $text-black: #232328;
   height: 100%;
   top: 0;
   left: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.40);
   z-index: 500;
 }
 
@@ -28,16 +22,16 @@ $text-black: #232328;
   display: flex;
   flex-direction: column;
   z-index: 100;
-  background: $baseBack;
+  background: var(--back, $baseBack);
   position: relative;
   margin: auto;
   border-radius: 10px;
-  box-shadow: rgba(30, 33, 37, 0.47) 0px 2px 6px;
-  border: solid 1px rgba(30, 33, 37, 0.65);
 }
 
 .modal-content {
-  padding: 15px 15px;
+  display: flex;
+  margin: auto;
+  padding: 12px 12px;
   overflow-y: auto;
 }
 
@@ -45,21 +39,199 @@ $text-black: #232328;
   display: flex;
   flex-direction: column;
   input {
-    width: 90%;
+    width: 100%;
     height: 100%;
     margin: auto;
-    padding: 5px 10px;
-    border-radius: 30px;
-    border: solid 1px $border;
-    background-color:white;
-    text-align: center;
+    padding: 6px 12px;
 
-    font-size: 10px;
-    font-family: "JetBrains Mono",monospace;
-    color: $text-black;
+    border-radius: 40px;
+    border: 0.5px solid var(--card-border, $cardBorderDefault);
+    background: var(--table-back, $tableBack);
+
+    font-variant-numeric: lining-nums tabular-nums;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 20px;
+    letter-spacing: -0.008px;
+
+    color: var(--text-primary, $text-black);
+  }
+  input::placeholder {
+    color: var(--text-secondary, $secondaryText);
+  }
+  input:focus {
+    outline: 1px solid $ton;
+    box-shadow: 0px 0px 0px 3px rgba(7, 172, 255, 0.10);
+    border: 0.5px solid var(--card-border, $cardBorderDefault);
+  }
+  .title {
+    margin-bottom: 12px;
+    color: var(--text-primary, $text-black);
+    text-align: center;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 24px; /* 150% */
+    letter-spacing: -0.018px;
+  }
+  .field-name {
+    padding-left: 12px;
+    margin-bottom: 4px;
+    color: var(--text-primary, $text-black);
+    font-variant-numeric: lining-nums tabular-nums;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 18px; /* 150% */
+    letter-spacing: -0.007px;
   }
   .torrent-name-input {
     margin-bottom: 8px;
+  }
+  input.invalid {
+    outline: none;
+    border: solid 1px red;
+  }
+  input.file {
+    height: 114px;
+    border-radius: 10px;
+    border: 1px dashed var(--drop-border, $drop-border);
+    padding: 12px 12px 16px 12px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: transparent;
+    cursor: pointer;
+
+  }
+  input.file::file-selector-button {
+    display: none;
+  }
+  input.file:hover {
+    background: var(--table-back, $tableBack);
+  }
+  .file-selector-ui {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+
+    width: 286px;
+    height: 114px;
+    border-radius: 10px;
+    pointer-events: none;
+    padding: 12px;
+
+    top: 121px;
+    left: 12px;
+    img {
+      height: 40px;
+      margin-bottom: 8px;
+    }
+    label {
+      width: 100%;
+      color: var(--text-secondary, $secondaryText);
+      text-align: center;
+      font-variant-numeric: lining-nums tabular-nums;
+      font-size: 12px;
+      font-style: normal;
+      font-weight: 400;
+      line-height: 18px; /* 150% */
+      letter-spacing: -0.007px;
+    }
+    .big {
+      width: 100%;
+      text-align: center;
+      font-variant-numeric: lining-nums tabular-nums;
+      color: var(--text-primary, $text-black);
+      font-size: 14px;
+      font-style: normal;
+      font-weight: 600;
+      line-height: 20px; /* 142.857% */
+      letter-spacing: -0.008px;
+    }
+  }
+  .files-block {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    .file-item {
+      display: flex;
+      flex-direction: column;
+      height: 66px;
+      width: 90px;
+
+      img {
+        height: 40px;
+      }
+
+      .name {
+        margin-top: 4px;
+        text-align: center;
+        text-overflow: ellipsis;
+        color: var(--text-primary, $text-black);
+        font-variant-numeric: lining-nums tabular-nums;
+        font-size: 12px;
+        font-style: normal;
+        font-weight: 400;
+        line-height: 18px;
+        letter-spacing: -0.007px;
+      }
+    }
+  }
+  .success {
+    display: flex;
+    width: 46px;
+    height: 46px;
+    padding: 9px;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+
+    border-radius: 100px;
+    background: var(--dark-feedback-colors-success, #32D583);
+    background-image: url("assets/images/icons/check.svg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 28px 28px;
+
+    margin-bottom: 17px;
+  }
+  .created-hash {
+    font-size: 10px;
+  }
+  .title {
+    margin-bottom: 12px;
+    color: var(--text-primary, $text-black);
+    text-align: center;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 24px; /* 150% */
+    letter-spacing: -0.018px;
+  }
+  .title.big {
+    font-size: 14px;
+  }
+  .title.name {
+    padding-top: 8px;
+    font-size: 14px;
+    max-width: 400px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    font-weight: normal;
+  }
+
+  .error {
+    color: #c90000;
+    text-align: center;
+    font-size: 10px;
+    margin-top: 5px;
   }
 }
 
@@ -69,33 +241,34 @@ $text-black: #232328;
   flex-direction: column;
 }
 
-hr.config {
-  color: $borderHover;
-  margin: 10px 0 0;
-}
-
 .set-speed {
   margin-top: 10px;
   display: flex;
-
+  justify-content: space-between;
   .info {
     display: flex;
     flex-direction: column;
     align-items: center;
-    height: 50px;
-    margin: auto;
     input {
+      width: 137px;
+      padding: 6px 12px;
+      align-items: center;
+      gap: 10px;
+
       text-align: center;
-      font-size: 12px;
+      font-size: 14px;
+      font-style: normal;
+      font-weight: 400;
+      line-height: 20px; /* 142.857% */
+      letter-spacing: -0.008px;
       height: 30px;
-      width: 120px;
     }
     input::placeholder {
-      font-size: 16px;
-      color: $text-black;
+      font-variant-numeric: lining-nums tabular-nums;
+      color: var(--text-secondary, $secondaryText);
     }
       input+span:after {
-      content: '112';
+      content: '';
       position: absolute;
       top: 0;
       left: 0;
@@ -109,50 +282,9 @@ hr.config {
   }
 }
 
-.add-torrent-block input::placeholder {
-  color: #a6a6a6;
-}
-.add-torrent-block input.file {
-  border: dashed 1px $border;
-}
-
-.add-torrent-block input:focus {
-  outline: none;
-  border: solid 1px $borderHover;
-}
-
-.add-torrent-block input.invalid {
-  outline: none;
-  border: solid 1px red;
-}
-
-.add-torrent-block .title {
-  text-align: center;
-  margin-bottom: 7px;
-  font-size: 12px;
-  font-weight: bold;
-}
-.add-torrent-block .title.big {
-  font-size: 14px;
-}
-.add-torrent-block .title.name {
-  padding-top: 8px;
-  font-size: 14px;
-  max-width: 400px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-  font-weight: normal;
-}
-
-.add-torrent-block .error {
-  color: #c90000;
-  text-align: center;
-  font-size: 10px;
-  margin-top: 5px;
-}
-
 .hr-text {
+  margin-top: 12px;
+  margin-bottom: 12px;
   line-height: 0.5em;
   position: relative;
   outline: 0;
@@ -160,17 +292,24 @@ hr.config {
   text-align: center;
   height: 1em;
   opacity: 1;
+
+  font-variant-numeric: lining-nums tabular-nums;
   font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: -0.013px;
+
   &:before {
     content: '';
-    // use the linear-gradient for the fading effect
-    // use a solid background color for a solid bar
-    background: linear-gradient(to right, transparent, $borderHover, transparent);
+
+    border-radius: 20px;
+    background: var(--separator-alpha, $separator-alpha);
+
     position: absolute;
     left: 0;
     top: 50%;
     width: 100%;
-    height: 1px;
+    height: 0.5px;
   }
   &:after {
     content: attr(data-content);
@@ -179,106 +318,143 @@ hr.config {
 
     padding: 0 .4em;
     line-height: 1em;
-    color: #818181;
-    background-color: $baseBack;
+    color: var(--text-secondary, $secondaryText);
+    background-color: var(--back, $baseBack);
   }
 }
 
 .files-selector {
-  border-radius: 10px;
-  background-color: white;
   min-width: 300px;
-  min-height: 200px;
 
   padding: 5px;
   max-width: 430px;
   max-height: 300px;
   overflow: scroll;
   margin: auto;
-  border: dotted 1px rgba(0, 136, 204, 0.53);
 
   display: flex;
   flex-direction: column;
-}
-.files-selector::-webkit-scrollbar {
-  display: none;
+  ::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .modal-control {
   display: flex;
+  justify-content: space-between;
+  flex-grow: 1;
   align-items: center;
-  width: 300px;
-  margin: 18px auto 5px;
+  margin-top: 16px;
+  margin-bottom: 4px;
+}
+
+.modal-version {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  margin-top: 8px;
+  color: var(--text-secondary, $secondaryText);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 12px; /* 120% */
+  letter-spacing: -0.006px;
+  .version {
+    margin-right: 6px;
+  }
+  .check {
+    text-decoration-line: underline;
+    cursor: pointer;
+  }
 }
 
 .second-button {
-  margin: auto;
-  width: 100px;
-  flex-direction: column;
-  align-items: center;
-  padding: 3px 14px;
-  font-size: 13px;
-  border-radius: 6px;
-  justify-content: center;
   white-space: nowrap;
 
-  border: solid 1px rgba(0, 136, 204, 0.68);
-  color: $text-black;
-  background: white;
+  border-radius: 24px;
+  display: flex;
+  width: 137px;
+  padding: 6px 16px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 24px; /* 171.429% */
+  letter-spacing: -0.008px;
+
+  border: 1px solid var(--button-stroke, $buttonStroke);
+  color: var(--text-primary, $text-black);
+  background: var(--back, $baseBack);
   cursor: pointer;
+}
+.second-button:hover {
+  background: var(--table-back, $tableBack);
 }
 .second-button.black {
-  border: solid 1px $text-black;
+  border: solid 1px var(--text-primary, $text-black);
 }
 .main-button {
-  margin: auto;
-  width: 100px;
-  flex-direction: column;
+  display: flex;
+  width: 138px;
+  padding: 6px 16px;
+  justify-content: center;
   align-items: center;
-  padding: 3px 14px;
-  font-size: 13px;
-  border-radius: 6px;
+  gap: 10px;
+
+  flex-direction: column;
+  border-radius: 24px;
+  background: $ton;
+
+  color: var(--basic-white, #FFF);
+  text-align: center;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 24px; /* 171.429% */
+  letter-spacing: -0.008px;
 
   white-space: nowrap;
   border: solid 1px rgba(0, 136, 204, 0.68);
-  color: #fff;
   cursor: pointer;
-  background: linear-gradient(180deg, #029fd9 0%, #0088cc 100%);
 }
 .main-button:hover {
-  color: #fff;
-  background: linear-gradient(180deg, #03b1f1 0%, #029ae7 100%);
+  background: var(--accent-hover, #00A6FF);
 }
+
 .main-button:disabled {
-  color: #23232888;
-  border: solid 1px rgba(204, 204, 204, 0.68);
-  background: white;
+  border: none;
+  color: var(--text-secondary, $secondaryText);
+  background: var(--table-back, $tableBack);
   cursor: auto;
-}
-.second-button:active {
-  box-shadow: inset 0 0 3px #00000042;
 }
 .second-button.danger {
   width: auto;
   color: white;
-  background: linear-gradient(180deg, rgb(246,79,79) 0%, rgb(196, 66, 50) 100%);
-
-  border: solid 1px rgba(196, 66, 50, 0.68);
+  background: var(--dark-feedback-colors-error, #FF5C5C);
 }
 
 .checkbox-file {
-  margin: 3px 10px 0;
+  margin: 4px 0px 0;
   position: relative;
-  padding-left: 20px;
+  padding-left: 22px;
   font-size: 12px;
-  line-height: 14px;
+  line-height: 18px;
+  color: var(--text-primary, $text-black);
 }
 
 .checkbox-file.daemon {
-  margin: 10px auto auto;
-  font-size: 11px;
+  margin: 0;
+  color: var(--text-primary, $text-black);
 
-  font-weight: bold;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 20px; /* 142.857% */
+  letter-spacing: -0.008px;
 }
 
 .checkbox-file.folder {
@@ -287,12 +463,11 @@ hr.config {
 
 .checkbox-file .size {
   font-size: 9px;
-  color: $text-black;
-  font-family: "JetBrains Mono",monospace;
+  color: var(--text-primary, $text-black);
 }
 
 .checkbox-file button {
-  background-image: url(assets/images/icons/expand.svg);
+  background-image: var(--expand-img);
   background-position: center;
   background-repeat: no-repeat;
   background-size: 100% 100%;
@@ -318,25 +493,25 @@ hr.config {
   position: absolute;
   top: 0;
   left: 0;
-  height: 14px;
-  width: 14px;
-  border: solid 1px rgba(0, 136, 204, 0.68);
-  border-radius: 3px;
+  height: 16px;
+  width: 16px;
+
+  border-radius: 4.5px;
+  border: 0.5px solid var(--card-border, $cardBorderDefault);
+  background: var(--table-back, $tableBack);
+  cursor: pointer;
 }
 
-.checkbox-file:hover input ~ .checkmark {
-  background-color: rgba(0, 136, 204, 0.05);
-}
-
-/* Create the checkmark/indicator (hidden when not checked) */
 .checkmark:after {
   content: '';
+  border-radius: 4.5px;
+  background-color: $ton;
   background-image: url(assets/images/icons/check.svg);
   background-position: center;
   background-repeat: no-repeat;
-  background-size: 7px 7px;
-  height: 12px;
-  width: 12px;
+  background-size: 12px 12px;
+  height: 16px;
+  width: 16px;
   display: none;
 }
 
@@ -348,7 +523,7 @@ hr.config {
 .dir-space {
   display: flex;
   flex-direction: column;
-  margin: 0 15px 3px;
+  margin: 0 10px 0px;
 }
 
 .loader-block {
@@ -409,28 +584,28 @@ hr.config {
   height: 100%;
   top: 0;
   left: 0;
-  background: rgba(255, 255, 255, 0.81);
+  background: rgba(0, 0, 0, 0.40);
   z-index: 500;
   display: flex;
   flex-direction: column;
-  .loader-block {
-    margin: auto;
-    display: flex;
-    flex-direction: column;
-    height: 80px;
-  }
-  .loader {
-    width: 30px;
-    height: 30px;
-    border: 3px solid #0088cc;
-    border-bottom-color: transparent;
-    border-radius: 50%;
-    display: inline-block;
-    box-sizing: border-box;
-    animation: rotation 1s linear infinite;
-  }
-  .loader-text {
-    font-size: 18px;
-    padding-top: 5px;
-  }
+}
+
+.loader-block {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  height: 100px;
+  width: 100px;
+  border-radius: 10px;
+  background: var(--back, $baseBack);
+}
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 2.2px solid $ton;
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
 }

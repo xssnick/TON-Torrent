@@ -37,7 +37,7 @@ func main() {
 			Assets: assets,
 		},
 		Mac: &mac.Options{
-			Appearance: mac.NSAppearanceNameVibrantLight,
+			Appearance: mac.DefaultAppearance,
 		},
 		Windows:    &windows.Options{},
 		OnStartup:  app.startup,

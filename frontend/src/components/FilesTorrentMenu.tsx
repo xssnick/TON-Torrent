@@ -62,10 +62,10 @@ export class FilesTorrentMenu extends Component<FilesProps,State> {
         for (let t of this.state.files) {
             items.push(<tr onDoubleClick={() => {OpenFolderSelectFile(t.path).then()}}>
                 <td style={{maxWidth:"150px"}}>{t.name}</td>
-                <td className={"small"}>{t.size}</td>
-                <td className={"small"}>{t.downloaded}</td>
+                <td>{t.size}</td>
+                <td>{t.downloaded}</td>
                 <td><div className="progress-block-small">
-                    <span style={{textAlign:"left", width:"27px"}}>{t.progress}%</span>
+                    <span style={{textAlign:"left", width:"40px"}}>{t.progress}%</span>
                     <div className="progress-bar-small-form">
                         <div className="progress-bar-small" style={{width: t.progress+"%"}}></div>
                     </div></div>

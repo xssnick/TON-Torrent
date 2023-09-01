@@ -47,26 +47,26 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
     render() {
         return baseModal(this.props.onExit, (
             <>
-                <div style={this.state.createdStage ? {width: "455px"} : {display: "none"}} className="add-torrent-block">
+                <div style={this.state.createdStage ? {width: "287px"} : {display: "none"}} className="add-torrent-block">
                     {this.state.hash ? <div className="torrent-created">
-                        <span className="header">Torrent successfully created!</span>
-                        <input readOnly={true} onClick={(e)=>{ e.currentTarget.select()}} value={this.state.hash}/>
-                        <button className="second-button black" style={{width:"170px"}} onClick={() => {
-                            ExportMeta(this.state.hash!).then((file) => {OpenFolderSelectFile(file).then()})}
-                        }>Export torrent file</button>
-                    </div> : <div className="files-selector">
-                        <div className="loader-block"><span className="loader"/><span className="loader-text">Creating torrent..</span></div>
-                    </div>}
+                        <div className="success"/>
+                        <span className="title" style={{width: "70%"}}>Torrent successfully created!</span>
+                    </div> : <><span className="title">Creating torrent...</span>
+                        <div className="files-selector">
+                            <div className="loader-block"><span className="loader"/></div>
+                        </div></>}
                 </div>
-                <div style={this.state.createdStage ? {display: "none"} : {width: "330px"}} className="add-torrent-block">
-                    <span className="title">Torrent name</span>
-                    <input className="torrent-name-input" maxLength={100} autoFocus={true} onInput={(e) => {
+                <div style={this.state.createdStage ? {display: "none"} : {width: "287px"}} className="add-torrent-block">
+                    <span className="title">Create Torrent</span>
+                    <input className="torrent-name-input" placeholder={"Name"} maxLength={100} autoFocus={true} onInput={(e) => {
                         let val = e.currentTarget.value;
                         let can = val.length > 0 && this.state.path.length > 0;
                         this.setState((current) => ({...current, name: val, canContinue: can}));
                     }}/>
-                    <span className="title">From directory</span>
                     <div className="create-input">
+                        <span>{
+                            this.state.path.length > 23 ? "..."+this.state.path.slice(this.state.path.length-23,this.state.path.length) : this.state.path
+                        }</span>
                         <button onClick={() => {
                             OpenDir().then((p: string) => {
                                 if (p.length > 0) {
@@ -74,21 +74,23 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
                                     this.setState((current) => ({...current, path: p, canContinue: can}))
                                 }
                             })
-                        }}>Select</button>
-                        <span>{
-                            this.state.path.length > 30 ? "..."+this.state.path.slice(this.state.path.length-30,this.state.path.length) : this.state.path
-                        }</span>
+                        }}>Select folder</button>
                     </div>
                     {this.state.err ? <span className="error">{this.state.err}</span> : ""}
                 </div>
-                <div className="modal-control">
+                {(this.state.createdStage && this.state.hash) ? <div className="modal-control">
+                        <button className="main-button" style={{width: "100%"}} onClick={()=>{this.next()}}>
+                            Done
+                        </button>
+                    </div>:
+                    <div className="modal-control">
                     <button className="second-button" onClick={this.props.onExit}>
                         Cancel
                     </button>
                     <button className="main-button" disabled={!this.state.canContinue} onClick={()=>{this.next()}}>
                         Continue
                     </button>
-                </div>
+                </div>}
             </>
         ));
     }
