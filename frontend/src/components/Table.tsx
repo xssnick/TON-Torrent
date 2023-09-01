@@ -257,7 +257,7 @@ export class Table extends Component<TableProps,State> {
                         <div className="progress-bar-small" style={{width: t.progress+"%"}}></div>
                     </div></div>
                 </td>
-                <td style={{width:"80px"}}>{t.size}</td>
+                <td style={{width:"80px", justifyContent: "flex-end"}}>{t.size}</td>
                 <td style={{width:"60px", justifyContent: "flex-end"}}>{t.peersNum}</td>
                 <td style={{width:"95px", justifyContent: "flex-end"}}>{t.downloadSpeed}</td>
                 <td style={{width:"95px", justifyContent: "flex-end", paddingRight:"12px"}}>{t.uploadSpeed}</td>
@@ -277,7 +277,7 @@ export class Table extends Component<TableProps,State> {
             <tr>
                 <th style={{flexGrow:"1"}}>Name</th>
                 <th style={{width:"130px"}}>Progress</th>
-                <th style={{width:"80px", justifyContent: "flex-end"}}>Size</th>
+                <th style={{width:"90px", justifyContent: "flex-end"}}>Size</th>
                 <th style={{width:"60px", justifyContent: "flex-end"}}>Peers</th>
                 <th style={{width:"95px", justifyContent: "flex-end"}}>Download</th>
                 <th style={{width:"95px", justifyContent: "flex-end", paddingRight:"12px"}}>Upload</th>
