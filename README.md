@@ -4,8 +4,7 @@
 TON Storage UI based on [tonutils-storage](https://github.com/xssnick/tonutils-storage), with storage-daemon support mode.
 
 ## Getting started
-
-<img align="right"  width="500" alt="Screen Shot 2023-06-12 at 22 03 21" src="https://github.com/xssnick/TON-Torrent/assets/9332353/627b6327-910e-4b27-b1fa-9fcf2fc9bf32">
+<img align="right"  width="500" alt="Preview" src="https://github.com/xssnick/TON-Torrent/assets/9332353/1b3a28d5-6b87-4b96-b199-e7b33da6bbba">
 
 **Download**
 * [Windows x64](https://github.com/xssnick/TON-Torrent/releases/download/v0.1.4/ton-torrent-windows-x64-installer.exe)
