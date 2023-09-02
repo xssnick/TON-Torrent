@@ -7,11 +7,11 @@ TON Storage UI based on [tonutils-storage](https://github.com/xssnick/tonutils-s
 <img align="right"  width="500" alt="Preview" src="https://github.com/xssnick/TON-Torrent/assets/9332353/1b3a28d5-6b87-4b96-b199-e7b33da6bbba">
 
 **Download**
-* [Windows x64](https://github.com/xssnick/TON-Torrent/releases/download/v0.1.4/ton-torrent-windows-x64-installer.exe)
-* [Mac Apple Silicon](https://github.com/xssnick/TON-Torrent/releases/download/v0.1.4/ton-torrent-mac-apple-silicon.dmg)
-* [Mac Intel](https://github.com/xssnick/TON-Torrent/releases/download/v0.1.4/ton-torrent-mac-intel.dmg)
-* [Linux AMD64](https://github.com/xssnick/TON-Torrent/releases/download/v0.1.4/ton-torrent-linux-amd64.deb)
-* [Linux ARM64](https://github.com/xssnick/TON-Torrent/releases/download/v0.1.4/ton-torrent-linux-arm64.deb)
+* [Windows x64](https://github.com/xssnick/TON-Torrent/releases/download/v1.0.0/ton-torrent-windows-x64-installer.exe)
+* [Mac Apple Silicon](https://github.com/xssnick/TON-Torrent/releases/download/v1.0.0/ton-torrent-mac-apple-silicon.dmg)
+* [Mac Intel](https://github.com/xssnick/TON-Torrent/releases/download/v1.0.0/ton-torrent-mac-intel.dmg)
+* [Linux AMD64](https://github.com/xssnick/TON-Torrent/releases/download/v1.0.0/ton-torrent-linux-amd64.deb)
+* [Linux ARM64](https://github.com/xssnick/TON-Torrent/releases/download/v1.0.0/ton-torrent-linux-arm64.deb)
 
 **Install**
 * For Windows click on installer
