@@ -181,7 +181,7 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                     </button>
                 </div>
                 <div className="modal-version">
-                    <span className="version">Version 1.0.0</span>
+                    <span className="version">Version 1.0.1</span>
                     <span className="check" onClick={()=>{
                         BrowserOpenURL("https://github.com/xssnick/TON-Torrent/releases")
                     }}>Check updates</span>

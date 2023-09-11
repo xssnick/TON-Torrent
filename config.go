@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sync"
 	"time"
 )
 
@@ -21,6 +22,9 @@ type Config struct {
 	UseDaemon         bool
 	DaemonDBPath      string
 	DaemonControlAddr string
+	PortsChecked      bool
+
+	mx sync.Mutex
 }
 
 func LoadConfig(dir string) (*Config, error) {
@@ -38,12 +42,6 @@ func LoadConfig(dir string) (*Config, error) {
 			ListenAddr:        ":13333",
 			Key:               priv.Seed(),
 			UseDaemon:         false,
-		}
-
-		ip, seed := checkCanSeed()
-		if seed {
-			cfg.SeedMode = true
-			cfg.ListenAddr = ip + ":13333"
 		}
 
 		err = cfg.SaveConfig(dir)
@@ -79,6 +77,9 @@ func LoadConfig(dir string) (*Config, error) {
 }
 
 func (cfg *Config) SaveConfig(dir string) error {
+	cfg.mx.Lock()
+	defer cfg.mx.Unlock()
+
 	path := dir + "/config.json"
 
 	data, err := json.MarshalIndent(cfg, "", "\t")
@@ -121,7 +122,7 @@ func checkIPAddress(ip string) string {
 	return p.String()
 }
 
-func checkCanSeed() (string, bool) {
+func CheckCanSeed() (string, bool) {
 	ch := make(chan bool, 1)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
