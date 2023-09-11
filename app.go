@@ -17,7 +17,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -45,6 +44,20 @@ func NewApp() *App {
 	oshook.HookStartup(a.openFile, a.openHash)
 	adnl.Logger = func(v ...any) {}
 	storage.Logger = log.Println
+
+	var err error
+	a.rootPath, err = PrepareRootPath()
+	if err != nil {
+		a.Throw(err)
+	}
+
+	cfg, err := LoadConfig(a.rootPath)
+	if err != nil {
+		a.Throw(err)
+	}
+
+	a.config = cfg
+
 	return a
 }
 
@@ -96,30 +109,14 @@ func (a *App) ShowWarnMsg(text string) {
 func (a *App) prepare() {
 	oshook.HookStartup(a.openFile, a.openHash)
 
-	var err error
-	a.rootPath, err = PrepareRootPath()
-	if err != nil {
-		a.Throw(err)
-	}
-
-	cfg, err := LoadConfig(a.rootPath)
-	if err != nil {
-		a.Throw(err)
-	}
-
-	a.config = cfg
-
-	var exPath = CustomRoot // if we have defined root, use it for daemon path too
-	if exPath == "" {
-		ex, err := os.Executable()
-		if err != nil {
-			a.Throw(err)
+	if !a.config.PortsChecked && !a.config.SeedMode {
+		ip, seed := CheckCanSeed()
+		if seed {
+			a.config.SeedMode = true
+			a.config.ListenAddr = ip + ":13333"
 		}
-		exPath = filepath.Dir(ex)
-
-		if runtime.GOOS == "darwin" {
-			exPath = filepath.Dir(exPath) + "/Resources/Storage.app/Contents/MacOS"
-		}
+		a.config.PortsChecked = true
+		_ = a.config.SaveConfig(a.rootPath)
 	}
 
 	/*go func() {
@@ -500,8 +497,10 @@ func (a *App) SaveConfig(downloads string, useTonutilsStorage, seedMode bool, st
 func (a *App) OpenFolder(path string) {
 	var cmd string
 	switch runtime.GOOS {
-	case "darwin", "linux":
+	case "darwin":
 		cmd = "open"
+	case "linux":
+		cmd = "xdg-open"
 	case "windows":
 		path = strings.ReplaceAll(path, "/", "\\")
 		cmd = "explorer"
@@ -512,8 +511,11 @@ func (a *App) OpenFolder(path string) {
 
 func (a *App) OpenFolderSelectFile(path string) {
 	switch runtime.GOOS {
-	case "darwin", "linux":
+	case "darwin":
 		exec.Command("open", "-R", path).Start()
+	case "linux":
+		// TODO: select file somehow
+		exec.Command("xdg-open", path).Start()
 	case "windows":
 		path = strings.ReplaceAll(path, "/", "\\")
 		exec.Command("explorer", "/select,"+path).Start()
