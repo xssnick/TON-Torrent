@@ -60,7 +60,7 @@ export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
 
     startCheckFiles = (hash: string) => {
         // check header availability every 100 ms, and load files list when we get it
-        this.inter = setInterval(() => {
+        this.inter = window.setInterval(() => {
             CheckHeader(hash).then(has => {
                 if (has) {
                     GetFiles(hash).then((tree) => {
