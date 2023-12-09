@@ -1,12 +1,15 @@
 import React, {Component} from 'react';
 import {baseModal} from "./Modal";
-import {CreateTorrent, ExportMeta, OpenDir, OpenFolderSelectFile} from "../../wailsjs/go/main/App";
+import {CancelCreateTorrent, CreateTorrent, ExportMeta, OpenDir, OpenFolderSelectFile} from "../../wailsjs/go/main/App";
+import {EventsOff, EventsOn} from "../../wailsjs/runtime";
 
 interface State {
     createdStage: boolean
     canContinue: boolean
     path: string
     name: string
+
+    creationProgress: string
 
     hash?: string
     err?: string
@@ -25,7 +28,18 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
             createdStage: false,
             path: "",
             name: "",
+            creationProgress: "0"
         }
+    }
+
+    componentDidMount() {
+        EventsOn("update-create-progress", (progress: string) => {
+            this.setState((current) => ({ ...current, creationProgress: progress }))
+        })
+    }
+    componentWillUnmount() {
+        CancelCreateTorrent().then()
+        EventsOff("update-create-progress")
     }
 
     next = () => {
@@ -53,7 +67,13 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
                         <span className="title" style={{width: "70%"}}>Torrent successfully created!</span>
                     </div> : <><span className="title">Creating torrent...</span>
                         <div className="files-selector">
-                            <div className="loader-block"><span className="loader"/></div>
+                            <div className="create-torrent-loader-block ">
+                                <div className="create-progress-block">
+                                    <span style={{width: "20%", textAlign: "center"}}>{this.state.creationProgress}%</span>
+                                    <div className="create-progress-bar-form">
+                                        <div className="create-progress-bar-small" style={{width: this.state.creationProgress+"%"}}></div>
+                                    </div></div>
+                            </div>
                         </div></>}
                 </div>
                 <div style={this.state.createdStage ? {display: "none"} : {width: "287px"}} className="add-torrent-block">

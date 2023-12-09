@@ -7,6 +7,8 @@ export function AddTorrentByHash(arg1:string):Promise<string>;
 
 export function AddTorrentByMeta(arg1:string):Promise<main.TorrentAddResult>;
 
+export function CancelCreateTorrent():Promise<void>;
+
 export function CheckHeader(arg1:string):Promise<boolean>;
 
 export function CreateTorrent(arg1:string,arg2:string):Promise<main.TorrentCreateResult>;

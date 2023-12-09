@@ -10,6 +10,10 @@ export function AddTorrentByMeta(arg1) {
   return window['go']['main']['App']['AddTorrentByMeta'](arg1);
 }
 
+export function CancelCreateTorrent() {
+  return window['go']['main']['App']['CancelCreateTorrent']();
+}
+
 export function CheckHeader(arg1) {
   return window['go']['main']['App']['CheckHeader'](arg1);
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/tonutils/torrent-client/core/client"
 	"log"
+	"math/big"
 	"sort"
 	"strings"
 	"sync"
@@ -27,6 +28,7 @@ type PlainFile struct {
 	Size       string
 	Downloaded string
 	Progress   float64
+	RawSize    int64
 }
 
 type Torrent struct {
@@ -40,6 +42,8 @@ type Torrent struct {
 	Download       string
 	Path           string
 	PeersNum       int
+	Uploaded       string
+	Ratio          string
 
 	rawDowSpeed    int64
 	rawDownloaded  int64
@@ -59,6 +63,8 @@ type TorrentInfo struct {
 	Path        string
 	Peers       int
 	AddedAt     string
+	Uploaded    string
+	Ratio       string
 }
 
 type SpeedLimits struct {
@@ -82,7 +88,7 @@ type StorageClient interface {
 	GetTorrents(ctx context.Context) (*client.TorrentsList, error)
 	AddByHash(ctx context.Context, hash []byte, dir string) (*client.TorrentFull, error)
 	AddByMeta(ctx context.Context, meta []byte, dir string) (*client.TorrentFull, error)
-	CreateTorrent(ctx context.Context, dir, description string) (*client.TorrentFull, error)
+	CreateTorrent(ctx context.Context, dir, description string, progressCallback func(done uint64, max uint64)) (*client.TorrentFull, error)
 	GetTorrentFull(ctx context.Context, hash []byte) (*client.TorrentFull, error)
 	GetTorrentMeta(ctx context.Context, hash []byte) ([]byte, error)
 	GetPeers(ctx context.Context, hash []byte) (*client.PeersList, error)
@@ -91,6 +97,7 @@ type StorageClient interface {
 	SetFilesPriority(ctx context.Context, hash []byte, names []string, priority int32) error
 	GetSpeedLimits(ctx context.Context) (*client.SpeedLimits, error)
 	SetSpeedLimits(ctx context.Context, download, upload int64) error
+	GetUploadStats(ctx context.Context, hash []byte) (uint64, error)
 }
 
 type API struct {
@@ -153,7 +160,12 @@ func (a *API) SyncTorrents() error {
 			continue
 		}
 
-		tr := formatTorrent(full, len(peers.Peers), true)
+		uploaded, err := a.client.GetUploadStats(a.globalCtx, torrent.Hash)
+		if err != nil {
+			continue
+		}
+
+		tr := formatTorrent(full, len(peers.Peers), true, uploaded)
 		if tr == nil {
 			continue
 		}
@@ -190,6 +202,13 @@ func toSz(sz int64) string {
 	}
 }
 
+func toRatio(uploaded, size uint64) string {
+	if size == 0 || uploaded == 0 {
+		return "0"
+	}
+	return new(big.Float).Quo(new(big.Float).SetUint64(uploaded), new(big.Float).SetUint64(size)).Text('f', 2)
+}
+
 func toSpeed(speed int64, zeroEmpty bool) string {
 	if speed == 0 && zeroEmpty {
 		return ""
@@ -207,7 +226,7 @@ func toSpeed(speed int64, zeroEmpty bool) string {
 	}
 }
 
-func formatTorrent(full *client.TorrentFull, peersNum int, hide0Speed bool) *Torrent {
+func formatTorrent(full *client.TorrentFull, peersNum int, hide0Speed bool, uploaded uint64) *Torrent {
 	torrent := full.Torrent // newer object
 	var dataSz, downloadedSz int64
 	for _, file := range full.Files {
@@ -275,11 +294,13 @@ func formatTorrent(full *client.TorrentFull, peersNum int, hide0Speed bool) *Tor
 		Upload:         uplSpeed,
 		Download:       dowSpeed,
 		Path:           path,
+		PeersNum:       peersNum,
+		Uploaded:       toSz(int64(uploaded)),
+		Ratio:          toRatio(uploaded, uint64(dataSz)),
 		rawDowSpeed:    int64(torrent.DownloadSpeed),
 		rawDownloaded:  downloadedSz,
 		rawSize:        dataSz,
 		rawDescription: rawDesc,
-		PeersNum:       peersNum,
 	}
 }
 
@@ -337,8 +358,8 @@ func (a *API) AddTorrentByMeta(meta []byte, rootDir string) error {
 	return nil
 }
 
-func (a *API) CreateTorrent(dir, description string) (string, error) {
-	t, err := a.client.CreateTorrent(a.globalCtx, dir, description)
+func (a *API) CreateTorrent(ctx context.Context, dir, description string, progressCallback func(done uint64, max uint64)) (string, error) {
+	t, err := a.client.CreateTorrent(ctx, dir, description, progressCallback)
 	if err != nil {
 		return "", err
 	}
@@ -491,6 +512,7 @@ func (a *API) GetPlainFiles(hash string) ([]PlainFile, error) {
 			Size:       toSz(file.Size),
 			Downloaded: toSz(file.DownloadedSize),
 			Progress:   progress,
+			RawSize:    file.Size,
 		})
 	}
 
@@ -513,7 +535,12 @@ func (a *API) GetInfo(hash string) (*TorrentInfo, error) {
 		return nil, err
 	}
 
-	tr := formatTorrent(t, len(peers.Peers), false)
+	uploaded, err := a.client.GetUploadStats(a.globalCtx, hashBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	tr := formatTorrent(t, len(peers.Peers), false, uploaded)
 	if tr == nil {
 		return nil, fmt.Errorf("not initialized torrent")
 	}
@@ -550,6 +577,8 @@ func (a *API) GetInfo(hash string) (*TorrentInfo, error) {
 		Path:        tr.Path,
 		Peers:       len(peers.Peers),
 		AddedAt:     time.Unix(int64(t.Torrent.AddedAt), 0).Format("02 Jan 2006 15:04:05"),
+		Uploaded:    tr.Uploaded,
+		Ratio:       tr.Ratio,
 	}, nil
 }
 
