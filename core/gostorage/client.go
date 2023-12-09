@@ -1,20 +1,25 @@
 package gostorage
 
 import (
+	"bytes"
 	"context"
 	"crypto/ed25519"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"github.com/pterm/pterm"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/tonutils/torrent-client/core/client"
 	"github.com/xssnick/tonutils-go/adnl"
 	"github.com/xssnick/tonutils-go/adnl/dht"
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/tl"
+	"github.com/xssnick/tonutils-storage/config"
 	"github.com/xssnick/tonutils-storage/db"
 	"github.com/xssnick/tonutils-storage/storage"
 	"log"
 	"net"
+	"os"
 	"sort"
 )
 
@@ -23,6 +28,8 @@ type Config struct {
 	ListenAddr    string
 	ExternalIP    string
 	DownloadsPath string
+
+	NetworkConfigPath string
 }
 
 type Client struct {
@@ -46,9 +53,23 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 		}
 	}
 
-	lsCfg, err := liteclient.GetConfigFromUrl(context.Background(), "https://ton.org/global.config.json")
-	if err != nil {
-		return nil, fmt.Errorf("failed to download ton config: %w", err)
+	var lsCfg *liteclient.GlobalConfig
+	if cfg.NetworkConfigPath != "" {
+		lsCfg, err = liteclient.GetConfigFromFile(cfg.NetworkConfigPath)
+		if err != nil {
+			pterm.Error.Println("Failed to load ton network config from file:", err.Error())
+			os.Exit(1)
+		}
+	} else {
+		lsCfg, err = liteclient.GetConfigFromUrl(context.Background(), "https://ton.org/global.config.json")
+		if err != nil {
+			pterm.Warning.Println("Failed to download ton config:", err.Error(), "; We will take it from static cache")
+			lsCfg = &liteclient.GlobalConfig{}
+			if err = json.NewDecoder(bytes.NewBufferString(config.FallbackNetworkConfig)).Decode(lsCfg); err != nil {
+				pterm.Error.Println("Failed to parse fallback ton config:", err.Error())
+				os.Exit(1)
+			}
+		}
 	}
 
 	gate := adnl.NewGateway(cfg.Key)
@@ -82,7 +103,7 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to init downloader gateway: %w", err)
 	}
 
-	srv := storage.NewServer(dhtClient, gate, cfg.Key, serverMode, true)
+	srv := storage.NewServer(dhtClient, gate, cfg.Key, serverMode)
 
 	c.connector = storage.NewConnector(srv)
 	c.storage, err = db.NewStorage(ldb, c.connector, false)
@@ -168,13 +189,13 @@ func (c *Client) AddByMeta(ctx context.Context, meta []byte, dir string) (*clien
 	return c.GetTorrentFull(ctx, tor.BagID)
 }
 
-func (c *Client) CreateTorrent(ctx context.Context, path, description string) (*client.TorrentFull, error) {
+func (c *Client) CreateTorrent(ctx context.Context, path, description string, progressCallback func(done uint64, max uint64)) (*client.TorrentFull, error) {
 	rootPath, dir, files, err := c.storage.DetectFileRefs(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read files: %w", err)
 	}
 
-	it, err := storage.CreateTorrent(ctx, rootPath, dir, description, c.storage, c.connector, files)
+	it, err := storage.CreateTorrent(ctx, rootPath, dir, description, c.storage, c.connector, files, progressCallback)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bag: %w", err)
 	}
@@ -189,6 +210,14 @@ func (c *Client) CreateTorrent(ctx context.Context, path, description string) (*
 
 func (c *Client) GetTorrentFull(ctx context.Context, hash []byte) (*client.TorrentFull, error) {
 	return c.getTorrent(hash, true)
+}
+
+func (c *Client) GetUploadStats(ctx context.Context, hash []byte) (uint64, error) {
+	t := c.storage.GetTorrent(hash)
+	if t == nil {
+		return 0, fmt.Errorf("torrent is not found")
+	}
+	return t.GetUploadStats(), nil
 }
 
 func (c *Client) getTorrent(hash []byte, withFiles bool) (*client.TorrentFull, error) {

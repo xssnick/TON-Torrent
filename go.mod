@@ -5,10 +5,11 @@ go 1.18
 require (
 	github.com/audrenbdb/goforeground v0.0.0-20220126120304-39261aeee000
 	github.com/jcuga/go-upnp v0.0.0-20160830125909-492b17f02cbb
+	github.com/pterm/pterm v0.12.59
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/wailsapp/wails/v2 v2.5.1
-	github.com/xssnick/tonutils-go v1.8.0
-	github.com/xssnick/tonutils-storage v0.1.1-0.20230817070924-cb10ad604327
+	github.com/xssnick/tonutils-go v1.8.8-0.20231207120654-6860e0ce8447
+	github.com/xssnick/tonutils-storage v0.3.1
 )
 
 require (
@@ -34,7 +35,6 @@ require (
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20220328075252-7dd334e3daae // indirect
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pterm/pterm v0.12.59 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/samber/lo v1.27.1 // indirect
 	github.com/sigurn/crc16 v0.0.0-20211026045750-20ab5afb07e3 // indirect

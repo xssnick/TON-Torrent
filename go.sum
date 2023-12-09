@@ -129,10 +129,10 @@ github.com/wailsapp/wails/v2 v2.5.1/go.mod h1:jbOZbcr/zm79PxXxAjP8UoVlDd9wLW3uDs
 github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778/go.mod h1:2MuV+tbUrU1zIOPMxZ5EncGwgmMJsa+9ucAQZXxsObs=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e h1:JVG44RsyaB9T2KIHavMF/ppJZNG9ZpyihvCd0w101no=
 github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e/go.mod h1:RbqR21r5mrJuqunuUZ/Dhy/avygyECGrLceyNeo4LiM=
-github.com/xssnick/tonutils-go v1.8.0 h1:HnGA374Un36Adhw3MNB0X/RCeckl4GGJ5ONU2Vaa6N8=
-github.com/xssnick/tonutils-go v1.8.0/go.mod h1:rqfQ4jsLaFhUUvouz2hTTC02nQGszOhSps7tGAKRC8g=
-github.com/xssnick/tonutils-storage v0.1.1-0.20230817070924-cb10ad604327 h1:HMatajwUjFJvhbYZUTmYonA7gieUjuUrDQOpnOvPHuc=
-github.com/xssnick/tonutils-storage v0.1.1-0.20230817070924-cb10ad604327/go.mod h1:W6TmxrlYgLL7vMu5k475Mc346+JUt6ggQAlrDGTYulc=
+github.com/xssnick/tonutils-go v1.8.8-0.20231207120654-6860e0ce8447 h1:7V55abz9fAoSrcIkbjvKZsi3kYHq2D0Tqd4ytcRYXhA=
+github.com/xssnick/tonutils-go v1.8.8-0.20231207120654-6860e0ce8447/go.mod h1:rqfQ4jsLaFhUUvouz2hTTC02nQGszOhSps7tGAKRC8g=
+github.com/xssnick/tonutils-storage v0.3.1 h1:8pWigaltK35qayijRhJAw4HsPJVuOj4mWVXrdh7eS2c=
+github.com/xssnick/tonutils-storage v0.3.1/go.mod h1:XLXPeWsIuhI56nvqcPruNNThP3XpsUZomAhdAIcvKPI=
 golang.org/x/crypto v0.1.0 h1:MDRAIl0xIo9Io2xV565hzXHw3zVseKrJKodhohM5CjU=
 golang.org/x/crypto v0.1.0/go.mod h1:RecgLatLF4+eUMCP1PoPZQb+cVrJcOPbHkTkbkB9sbw=
 golang.org/x/exp v0.0.0-20220909182711-5c715a9e8561 h1:MDc5xs78ZrZr3HMQugiXOAkSZtfTpbJLDr/lwfgO53E=

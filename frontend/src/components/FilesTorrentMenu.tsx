@@ -16,6 +16,7 @@ export interface FilesProps {
 
 interface State {
     files: FileItem[]
+    allShown: boolean
 }
 
 export class FilesTorrentMenu extends Component<FilesProps,State> {
@@ -24,6 +25,7 @@ export class FilesTorrentMenu extends Component<FilesProps,State> {
 
         this.state = {
             files: [],
+            allShown: true
         }
     }
 
@@ -41,7 +43,8 @@ export class FilesTorrentMenu extends Component<FilesProps,State> {
             })
 
             this.setState({
-                files: newList
+                files: newList,
+                allShown: newList.length < 1000
             });
         });
     }
@@ -61,7 +64,7 @@ export class FilesTorrentMenu extends Component<FilesProps,State> {
 
         for (let t of this.state.files) {
             items.push(<tr onDoubleClick={() => {OpenFolderSelectFile(t.path).then()}}>
-                <td style={{maxWidth:"150px"}}>{t.name}</td>
+                <td style={{maxWidth: "80px"}}>{t.name}</td>
                 <td>{t.size}</td>
                 <td>{t.downloaded}</td>
                 <td><div className="progress-block-small">
@@ -72,6 +75,14 @@ export class FilesTorrentMenu extends Component<FilesProps,State> {
                 </td>
             </tr>);
         }
+
+        if (!this.state.allShown) {
+            items.push(<tr>
+                <td style={{maxWidth: "200px"}}>
+                    <span style={{textAlign:"center"}}>Too many files to render, please see others in directory</span>
+                </td>
+            </tr>);
+        }
         return items;
     }
 
@@ -79,7 +90,7 @@ export class FilesTorrentMenu extends Component<FilesProps,State> {
         return <table className="files-table" style={{fontSize:12}}>
             <thead>
             <tr>
-                <th>Name</th>
+                <th style={{maxWidth: "80px"}}>Name</th>
                 <th style={{width:"100px"}}>Size</th>
                 <th style={{width:"120px"}}>Downloaded</th>
                 <th style={{width:"150px"}}>Progress</th>

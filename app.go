@@ -9,6 +9,7 @@ import (
 	"github.com/tonutils/torrent-client/core/api"
 	"github.com/tonutils/torrent-client/core/client"
 	"github.com/tonutils/torrent-client/core/gostorage"
+	"github.com/tonutils/torrent-client/core/upnp"
 	"github.com/tonutils/torrent-client/oshook"
 	runtime2 "github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/xssnick/tonutils-go/adnl"
@@ -18,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -34,6 +36,10 @@ type App struct {
 
 	openFileData []byte
 	openFileHash string
+
+	lastCreateProgressReport time.Time
+	creationCtx              context.Context
+	cancelCreation           func()
 
 	mx sync.RWMutex
 }
@@ -109,24 +115,32 @@ func (a *App) ShowWarnMsg(text string) {
 func (a *App) prepare() {
 	oshook.HookStartup(a.openFile, a.openHash)
 
-	if !a.config.PortsChecked && !a.config.SeedMode {
+	if (!a.config.PortsChecked && !a.config.SeedMode) || a.config.FetchIPOnStartup {
+		log.Println("Trying to forward ports using UPnP")
+
+		up, err := upnp.NewUPnP()
+		if err != nil {
+			log.Println("UPnP init failed", err.Error())
+		} else {
+			if err = up.ForwardPortTCP(18889); err != nil {
+				log.Println("Port 18889 TCP forwarding failed:", err.Error())
+			}
+			if err = up.ForwardPortUDP(13333); err != nil {
+				log.Println("Port 13333 UDP forwarding failed:", err.Error())
+			}
+		}
+
 		ip, seed := CheckCanSeed()
 		if seed {
 			a.config.SeedMode = true
 			a.config.ListenAddr = ip + ":13333"
+			log.Println("Static seed mode is enabled, ports are open.")
+		} else {
+			log.Println("Static seed mode was not activated, ports are closed.")
 		}
 		a.config.PortsChecked = true
 		_ = a.config.SaveConfig(a.rootPath)
 	}
-
-	/*go func() {
-		// TODO: forward port
-		up, err := upnp.NewUPnP()
-		if err != nil {
-			return
-			// a.Throw(err)
-		}
-	}()*/
 }
 
 var oncePrepare sync.Once
@@ -154,12 +168,19 @@ func (a *App) ready(ctx context.Context) {
 				}
 
 				cfg := gostorage.Config{
-					Key:           ed25519.NewKeyFromSeed(a.config.Key),
-					ListenAddr:    lAddr + ":" + addr[1],
-					ExternalIP:    addr[0],
-					DownloadsPath: a.config.DownloadsPath,
+					Key:               ed25519.NewKeyFromSeed(a.config.Key),
+					ListenAddr:        lAddr + ":" + addr[1],
+					ExternalIP:        addr[0],
+					DownloadsPath:     a.config.DownloadsPath,
+					NetworkConfigPath: a.config.NetworkConfigPath,
 				}
 				if !a.config.SeedMode {
+					cfg.ExternalIP = ""
+				}
+
+				if cfg.ExternalIP == "0.0.0.0" {
+					a.ShowWarnMsg("external ip cannot be 0.0.0.0, disabling seed mode, " +
+						"change ip in settings to your real external ip")
 					cfg.ExternalIP = ""
 				}
 
@@ -276,12 +297,31 @@ type TorrentCreateResult struct {
 }
 
 func (a *App) CreateTorrent(dir, description string) TorrentCreateResult {
-	hash, err := a.api.CreateTorrent(dir, description)
+	a.creationCtx, a.cancelCreation = context.WithCancel(a.ctx)
+	hash, err := a.api.CreateTorrent(a.creationCtx, dir, description, a.reportCreationProgress)
 	if err != nil {
 		log.Println(err.Error())
 		return TorrentCreateResult{Err: err.Error()}
 	}
 	return TorrentCreateResult{Hash: hash}
+}
+
+func (a *App) CancelCreateTorrent() {
+	println("CANCEL CREATION")
+	if a.cancelCreation != nil {
+		a.cancelCreation()
+	}
+}
+
+func (a *App) reportCreationProgress(done, max uint64) {
+	now := time.Now()
+	if a.lastCreateProgressReport.Add(50 * time.Millisecond).After(now) {
+		// not refresh too often
+		return
+	}
+	a.lastCreateProgressReport = now
+
+	runtime2.EventsEmit(a.ctx, "update-create-progress", fmt.Sprintf("%.2f", (float64(done)/float64(max))*100))
 }
 
 func (a *App) ExportMeta(hash string) string {
@@ -359,6 +399,15 @@ func (a *App) GetPlainFiles(hash string) []api.PlainFile {
 	if list == nil {
 		return []api.PlainFile{}
 	}
+
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].RawSize > list[j].RawSize
+	})
+
+	if len(list) > 1000 {
+		list = list[:1000]
+	}
+
 	return list
 }
 

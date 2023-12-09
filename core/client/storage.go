@@ -107,7 +107,11 @@ func (s *StorageClient) AddByMeta(ctx context.Context, meta []byte, dir string) 
 	return nil, fmt.Errorf("unexpected response")
 }
 
-func (s *StorageClient) CreateTorrent(ctx context.Context, dir, description string) (*TorrentFull, error) {
+func (s *StorageClient) CreateTorrent(ctx context.Context, dir, description string, progressCallback func(done uint64, max uint64)) (*TorrentFull, error) {
+	if progressCallback != nil {
+		progressCallback(50, 100)
+	}
+
 	var res tl.Serializable
 	err := s.client.QueryADNL(ctx, CreateTorrent{
 		Path:        dir,
@@ -162,6 +166,11 @@ func (s *StorageClient) GetTorrentMeta(ctx context.Context, hash []byte) ([]byte
 		return nil, fmt.Errorf("%s", t.Message)
 	}
 	return nil, fmt.Errorf("unexpected response")
+}
+
+func (s *StorageClient) GetUploadStats(ctx context.Context, hash []byte) (uint64, error) {
+	// not supported by daemon
+	return 0, nil
 }
 
 func (s *StorageClient) GetPeers(ctx context.Context, hash []byte) (*PeersList, error) {

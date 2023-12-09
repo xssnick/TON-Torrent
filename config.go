@@ -24,6 +24,9 @@ type Config struct {
 	DaemonControlAddr string
 	PortsChecked      bool
 
+	NetworkConfigPath string
+	FetchIPOnStartup  bool
+
 	mx sync.Mutex
 }
 

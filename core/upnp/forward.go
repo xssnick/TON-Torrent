@@ -17,8 +17,16 @@ func NewUPnP() (*UPnP, error) {
 	return &UPnP{client: d}, nil
 }
 
-func (u *UPnP) ForwardPort(port uint16) error {
+func (u *UPnP) ForwardPortUDP(port uint16) error {
 	err := u.client.Forward(port, "TON Torrent (Storage)", "UDP")
+	if err != nil {
+		return fmt.Errorf("failed to forward port using upnp: %w", err)
+	}
+	return nil
+}
+
+func (u *UPnP) ForwardPortTCP(port uint16) error {
+	err := u.client.Forward(port, "TON Torrent (Storage)", "TCP")
 	if err != nil {
 		return fmt.Errorf("failed to forward port using upnp: %w", err)
 	}

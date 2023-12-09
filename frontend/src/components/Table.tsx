@@ -12,6 +12,7 @@ import Pause from "../../public/light/pause.svg";
 import Close from "../../public/light/close.svg";
 import OpenDir from "../assets/images/icons/open-folder.svg";
 import Export from "../assets/images/icons/export.svg";
+import Copy from "../assets/images/icons/copy.svg";
 
 export interface SelectedTorrent {
     hash: string
@@ -223,9 +224,14 @@ export class Table extends Component<TableProps,State> {
                                elems.push(<div onClick={() => {
                                    WantRemoveTorrent([t.id]).then(Refresh)
                                }}><img src={Close} alt=""/><span>Remove</span></div>)
+
                                elems.push(<div onClick={() => {
                                    ExportMeta(t.id).then()
                                }}><img src={Export} alt=""/><span>Export .tonbag</span></div>)
+
+                               elems.push(<div onClick={() => {
+                                   navigator.clipboard.writeText(t.id).then();
+                               }}><img src={Copy} alt=""/><span>Copy bag ID</span></div>)
 
                                this.setState((current) => ({ ...current, contextShow: true, contextItems: elems}));
 

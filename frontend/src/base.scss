@@ -359,6 +359,40 @@ img {
     background: rgba(118, 152, 187, 0.12);
 }
 
+.create-torrent-loader-block {
+    margin-right: 12px;
+    display: flex;
+    flex-direction: column;
+    height: 60px;
+}
+
+.create-progress-block {
+    width: 100%;
+    align-items: center;
+    height: 38px;
+    margin-top: auto;
+    margin-bottom: auto;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.create-progress-bar-small {
+    width: 220px;
+    height: 100%;
+    background-color: $ton;
+    border-radius: 8px;
+    transition: width 0.2s;
+}
+
+.create-progress-bar-form {
+    width: 220px;
+    height: 8px;
+    border-radius: 8px;
+    margin: auto auto auto auto;
+    background: rgba(118, 152, 187, 0.12);
+}
+
 .filters-menu {
     display: flex;
     flex-direction: column;
@@ -692,7 +726,7 @@ img {
 }
 
 .files-table {
-    width: 95%;
+    width: 100%;
     margin-top: 5px;
     margin-left: 10px;
     margin-right: 10px;

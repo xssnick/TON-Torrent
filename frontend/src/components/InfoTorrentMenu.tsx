@@ -22,6 +22,9 @@ interface State {
     added: string
     peers: string
     progress: string
+
+    uploaded: string
+    ratio: string
 }
 
 export class InfoTorrentMenu extends Component<InfoProps,State> {
@@ -40,6 +43,8 @@ export class InfoTorrentMenu extends Component<InfoProps,State> {
             added: "",
             peers: "",
             progress: "",
+            uploaded: "",
+            ratio: "",
         }
     }
 
@@ -71,6 +76,8 @@ export class InfoTorrentMenu extends Component<InfoProps,State> {
                 status: tr.State,
                 added: tr.AddedAt,
                 peers: tr.Peers,
+                uploaded: tr.Uploaded,
+                ratio: tr.Ratio,
             });
         });
     }
@@ -104,7 +111,12 @@ export class InfoTorrentMenu extends Component<InfoProps,State> {
                         <div className="item" style={{width: "15%"}}><span className="value">{this.state.downloadSpeed}</span></div>
                         <div className="item" style={{width: "12%"}}><span className="field">Remaining</span></div>
                         <div className="item" style={{flexGrow: "1", justifyContent: "flex-end"}}><span className="value">{this.state.left}</span></div>
-                    </> : ""}
+                    </> : <>
+                        <div className="item" style={{width: "20%"}}><span className="field">Uploaded</span></div>
+                        <div className="item" style={{width: "15%"}}><span className="value">{this.state.uploaded}</span></div>
+                        <div className="item" style={{width: "12%"}}><span className="field">Ratio</span></div>
+                        <div className="item" style={{flexGrow: "1", justifyContent: "flex-end"}}><span className="value">{this.state.ratio}</span></div>
+                    </>}
                 </div> : <></> }
                 <div className="basic">
                     <div className="item" style={{width: "20%"}}><span className="field">Downloaded</span></div>
