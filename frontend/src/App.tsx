@@ -17,6 +17,7 @@ import {PeersTorrentMenu} from "./components/PeersTorrentMenu";
 import {InfoTorrentMenu} from "./components/InfoTorrentMenu";
 import {SettingsModal} from "./components/ModalSettings";
 import {RemoveConfirmModal} from "./components/ModalRemoveConfirm";
+import {ProvidersTorrentMenu} from "./components/ProvidersTorrentMenu";
 
 interface State {
     isDark: boolean
@@ -295,6 +296,7 @@ export class App extends Component<{}, State> {
                                 <button disabled={this.state.torrentMenuSelected == 0 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(0)}>Info</button>
                                 <button disabled={this.state.torrentMenuSelected == 1 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(1)}>Files</button>
                                 <button disabled={this.state.torrentMenuSelected == 2 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(2)}>Peers</button>
+                                <button disabled={this.state.torrentMenuSelected == 3 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(3)}>Providers</button>
                             </div>
                             <div onMouseDown={this.extendInfoEvent} className="size-scroller"></div>
                             <div className="buttons-block">
@@ -305,6 +307,7 @@ export class App extends Component<{}, State> {
                             {this.state.torrentMenuSelected == 0 ? <InfoTorrentMenu torrent={this.state.selectedItems[0].hash}/> : ""}
                             {this.state.torrentMenuSelected == 1 ? <FilesTorrentMenu torrent={this.state.selectedItems[0].hash}/> : ""}
                             {this.state.torrentMenuSelected == 2 ? <PeersTorrentMenu torrent={this.state.selectedItems[0].hash}/> : ""}
+                            {this.state.torrentMenuSelected == 3 ? <ProvidersTorrentMenu torrent={this.state.selectedItems[0].hash}/> : ""}
                         </div>
                     </div> : ""}
                     <div className="foot-bar">
