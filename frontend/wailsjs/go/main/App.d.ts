@@ -7,6 +7,10 @@ export function AddTorrentByHash(arg1:string):Promise<string>;
 
 export function AddTorrentByMeta(arg1:string):Promise<main.TorrentAddResult>;
 
+export function BuildProviderContractData(arg1:string,arg2:string,arg3:string,arg4:Array<api.NewProviderData>):Promise<api.Transaction>;
+
+export function BuildWithdrawalContractData(arg1:string,arg2:string):Promise<api.Transaction>;
+
 export function CancelCreateTorrent():Promise<void>;
 
 export function CheckHeader(arg1:string):Promise<boolean>;
@@ -14,6 +18,8 @@ export function CheckHeader(arg1:string):Promise<boolean>;
 export function CreateTorrent(arg1:string,arg2:string):Promise<main.TorrentCreateResult>;
 
 export function ExportMeta(arg1:string):Promise<string>;
+
+export function FetchProviderRates(arg1:string,arg2:string):Promise<api.ProviderRates>;
 
 export function GetConfig():Promise<main.Config>;
 
@@ -24,6 +30,8 @@ export function GetInfo(arg1:string):Promise<api.TorrentInfo>;
 export function GetPeers(arg1:string):Promise<Array<api.Peer>>;
 
 export function GetPlainFiles(arg1:string):Promise<Array<api.PlainFile>>;
+
+export function GetProviderContract(arg1:string,arg2:string):Promise<api.ProviderContract>;
 
 export function GetSpeedLimit():Promise<api.SpeedLimits>;
 
@@ -38,6 +46,8 @@ export function OpenFolder(arg1:string):Promise<void>;
 export function OpenFolderSelectFile(arg1:string):Promise<void>;
 
 export function RemoveTorrent(arg1:string,arg2:boolean,arg3:boolean):Promise<string>;
+
+export function RequestProviderStorageInfo(arg1:string,arg2:string,arg3:string):Promise<api.ProviderStorageInfo>;
 
 export function SaveConfig(arg1:string,arg2:boolean,arg3:boolean,arg4:string,arg5:string,arg6:string):Promise<string>;
 

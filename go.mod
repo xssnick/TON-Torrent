@@ -8,8 +8,9 @@ require (
 	github.com/pterm/pterm v0.12.59
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/wailsapp/wails/v2 v2.5.1
-	github.com/xssnick/tonutils-go v1.8.9-0.20240111140609-4f28a5aa8643
-	github.com/xssnick/tonutils-storage v0.3.3-0.20240111143155-647251062dd9
+	github.com/xssnick/tonutils-go v1.8.9-0.20240124111439-e61f229680be
+	github.com/xssnick/tonutils-storage v0.3.3-0.20240123162844-a9713457a0cf
+	github.com/xssnick/tonutils-storage-provider v0.0.0-20240124120203-e894459b83c5
 )
 
 require (
@@ -29,8 +30,8 @@ require (
 	github.com/leaanthony/gosod v1.0.3 // indirect
 	github.com/leaanthony/slicer v1.5.0 // indirect
 	github.com/lithammer/fuzzysearch v1.1.5 // indirect
-	github.com/mattn/go-colorable v0.1.11 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.14 // indirect
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20220328075252-7dd334e3daae // indirect
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2 // indirect

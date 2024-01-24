@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/ed25519"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,8 @@ import (
 	"github.com/xssnick/tonutils-go/adnl/dht"
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/tl"
+	"github.com/xssnick/tonutils-go/ton"
+	"github.com/xssnick/tonutils-storage-provider/pkg/transport"
 	"github.com/xssnick/tonutils-storage/config"
 	"github.com/xssnick/tonutils-storage/db"
 	"github.com/xssnick/tonutils-storage/storage"
@@ -21,6 +24,8 @@ import (
 	"net"
 	"os"
 	"sort"
+	"sync"
+	"time"
 )
 
 type Config struct {
@@ -35,10 +40,17 @@ type Config struct {
 type Client struct {
 	storage   *db.Storage
 	connector storage.NetConnector
+	api       ton.APIClientWrapped
+	provider  *transport.Client
+
+	infoCache map[string]*client.ProviderStorageInfo
+	mx        sync.RWMutex
 }
 
 func NewClient(dbPath string, cfg Config) (*Client, error) {
-	c := &Client{}
+	c := &Client{
+		infoCache: map[string]*client.ProviderStorageInfo{},
+	}
 
 	ldb, err := leveldb.OpenFile(dbPath, nil)
 	if err != nil {
@@ -61,7 +73,7 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 			os.Exit(1)
 		}
 	} else {
-		lsCfg, err = liteclient.GetConfigFromUrl(context.Background(), "https://ton.org/global.config.json")
+		lsCfg, err = liteclient.GetConfigFromUrl(context.Background(), "https://ton.org/testnet-global.config.json")
 		if err != nil {
 			pterm.Warning.Println("Failed to download ton config:", err.Error(), "; We will take it from static cache")
 			lsCfg = &liteclient.GlobalConfig{}
@@ -72,18 +84,31 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 		}
 	}
 
+	lsPool := liteclient.NewConnectionPool()
+	c.api = ton.NewAPIClient(lsPool, ton.ProofCheckPolicyFast)
+
+	// connect async to not slow down main processes
+	go func() {
+		for {
+			if err := lsPool.AddConnectionsFromConfig(context.Background(), lsCfg); err != nil {
+				pterm.Warning.Println("Failed to add connections from ton config:", err.Error())
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			break
+		}
+	}()
+
 	gate := adnl.NewGateway(cfg.Key)
 
 	serverMode := ip != nil
 	if serverMode {
 		gate.SetExternalIP(ip)
-		err = gate.StartServer(cfg.ListenAddr)
-		if err != nil {
+		if err = gate.StartServer(cfg.ListenAddr); err != nil {
 			return nil, fmt.Errorf("failed to start adnl gateway in server mode: %w", err)
 		}
 	} else {
-		err = gate.StartClient()
-		if err != nil {
+		if err = gate.StartClient(); err != nil {
 			return nil, fmt.Errorf("failed to start adnl gateway in client mode: %w", err)
 		}
 	}
@@ -97,6 +122,14 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to init dht client: %w", err)
 	}
+
+	providerGateSeed := sha256.Sum256(cfg.Key.Seed())
+	gateKey := ed25519.NewKeyFromSeed(providerGateSeed[:])
+	gateProvider := adnl.NewGateway(gateKey)
+	if err = gateProvider.StartClient(); err != nil {
+		return nil, fmt.Errorf("failed to start adnl gateway for provider: %w", err)
+	}
+	c.provider = transport.NewClient(gateProvider, dhtClient)
 
 	downloadGate := adnl.NewGateway(cfg.Key)
 	if err = downloadGate.StartClient(); err != nil {

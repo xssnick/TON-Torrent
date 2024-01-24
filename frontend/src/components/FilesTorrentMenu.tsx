@@ -93,7 +93,7 @@ export class FilesTorrentMenu extends Component<FilesProps,State> {
                 <th style={{maxWidth: "80px"}}>Name</th>
                 <th style={{width:"100px"}}>Size</th>
                 <th style={{width:"120px"}}>Downloaded</th>
-                <th style={{width:"150px"}}>Progress</th>
+                <th style={{width:"130px"}}>Progress</th>
             </tr>
             </thead>
             <tbody>

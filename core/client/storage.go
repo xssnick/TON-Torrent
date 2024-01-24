@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"encoding/base64"
 	"fmt"
+	"github.com/xssnick/tonutils-go/address"
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/tl"
 	"log"
@@ -315,4 +316,24 @@ func (s *StorageClient) SetSpeedLimits(ctx context.Context, download, upload int
 		return fmt.Errorf("%s", t.Message)
 	}
 	return fmt.Errorf("unexpected response")
+}
+
+func (s *StorageClient) FetchProviderContract(ctx context.Context, torrentHash []byte, owner *address.Address) (*ProviderContractData, error) {
+	return nil, fmt.Errorf("not supported with storage daemon")
+}
+
+func (s *StorageClient) FetchProviderRates(ctx context.Context, torrentHash, providerKey []byte) (*ProviderRates, error) {
+	return nil, fmt.Errorf("not supported with storage daemon")
+}
+
+func (s *StorageClient) RequestProviderStorageInfo(ctx context.Context, torrentHash, providerKey []byte, owner *address.Address) (*ProviderStorageInfo, error) {
+	return nil, fmt.Errorf("not supported with storage daemon")
+}
+
+func (s *StorageClient) BuildAddProviderTransaction(ctx context.Context, torrentHash []byte, owner *address.Address, providers []NewProviderData) (addr *address.Address, bodyData, stateInit []byte, err error) {
+	return nil, nil, nil, fmt.Errorf("not supported with storage daemon")
+}
+
+func (s *StorageClient) BuildWithdrawalTransaction(torrentHash []byte, owner *address.Address) (addr *address.Address, bodyData []byte, err error) {
+	return nil, nil, fmt.Errorf("not supported with storage daemon")
 }

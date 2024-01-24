@@ -18,6 +18,16 @@ import {InfoTorrentMenu} from "./components/InfoTorrentMenu";
 import {SettingsModal} from "./components/ModalSettings";
 import {RemoveConfirmModal} from "./components/ModalRemoveConfirm";
 import {ProvidersTorrentMenu} from "./components/ProvidersTorrentMenu";
+import {TonConnectButton} from "@tonconnect/ui-react";
+import {AddProviderModal} from "./components/ModalAddProvider";
+import {DoTxModal} from "./components/ModalDoTx";
+
+interface DoProviderTxModalData {
+    hash: string
+    owner: string
+    providers: any[]
+    justTopup: boolean
+}
 
 interface State {
     isDark: boolean
@@ -26,6 +36,8 @@ interface State {
     tableFilter: Filter
     showAddTorrentModal: boolean
     showCreateTorrentModal: boolean
+    showAddProviderModal: boolean
+    showDoTransactionModal: boolean
     showSettingsModal: boolean
     showRemoveConfirmModal: boolean
 
@@ -36,7 +48,9 @@ interface State {
     ready: boolean
 
     openFileHash?: string
+    addProviderTorrentHash?: string
     removeHashes?: string[]
+    doProviderTxModalData?: DoProviderTxModalData
 }
 
 export class App extends Component<{}, State> {
@@ -55,6 +69,8 @@ export class App extends Component<{}, State> {
             showCreateTorrentModal: false,
             showSettingsModal: false,
             showRemoveConfirmModal: false,
+            showAddProviderModal: false,
+            showDoTransactionModal: false,
             overallUploadSpeed: "0 Bytes",
             overallDownloadSpeed: "0 Bytes",
             torrentMenuSelected: -1,
@@ -95,11 +111,29 @@ export class App extends Component<{}, State> {
     toggleRemoveConfirmModal = () => {
         this.setState((current)=>({...current, showRemoveConfirmModal: !this.state.showRemoveConfirmModal, removeHashes: undefined}))
     }
+    toggleAddProviderModal = () => {
+        this.setState((current)=>({...current, showAddProviderModal: false, addProviderTorrentHash: undefined}))
+    }
+    toggleDoTransactionModal = () => {
+        this.setState((current)=>({...current, showDoTransactionModal: false, doProviderTxModalData: undefined}))
+    }
 
     async componentDidMount() {
         let dark = await IsDarkTheme();
         this.setState((current)=>({...current, isDark: dark}))
 
+        EventsOn("want_add_provider", (torrentHash: string) => {
+            this.setState((current)=>({...current, showAddProviderModal: true, addProviderTorrentHash: torrentHash}))
+        })
+        EventsOn("want_set_providers", (torrentHash: string, owner: string, providers: any[], justTopup: boolean) => {
+            this.setState((current)=>({...current, showDoTransactionModal: true, doProviderTxModalData: {
+                    hash: torrentHash,
+                    owner,
+                    providers,
+                    justTopup
+                }
+            }))
+        })
         EventsOn("want_remove_torrent", (hashes: string[]) => {
             this.setState((current)=>({...current, removeHashes: hashes, showRemoveConfirmModal: true}))
         })
@@ -184,6 +218,7 @@ export class App extends Component<{}, State> {
             document.documentElement.style.setProperty("--theme-img", "url(../dark/theme.svg)");
             document.documentElement.style.setProperty("--copy-img", "url(../dark/copy.svg)");
             document.documentElement.style.setProperty("--expand-img", "url(../dark/expand.svg)");
+            document.documentElement.style.setProperty("--logout-img", "url(../dark/logout.svg)");
         } else {
             document.documentElement.style.setProperty('--back', "#FFFFFF");
             document.documentElement.style.setProperty('--table-back', "#F7F9FB");
@@ -210,10 +245,12 @@ export class App extends Component<{}, State> {
             document.documentElement.style.setProperty("--theme-img", "url(../light/theme.svg)");
             document.documentElement.style.setProperty("--copy-img", "url(../light/copy.svg)");
             document.documentElement.style.setProperty("--expand-img", "url(../light/expand.svg)");
+            document.documentElement.style.setProperty("--logout-img", "url(../light/logout.svg)");
         }
 
         return (
             <div id="App">
+                <span id="tip" className="tooltip"/>
                 <div className="daemon-waiter" style={this.state.ready ? {display: "none"} : {}}>
                     <div className="loader-block">
                         <span className="loader"/>
@@ -223,6 +260,8 @@ export class App extends Component<{}, State> {
                 {this.state.showCreateTorrentModal ? <CreateTorrentModal onExit={this.toggleCreateTorrentModal}/> : null}
                 {this.state.showSettingsModal ? <SettingsModal onExit={this.toggleSettingsModal}/> : null}
                 {this.state.showRemoveConfirmModal ? <RemoveConfirmModal hashes={this.state.removeHashes!}  onExit={this.toggleRemoveConfirmModal} isDark={this.state.isDark}/> : null}
+                {this.state.showAddProviderModal ? <AddProviderModal hash={this.state.addProviderTorrentHash!} onExit={this.toggleAddProviderModal}/> : null}
+                {this.state.showDoTransactionModal ? <DoTxModal hash={this.state.doProviderTxModalData!.hash} owner={this.state.doProviderTxModalData!.owner} providers={this.state.doProviderTxModalData!.providers} justTopup={this.state.doProviderTxModalData!.justTopup}  onExit={this.toggleDoTransactionModal}/> : null}
                 <div className="left-bar">
                     <div className="logo-block">
                         <img className="logo-img" src={this.state.isDark ? LogoDark : LogoLight} alt=""/>

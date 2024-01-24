@@ -10,6 +10,14 @@ export function AddTorrentByMeta(arg1) {
   return window['go']['main']['App']['AddTorrentByMeta'](arg1);
 }
 
+export function BuildProviderContractData(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['BuildProviderContractData'](arg1, arg2, arg3, arg4);
+}
+
+export function BuildWithdrawalContractData(arg1, arg2) {
+  return window['go']['main']['App']['BuildWithdrawalContractData'](arg1, arg2);
+}
+
 export function CancelCreateTorrent() {
   return window['go']['main']['App']['CancelCreateTorrent']();
 }
@@ -24,6 +32,10 @@ export function CreateTorrent(arg1, arg2) {
 
 export function ExportMeta(arg1) {
   return window['go']['main']['App']['ExportMeta'](arg1);
+}
+
+export function FetchProviderRates(arg1, arg2) {
+  return window['go']['main']['App']['FetchProviderRates'](arg1, arg2);
 }
 
 export function GetConfig() {
@@ -44,6 +56,10 @@ export function GetPeers(arg1) {
 
 export function GetPlainFiles(arg1) {
   return window['go']['main']['App']['GetPlainFiles'](arg1);
+}
+
+export function GetProviderContract(arg1, arg2) {
+  return window['go']['main']['App']['GetProviderContract'](arg1, arg2);
 }
 
 export function GetSpeedLimit() {
@@ -72,6 +88,10 @@ export function OpenFolderSelectFile(arg1) {
 
 export function RemoveTorrent(arg1, arg2, arg3) {
   return window['go']['main']['App']['RemoveTorrent'](arg1, arg2, arg3);
+}
+
+export function RequestProviderStorageInfo(arg1, arg2, arg3) {
+  return window['go']['main']['App']['RequestProviderStorageInfo'](arg1, arg2, arg3);
 }
 
 export function SaveConfig(arg1, arg2, arg3, arg4, arg5, arg6) {
