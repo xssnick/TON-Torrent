@@ -8,8 +8,8 @@ require (
 	github.com/pterm/pterm v0.12.59
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/wailsapp/wails/v2 v2.5.1
-	github.com/xssnick/tonutils-go v1.8.9-0.20240124111439-e61f229680be
-	github.com/xssnick/tonutils-storage v0.3.3-0.20240123162844-a9713457a0cf
+	github.com/xssnick/tonutils-go v1.8.9-0.20240125063455-287eff1118b9
+	github.com/xssnick/tonutils-storage v0.3.3-0.20240125063836-46bdda250b34
 	github.com/xssnick/tonutils-storage-provider v0.0.0-20240124120203-e894459b83c5
 )
 
