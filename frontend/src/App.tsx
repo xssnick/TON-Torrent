@@ -10,13 +10,23 @@ import {Filter, Refresh, SelectedTorrent, Table} from "./components/Table";
 import {AddTorrentModal} from "./components/ModalAddTorrent";
 import {WaitReady, SetActive, WantRemoveTorrent, SwitchTheme, IsDarkTheme} from "../wailsjs/go/main/App";
 import {FiltersMenu} from "./components/FiltersMenu";
-import {BrowserOpenURL, EventsOn} from "../wailsjs/runtime";
-import {FilesTorrentMenu} from "./components/FilesTorrentMenu";
+import {EventsOn} from "../wailsjs/runtime";
+import FilesTorrentMenu from "./components/FilesTorrentMenu";
 import {CreateTorrentModal} from "./components/ModalCreateTorrent";
-import {PeersTorrentMenu} from "./components/PeersTorrentMenu";
-import {InfoTorrentMenu} from "./components/InfoTorrentMenu";
+import PeersTorrentMenu from "./components/PeersTorrentMenu";
 import {SettingsModal} from "./components/ModalSettings";
 import {RemoveConfirmModal} from "./components/ModalRemoveConfirm";
+import {ProvidersTorrentMenu} from "./components/ProvidersTorrentMenu";
+import {AddProviderModal} from "./components/ModalAddProvider";
+import {DoTxModal} from "./components/ModalDoTx";
+import InfoTorrentMenu from "./components/InfoTorrentMenu";
+
+interface DoProviderTxModalData {
+    hash: string
+    owner: string
+    providers: any[]
+    justTopup: boolean
+}
 
 interface State {
     isDark: boolean
@@ -25,6 +35,8 @@ interface State {
     tableFilter: Filter
     showAddTorrentModal: boolean
     showCreateTorrentModal: boolean
+    showAddProviderModal: boolean
+    showDoTransactionModal: boolean
     showSettingsModal: boolean
     showRemoveConfirmModal: boolean
 
@@ -35,7 +47,9 @@ interface State {
     ready: boolean
 
     openFileHash?: string
+    addProviderTorrentHash?: string
     removeHashes?: string[]
+    doProviderTxModalData?: DoProviderTxModalData
 }
 
 export class App extends Component<{}, State> {
@@ -54,6 +68,8 @@ export class App extends Component<{}, State> {
             showCreateTorrentModal: false,
             showSettingsModal: false,
             showRemoveConfirmModal: false,
+            showAddProviderModal: false,
+            showDoTransactionModal: false,
             overallUploadSpeed: "0 Bytes",
             overallDownloadSpeed: "0 Bytes",
             torrentMenuSelected: -1,
@@ -94,11 +110,29 @@ export class App extends Component<{}, State> {
     toggleRemoveConfirmModal = () => {
         this.setState((current)=>({...current, showRemoveConfirmModal: !this.state.showRemoveConfirmModal, removeHashes: undefined}))
     }
+    toggleAddProviderModal = () => {
+        this.setState((current)=>({...current, showAddProviderModal: false, addProviderTorrentHash: undefined}))
+    }
+    toggleDoTransactionModal = () => {
+        this.setState((current)=>({...current, showDoTransactionModal: false, doProviderTxModalData: undefined}))
+    }
 
     async componentDidMount() {
         let dark = await IsDarkTheme();
         this.setState((current)=>({...current, isDark: dark}))
 
+        EventsOn("want_add_provider", (torrentHash: string) => {
+            this.setState((current)=>({...current, showAddProviderModal: true, addProviderTorrentHash: torrentHash}))
+        })
+        EventsOn("want_set_providers", (torrentHash: string, owner: string, providers: any[], justTopup: boolean) => {
+            this.setState((current)=>({...current, showDoTransactionModal: true, doProviderTxModalData: {
+                    hash: torrentHash,
+                    owner,
+                    providers,
+                    justTopup
+                }
+            }))
+        })
         EventsOn("want_remove_torrent", (hashes: string[]) => {
             this.setState((current)=>({...current, removeHashes: hashes, showRemoveConfirmModal: true}))
         })
@@ -183,6 +217,7 @@ export class App extends Component<{}, State> {
             document.documentElement.style.setProperty("--theme-img", "url(../dark/theme.svg)");
             document.documentElement.style.setProperty("--copy-img", "url(../dark/copy.svg)");
             document.documentElement.style.setProperty("--expand-img", "url(../dark/expand.svg)");
+            document.documentElement.style.setProperty("--logout-img", "url(../dark/logout.svg)");
         } else {
             document.documentElement.style.setProperty('--back', "#FFFFFF");
             document.documentElement.style.setProperty('--table-back', "#F7F9FB");
@@ -209,10 +244,12 @@ export class App extends Component<{}, State> {
             document.documentElement.style.setProperty("--theme-img", "url(../light/theme.svg)");
             document.documentElement.style.setProperty("--copy-img", "url(../light/copy.svg)");
             document.documentElement.style.setProperty("--expand-img", "url(../light/expand.svg)");
+            document.documentElement.style.setProperty("--logout-img", "url(../light/logout.svg)");
         }
 
         return (
             <div id="App">
+                <span id="tip" className="tooltip"/>
                 <div className="daemon-waiter" style={this.state.ready ? {display: "none"} : {}}>
                     <div className="loader-block">
                         <span className="loader"/>
@@ -222,6 +259,8 @@ export class App extends Component<{}, State> {
                 {this.state.showCreateTorrentModal ? <CreateTorrentModal onExit={this.toggleCreateTorrentModal}/> : null}
                 {this.state.showSettingsModal ? <SettingsModal onExit={this.toggleSettingsModal}/> : null}
                 {this.state.showRemoveConfirmModal ? <RemoveConfirmModal hashes={this.state.removeHashes!}  onExit={this.toggleRemoveConfirmModal} isDark={this.state.isDark}/> : null}
+                {this.state.showAddProviderModal ? <AddProviderModal hash={this.state.addProviderTorrentHash!} onExit={this.toggleAddProviderModal}/> : null}
+                {this.state.showDoTransactionModal ? <DoTxModal hash={this.state.doProviderTxModalData!.hash} owner={this.state.doProviderTxModalData!.owner} providers={this.state.doProviderTxModalData!.providers} justTopup={this.state.doProviderTxModalData!.justTopup}  onExit={this.toggleDoTransactionModal}/> : null}
                 <div className="left-bar">
                     <div className="logo-block">
                         <img className="logo-img" src={this.state.isDark ? LogoDark : LogoLight} alt=""/>
@@ -286,7 +325,7 @@ export class App extends Component<{}, State> {
                                 menu = -1;
                             }
 
-                            this.setState((current) => ({ ...current, selectedItems: sl, torrentMenuSelected: menu }))
+                            this.setState((current) => ({ ...current, selectedItems: sl, torrentMenuSelected: menu }));
                         }}/>
                     </div>
                     { this.state.selectedItems.length >0 ? <div className="torrent-info" style={{minHeight: this.state.infoSize + "px",maxHeight: this.state.infoSize + "px"}}>
@@ -295,6 +334,7 @@ export class App extends Component<{}, State> {
                                 <button disabled={this.state.torrentMenuSelected == 0 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(0)}>Info</button>
                                 <button disabled={this.state.torrentMenuSelected == 1 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(1)}>Files</button>
                                 <button disabled={this.state.torrentMenuSelected == 2 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(2)}>Peers</button>
+                                <button disabled={this.state.torrentMenuSelected == 3 || this.state.torrentMenuSelected == -1} onClick={this.setSelectedTorrentMenu(3)}>Providers</button>
                             </div>
                             <div onMouseDown={this.extendInfoEvent} className="size-scroller"></div>
                             <div className="buttons-block">
@@ -305,6 +345,7 @@ export class App extends Component<{}, State> {
                             {this.state.torrentMenuSelected == 0 ? <InfoTorrentMenu torrent={this.state.selectedItems[0].hash}/> : ""}
                             {this.state.torrentMenuSelected == 1 ? <FilesTorrentMenu torrent={this.state.selectedItems[0].hash}/> : ""}
                             {this.state.torrentMenuSelected == 2 ? <PeersTorrentMenu torrent={this.state.selectedItems[0].hash}/> : ""}
+                            {this.state.torrentMenuSelected == 3 ? <ProvidersTorrentMenu torrent={this.state.selectedItems[0].hash}/> : ""}
                         </div>
                     </div> : ""}
                     <div className="foot-bar">

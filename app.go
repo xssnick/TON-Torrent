@@ -207,6 +207,13 @@ func (a *App) ready(ctx context.Context) {
 			runtime2.EventsOn(a.ctx, "refresh", func(optionalData ...interface{}) {
 				_ = a.api.SyncTorrents()
 			})
+
+			for range cl.GetNotifier() {
+				_ = a.api.SyncTorrents()
+
+				// to not refresh too often
+				time.Sleep(70 * time.Millisecond)
+			}
 		}()
 	})
 }
@@ -253,6 +260,36 @@ func (a *App) GetSpeedLimit() *api.SpeedLimits {
 		return &api.SpeedLimits{}
 	}
 	return limits
+}
+
+func (a *App) GetProviderContract(hash, owner string) api.ProviderContract {
+	return a.api.GetProviderContract(hash, owner)
+}
+
+func (a *App) FetchProviderRates(hash, provider string) api.ProviderRates {
+	return a.api.FetchProviderRates(hash, provider)
+}
+
+func (a *App) RequestProviderStorageInfo(hash, provider, owner string) api.ProviderStorageInfo {
+	return a.api.RequestProviderStorageInfo(hash, provider, owner)
+}
+
+func (a *App) BuildProviderContractData(hash, ownerAddr, amount string, providers []api.NewProviderData) *api.Transaction {
+	t, err := a.api.BuildProviderContractData(hash, ownerAddr, amount, providers)
+	if err != nil {
+		a.ShowWarnMsg(err.Error())
+		return nil
+	}
+	return t
+}
+
+func (a *App) BuildWithdrawalContractData(hash, ownerAddr string) *api.Transaction {
+	t, err := a.api.BuildWithdrawalContractData(hash, ownerAddr)
+	if err != nil {
+		a.ShowWarnMsg(err.Error())
+		return nil
+	}
+	return t
 }
 
 func (a *App) openFile(data []byte) {

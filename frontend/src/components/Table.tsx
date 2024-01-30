@@ -146,6 +146,7 @@ export class Table extends Component<TableProps,State> {
             // report selected to callback
             let selected = this.state.torrents.filter((tr)=>{return tr.selected});
             this.props.onSelect(selected.map<SelectedTorrent>((ti) => {
+                // EventsEmit("select-torrent", ti.id);
                 return {
                     hash: ti.id,
                     active: ti.state == "downloading" || ti.state == "seeding",
@@ -261,7 +262,8 @@ export class Table extends Component<TableProps,State> {
                     <span style={{textAlign:"left", width:"38px"}}>{t.progress}%</span>
                     <div className="progress-bar-small-form">
                         <div className="progress-bar-small" style={{width: t.progress+"%"}}></div>
-                    </div></div>
+                    </div>
+                </div>
                 </td>
                 <td style={{width:"80px", justifyContent: "flex-end"}}>{t.size}</td>
                 <td style={{width:"60px", justifyContent: "flex-end"}}>{t.peersNum}</td>
@@ -274,7 +276,6 @@ export class Table extends Component<TableProps,State> {
 
     render() {
         return <table style={{fontSize:12}}>
-            <span id="tip" className="tooltip"/>
             <div id="menu-back" className="context-backdrop" style={{visibility: this.state.contextShow ? "visible":"hidden"}}/>
             <div id="menu" className="context-menu" style={{visibility: this.state.contextShow ? "visible":"hidden"}}>
                 {this.state.contextItems}

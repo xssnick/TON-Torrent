@@ -119,7 +119,6 @@ export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
     }
 
     checkAndSet = (id: string) => {
-        console.log("ID "+id);
         let numChecked = 0;
         let numNotChecked = 0;
         let dep = document.getElementById("dir_"+id)!;

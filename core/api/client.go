@@ -2,9 +2,14 @@ package api
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/tonutils/torrent-client/core/client"
+	"github.com/xssnick/tonutils-go/address"
+	"github.com/xssnick/tonutils-go/tlb"
+	"github.com/xssnick/tonutils-storage-provider/pkg/contract"
 	"log"
 	"math/big"
 	"sort"
@@ -29,6 +34,12 @@ type PlainFile struct {
 	Downloaded string
 	Progress   float64
 	RawSize    int64
+}
+
+type NewProviderData struct {
+	Key           string
+	MaxSpan       uint32
+	PricePerMBDay string
 }
 
 type Torrent struct {
@@ -84,6 +95,44 @@ type Speed struct {
 	Download string
 }
 
+type ProviderContract struct {
+	Success   bool
+	Deployed  bool
+	Address   string
+	Providers []Provider
+	Balance   string
+}
+
+type ProviderRates struct {
+	Success  bool
+	Reason   string
+	Provider Provider
+}
+
+type Provider struct {
+	Key         string
+	LastProof   string
+	PricePerDay string
+	Span        string
+	Status      string
+	Reason      string
+	Progress    float64
+	Data        NewProviderData
+}
+
+type ProviderStorageInfo struct {
+	Status     string
+	Reason     string
+	Downloaded float64
+}
+
+type Transaction struct {
+	Body      string
+	StateInit string
+	Address   string
+	Amount    string
+}
+
 type StorageClient interface {
 	GetTorrents(ctx context.Context) (*client.TorrentsList, error)
 	AddByHash(ctx context.Context, hash []byte, dir string) (*client.TorrentFull, error)
@@ -98,6 +147,12 @@ type StorageClient interface {
 	GetSpeedLimits(ctx context.Context) (*client.SpeedLimits, error)
 	SetSpeedLimits(ctx context.Context, download, upload int64) error
 	GetUploadStats(ctx context.Context, hash []byte) (uint64, error)
+	FetchProviderContract(ctx context.Context, torrentHash []byte, owner *address.Address) (*client.ProviderContractData, error)
+	FetchProviderRates(ctx context.Context, torrentHash, providerKey []byte) (*client.ProviderRates, error)
+	RequestProviderStorageInfo(ctx context.Context, torrentHash, providerKey []byte, owner *address.Address) (*client.ProviderStorageInfo, error)
+	BuildAddProviderTransaction(ctx context.Context, torrentHash []byte, owner *address.Address, providers []client.NewProviderData) (addr *address.Address, bodyData, stateInit []byte, err error)
+	BuildWithdrawalTransaction(torrentHash []byte, owner *address.Address) (addr *address.Address, bodyData []byte, err error)
+	GetNotifier() <-chan bool
 }
 
 type API struct {
@@ -117,16 +172,6 @@ func NewAPI(globalCtx context.Context, client StorageClient) *API {
 		client:    client,
 	}
 
-	go func() {
-		for {
-			err := api.SyncTorrents()
-			if err != nil {
-				log.Println("SYNC ERR:", err.Error())
-			}
-			time.Sleep(150 * time.Millisecond)
-		}
-	}()
-
 	return api
 }
 
@@ -139,6 +184,9 @@ func (a *API) SetSpeedRefresh(handler func(Speed)) {
 }
 
 func (a *API) SyncTorrents() error {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
 	torr, err := a.client.GetTorrents(a.globalCtx)
 	if err != nil {
 		log.Println("sync err", err.Error())
@@ -147,7 +195,19 @@ func (a *API) SyncTorrents() error {
 
 	var download, upload float64
 	var list []*Torrent
+iter:
 	for _, torrent := range torr.Torrents {
+		// optimization for inactive torrents, to fetch just once if inactive
+		if !torrent.ActiveUpload && !torrent.ActiveDownload {
+			for _, t := range a.torrents {
+				if t.State == "inactive" && t.ID == hex.EncodeToString(torrent.Hash) {
+					// nothing changed, just add it again
+					list = append(list, t)
+					continue iter
+				}
+			}
+		}
+
 		full, err := a.client.GetTorrentFull(a.globalCtx, torrent.Hash)
 		if err != nil {
 			continue
@@ -155,9 +215,13 @@ func (a *API) SyncTorrents() error {
 		download += full.Torrent.DownloadSpeed
 		upload += full.Torrent.UploadSpeed
 
-		peers, err := a.client.GetPeers(a.globalCtx, torrent.Hash)
-		if err != nil {
-			continue
+		var lnPeers = 0
+		if torrent.ActiveUpload || torrent.ActiveDownload {
+			peers, err := a.client.GetPeers(a.globalCtx, torrent.Hash)
+			if err != nil {
+				continue
+			}
+			lnPeers = len(peers.Peers)
 		}
 
 		uploaded, err := a.client.GetUploadStats(a.globalCtx, torrent.Hash)
@@ -165,17 +229,14 @@ func (a *API) SyncTorrents() error {
 			continue
 		}
 
-		tr := formatTorrent(full, len(peers.Peers), true, uploaded)
+		tr := formatTorrent(full, lnPeers, true, uploaded)
 		if tr == nil {
 			continue
 		}
 		list = append(list, tr)
 	}
 
-	a.mx.Lock()
 	a.torrents = list
-	a.mx.Unlock()
-
 	if a.onListRefresh != nil {
 		a.onListRefresh()
 	}
@@ -637,6 +698,248 @@ func (a *API) SetPriorities(hash string, list []string, priority int) error {
 		return err
 	}
 	return nil
+}
+
+func (a *API) GetProviderContract(hash, ownerAddr string) ProviderContract {
+	hashBytes, err := toHashBytes(hash)
+	if err != nil {
+		return ProviderContract{Success: false}
+	}
+
+	addr, err := address.ParseAddr(ownerAddr)
+	if err != nil {
+		log.Println("failed to get provider contract, parse addr error:", err.Error())
+		return ProviderContract{Success: false}
+	}
+
+	data, err := a.client.FetchProviderContract(a.globalCtx, hashBytes, addr)
+	if err != nil {
+		if errors.Is(err, contract.ErrNotDeployed) {
+			return ProviderContract{Success: true, Deployed: false}
+		}
+		log.Println("failed to get provider contract:", err.Error())
+		return ProviderContract{Success: false}
+	}
+
+	var providers []Provider
+	for _, p := range data.Providers {
+		since := "Never"
+		snc := time.Since(p.LastProofAt)
+		if snc < 2*time.Minute {
+			since = fmt.Sprint(int(snc.Seconds())) + " seconds ago"
+		} else if snc < 2*time.Hour {
+			since = fmt.Sprint(int(snc.Minutes())) + " minutes ago"
+		} else if snc < 48*time.Hour {
+			since = fmt.Sprint(int(snc.Hours())) + " hours ago"
+		} else if snc < 1000*24*time.Hour {
+			since = fmt.Sprint(int(snc.Hours())/24) + " days ago"
+		}
+
+		every := ""
+		if p.MaxSpan < 3600 {
+			every = fmt.Sprint(p.MaxSpan/60) + " Minutes"
+		} else if p.MaxSpan < 100*3600 {
+			every = fmt.Sprint(p.MaxSpan/3600) + " Hours"
+		} else {
+			every = fmt.Sprint(p.MaxSpan/86400) + " Days"
+		}
+
+		psi, err := a.client.RequestProviderStorageInfo(a.globalCtx, hashBytes, p.Key, addr)
+		if err != nil {
+			log.Println("failed to request provider info:", err.Error())
+			return ProviderContract{Success: false}
+		}
+
+		providers = append(providers, Provider{
+			Key:         strings.ToUpper(hex.EncodeToString(p.Key)),
+			LastProof:   since,
+			Span:        every,
+			Progress:    psi.Progress,
+			Status:      psi.Status,
+			Reason:      psi.Reason,
+			PricePerDay: tlb.FromNanoTON(new(big.Int).Mul(p.RatePerMB.Nano(), big.NewInt(int64(data.Size/1024/1024)))).String() + " TON",
+			Data: NewProviderData{
+				Key:           hex.EncodeToString(p.Key),
+				MaxSpan:       p.MaxSpan,
+				PricePerMBDay: p.RatePerMB.Nano().String(),
+			},
+		})
+
+	}
+
+	bal := data.Balance.String()
+	if idx := strings.IndexByte(bal, '.'); idx != -1 {
+		if len(bal) > idx+4 {
+			// max 4 digits after comma
+			bal = bal[:idx+4]
+		}
+	}
+	return ProviderContract{
+		Success:   true,
+		Deployed:  true,
+		Address:   data.Address.String(),
+		Providers: providers,
+		Balance:   bal + " TON",
+	}
+}
+
+func (a *API) FetchProviderRates(hash, provider string) ProviderRates {
+	hashBytes, err := toHashBytes(hash)
+	if err != nil {
+		return ProviderRates{Success: false, Reason: "failed to parse torrent hash: " + err.Error()}
+	}
+
+	providerBytes, err := toHashBytes(provider)
+	if err != nil {
+		return ProviderRates{Success: false, Reason: "failed to parse provider hash: " + err.Error()}
+	}
+
+	rates, err := a.client.FetchProviderRates(a.globalCtx, hashBytes, providerBytes)
+	if err != nil {
+		return ProviderRates{Success: false, Reason: err.Error()}
+	}
+
+	span := uint32(86400)
+	if span > rates.MaxSpan {
+		span = rates.MaxSpan
+	} else if span < rates.MinSpan {
+		span = rates.MinSpan
+	}
+
+	every := ""
+	if span < 3600 {
+		every = fmt.Sprint(span/60) + " minutes"
+	} else if span < 100*3600 {
+		every = fmt.Sprint(span/3600) + " hours"
+	} else {
+		every = fmt.Sprint(span/86400) + " days"
+	}
+
+	ratePerMB := rates.RatePerMBDay.Nano()
+	min := rates.MinBounty.Nano()
+	perDay := new(big.Int).Mul(ratePerMB, big.NewInt(int64(rates.Size/1024/1024)))
+	if perDay.Cmp(min) < 0 {
+		// increase reward to fit min bounty
+		coff := new(big.Float).Quo(new(big.Float).SetInt(min), new(big.Float).SetInt(perDay))
+		coff = coff.Add(coff, big.NewFloat(0.01)) // increase a bit to not be less than needed
+		ratePerMB, _ = new(big.Float).Mul(new(big.Float).SetInt(ratePerMB), coff).Int(ratePerMB)
+		perDay = new(big.Int).Mul(ratePerMB, big.NewInt(int64(rates.Size/1024/1024)))
+	}
+
+	return ProviderRates{
+		Success: true,
+		Provider: Provider{
+			Key:         strings.ToUpper(hex.EncodeToString(providerBytes)),
+			PricePerDay: tlb.FromNanoTON(perDay).String() + " TON",
+			Span:        every,
+			Data: NewProviderData{
+				Key:           hex.EncodeToString(providerBytes),
+				MaxSpan:       span,
+				PricePerMBDay: ratePerMB.String(),
+			},
+		},
+	}
+}
+
+func (a *API) RequestProviderStorageInfo(hash, provider, ownerAddr string) ProviderStorageInfo {
+	hashBytes, err := toHashBytes(hash)
+	if err != nil {
+		return ProviderStorageInfo{Status: "internal"}
+	}
+
+	providerBytes, err := toHashBytes(provider)
+	if err != nil {
+		return ProviderStorageInfo{Status: "internal"}
+	}
+
+	addr, err := address.ParseAddr(ownerAddr)
+	if err != nil {
+		log.Println("failed to get provider contract, parse addr error:", err.Error())
+		return ProviderStorageInfo{Status: "internal"}
+	}
+
+	info, err := a.client.RequestProviderStorageInfo(a.globalCtx, hashBytes, providerBytes, addr)
+	if err != nil {
+		return ProviderStorageInfo{Status: "not_connected"}
+	}
+
+	return ProviderStorageInfo{
+		Status:     info.Status,
+		Reason:     info.Reason,
+		Downloaded: info.Progress,
+	}
+}
+
+func (a *API) BuildProviderContractData(hash, ownerAddr, amount string, providers []NewProviderData) (*Transaction, error) {
+	hashBytes, err := toHashBytes(hash)
+	if err != nil {
+		return nil, err
+	}
+
+	owner, err := address.ParseAddr(ownerAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	amt, err := tlb.FromTON(amount)
+	if err != nil {
+		return nil, err
+	}
+
+	var prs []client.NewProviderData
+	for _, p := range providers {
+		keyBytes, err := toHashBytes(p.Key)
+		if err != nil {
+			return nil, fmt.Errorf("provider key: %w", err)
+		}
+
+		price, ok := new(big.Int).SetString(p.PricePerMBDay, 10)
+		if !ok {
+			return nil, fmt.Errorf("incorrect amount format")
+		}
+
+		prs = append(prs, client.NewProviderData{
+			Address:       address.NewAddress(0, 0, keyBytes),
+			MaxSpan:       p.MaxSpan,
+			PricePerMBDay: tlb.FromNanoTON(price),
+		})
+	}
+
+	addr, body, si, err := a.client.BuildAddProviderTransaction(a.globalCtx, hashBytes, owner, prs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Transaction{
+		Body:      base64.StdEncoding.EncodeToString(body),
+		StateInit: base64.StdEncoding.EncodeToString(si),
+		Address:   addr.Bounce(false).String(),
+		Amount:    amt.Nano().String(),
+	}, nil
+}
+
+func (a *API) BuildWithdrawalContractData(hash, ownerAddr string) (*Transaction, error) {
+	hashBytes, err := toHashBytes(hash)
+	if err != nil {
+		return nil, err
+	}
+
+	owner, err := address.ParseAddr(ownerAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	addr, body, err := a.client.BuildWithdrawalTransaction(hashBytes, owner)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Transaction{
+		Body:      base64.StdEncoding.EncodeToString(body),
+		StateInit: "",
+		Address:   addr.Bounce(true).String(),
+		Amount:    tlb.MustFromTON("0.03").Nano().String(),
+	}, nil
 }
 
 func toHashBytes(hash string) ([]byte, error) {

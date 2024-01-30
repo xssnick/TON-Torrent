@@ -726,7 +726,7 @@ img {
 }
 
 .files-table {
-    width: 100%;
+    width: calc(100% - 20px);
     margin-top: 5px;
     margin-left: 10px;
     margin-right: 10px;
@@ -763,6 +763,143 @@ img {
         line-height: 20px;
         letter-spacing: -0.008px;
     }
+}
+
+.tonconnect-button {
+    color: red;
+    width: 30px;
+}
+
+button[data-tc-connect-button="true"] {
+    box-shadow: 0 0 0 0;
+    height: 36px;
+
+    display: flex;
+    padding: 6px 16px;
+    justify-content: center;
+    align-items: center;
+    background: var(--accent-default, $ton);
+
+    border-radius: 24px;
+    border: 1px solid var(--button-stroke, $buttonStroke);
+
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 24px;
+    letter-spacing: -0.008px;
+
+    cursor: pointer;
+    transition: none;
+}
+
+button[data-tc-connect-button="true"]:hover {
+    background: var(--accent-hover, #00A6FF);
+    transform: none;
+}
+
+.providers-connect {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.providers-login {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.providers-login .menu-item {
+    width: 188px;
+    height: 36px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: none;
+
+    border-radius: 24px;
+    border: 1px solid var(--button-stroke, $buttonStroke);
+    margin: auto auto;
+
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 24px;
+    letter-spacing: -0.008px;
+
+    color: var(--text-primary, $text-black);
+    cursor: pointer;
+}
+
+.providers-login .main {
+    color: #fff;
+    margin: 5px auto 10px;
+
+    background: var(--accent-default, $ton);
+}
+
+.providers-login .main:hover {
+    background: var(--accent-hover, #00A6FF);
+}
+
+.providers-login .main::before {
+    display: block;
+    height: 25px;
+    width: 27px;
+    content: '';
+    background-image: url(assets/images/icons/ton.svg);
+}
+
+.removed-provider td {
+    color: $secondaryText;
+    text-decoration: line-through;
+}
+
+.new-provider td {
+    color: $ton;
+}
+
+.providers-connect button[icon-type="logout"] {
+    border: 0;
+    outline: inherit;
+    background: var(--logout-img) 0 0 transparent;
+    background-size: cover;
+    width: 15px;
+    height: 15px;
+    margin-left: 4px;
+}
+
+.providers-connect button[icon-type="copy"] {
+    border: 0;
+    outline: inherit;
+    background: var(--copy-img) 0 0 transparent;
+    background-size: cover;
+    width: 17px;
+    height: 17px;
+    margin-left: 4px;
+}
+.providers-connect button[icon-type="copy"].clicked {
+    border: 0;
+    outline: inherit;
+    background: url(assets/images/icons/copy-done.svg) 0 0 transparent;
+    background-size: cover;
+    width: 17px;
+    height: 17px;
+    margin-left: 4px;
+}
+
+.providers-connect button[icon-type="remove"] {
+    border: 0;
+    outline: inherit;
+    background: var(--close-img) 0 0 transparent;
+    width: 16px;
+    height: 16px;
+    background-size: cover;
 }
 
 #App {

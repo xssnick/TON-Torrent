@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/ed25519"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,8 @@ import (
 	"github.com/xssnick/tonutils-go/adnl/dht"
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/tl"
+	"github.com/xssnick/tonutils-go/ton"
+	"github.com/xssnick/tonutils-storage-provider/pkg/transport"
 	"github.com/xssnick/tonutils-storage/config"
 	"github.com/xssnick/tonutils-storage/db"
 	"github.com/xssnick/tonutils-storage/storage"
@@ -21,6 +24,8 @@ import (
 	"net"
 	"os"
 	"sort"
+	"sync"
+	"time"
 )
 
 type Config struct {
@@ -35,10 +40,20 @@ type Config struct {
 type Client struct {
 	storage   *db.Storage
 	connector storage.NetConnector
+	api       ton.APIClientWrapped
+	provider  *transport.Client
+
+	infoCache map[string]*client.ProviderStorageInfo
+	mx        sync.RWMutex
+
+	notify chan bool
 }
 
 func NewClient(dbPath string, cfg Config) (*Client, error) {
-	c := &Client{}
+	c := &Client{
+		infoCache: map[string]*client.ProviderStorageInfo{},
+		notify:    make(chan bool, 10), // to refresh fast a bit after
+	}
 
 	ldb, err := leveldb.OpenFile(dbPath, nil)
 	if err != nil {
@@ -72,18 +87,31 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 		}
 	}
 
+	lsPool := liteclient.NewConnectionPool()
+	c.api = ton.NewAPIClient(lsPool, ton.ProofCheckPolicyFast)
+
+	// connect async to not slow down main processes
+	go func() {
+		for {
+			if err := lsPool.AddConnectionsFromConfig(context.Background(), lsCfg); err != nil {
+				pterm.Warning.Println("Failed to add connections from ton config:", err.Error())
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			break
+		}
+	}()
+
 	gate := adnl.NewGateway(cfg.Key)
 
 	serverMode := ip != nil
 	if serverMode {
 		gate.SetExternalIP(ip)
-		err = gate.StartServer(cfg.ListenAddr)
-		if err != nil {
+		if err = gate.StartServer(cfg.ListenAddr); err != nil {
 			return nil, fmt.Errorf("failed to start adnl gateway in server mode: %w", err)
 		}
 	} else {
-		err = gate.StartClient()
-		if err != nil {
+		if err = gate.StartClient(); err != nil {
 			return nil, fmt.Errorf("failed to start adnl gateway in client mode: %w", err)
 		}
 	}
@@ -98,6 +126,14 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to init dht client: %w", err)
 	}
 
+	providerGateSeed := sha256.Sum256(cfg.Key.Seed())
+	gateKey := ed25519.NewKeyFromSeed(providerGateSeed[:])
+	gateProvider := adnl.NewGateway(gateKey)
+	if err = gateProvider.StartClient(); err != nil {
+		return nil, fmt.Errorf("failed to start adnl gateway for provider: %w", err)
+	}
+	c.provider = transport.NewClient(gateProvider, dhtClient)
+
 	downloadGate := adnl.NewGateway(cfg.Key)
 	if err = downloadGate.StartClient(); err != nil {
 		return nil, fmt.Errorf("failed to init downloader gateway: %w", err)
@@ -105,8 +141,9 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 
 	srv := storage.NewServer(dhtClient, gate, cfg.Key, serverMode)
 
+	ch := make(chan db.Event, 1)
 	c.connector = storage.NewConnector(srv)
-	c.storage, err = db.NewStorage(ldb, c.connector, false)
+	c.storage, err = db.NewStorage(ldb, c.connector, false, ch)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init storage: %w", err)
 	}
@@ -119,6 +156,21 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 
 	c.connector.SetDownloadLimit(d)
 	c.connector.SetUploadLimit(u)
+
+	go func() {
+		ticker := time.Tick(3 * time.Second)
+		for {
+			select {
+			case <-ch:
+			case <-ticker:
+			}
+
+			select {
+			case c.notify <- true:
+			default:
+			}
+		}
+	}()
 
 	return c, nil
 }
@@ -453,4 +505,8 @@ func (c *Client) SetSpeedLimits(ctx context.Context, download, upload int64) err
 	}
 
 	return nil
+}
+
+func (c *Client) GetNotifier() <-chan bool {
+	return c.notify
 }
