@@ -10,17 +10,16 @@ import {Filter, Refresh, SelectedTorrent, Table} from "./components/Table";
 import {AddTorrentModal} from "./components/ModalAddTorrent";
 import {WaitReady, SetActive, WantRemoveTorrent, SwitchTheme, IsDarkTheme} from "../wailsjs/go/main/App";
 import {FiltersMenu} from "./components/FiltersMenu";
-import {BrowserOpenURL, EventsOn} from "../wailsjs/runtime";
-import {FilesTorrentMenu} from "./components/FilesTorrentMenu";
+import {EventsOn} from "../wailsjs/runtime";
+import FilesTorrentMenu from "./components/FilesTorrentMenu";
 import {CreateTorrentModal} from "./components/ModalCreateTorrent";
-import {PeersTorrentMenu} from "./components/PeersTorrentMenu";
-import {InfoTorrentMenu} from "./components/InfoTorrentMenu";
+import PeersTorrentMenu from "./components/PeersTorrentMenu";
 import {SettingsModal} from "./components/ModalSettings";
 import {RemoveConfirmModal} from "./components/ModalRemoveConfirm";
 import {ProvidersTorrentMenu} from "./components/ProvidersTorrentMenu";
-import {TonConnectButton} from "@tonconnect/ui-react";
 import {AddProviderModal} from "./components/ModalAddProvider";
 import {DoTxModal} from "./components/ModalDoTx";
+import InfoTorrentMenu from "./components/InfoTorrentMenu";
 
 interface DoProviderTxModalData {
     hash: string
@@ -326,7 +325,7 @@ export class App extends Component<{}, State> {
                                 menu = -1;
                             }
 
-                            this.setState((current) => ({ ...current, selectedItems: sl, torrentMenuSelected: menu }))
+                            this.setState((current) => ({ ...current, selectedItems: sl, torrentMenuSelected: menu }));
                         }}/>
                     </div>
                     { this.state.selectedItems.length >0 ? <div className="torrent-info" style={{minHeight: this.state.infoSize + "px",maxHeight: this.state.infoSize + "px"}}>

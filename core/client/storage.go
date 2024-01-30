@@ -10,6 +10,7 @@ import (
 	"github.com/xssnick/tonutils-go/tl"
 	"log"
 	"os"
+	"time"
 )
 
 type ADNL interface {
@@ -17,7 +18,8 @@ type ADNL interface {
 }
 
 type StorageClient struct {
-	client ADNL
+	client   ADNL
+	notifier chan bool
 }
 
 func ConnectToStorageDaemon(addr string, dbPath string) (*StorageClient, error) {
@@ -43,8 +45,17 @@ func ConnectToStorageDaemon(addr string, dbPath string) (*StorageClient, error) 
 		return nil, fmt.Errorf("connect to daemon err: %w", err)
 	}
 
+	notifier := make(chan bool, 1)
+	go func() {
+		for {
+			time.Sleep(1 * time.Second)
+			notifier <- true
+		}
+	}()
+
 	return &StorageClient{
-		client: pool,
+		client:   pool,
+		notifier: notifier,
 	}, nil
 }
 
@@ -336,4 +347,8 @@ func (s *StorageClient) BuildAddProviderTransaction(ctx context.Context, torrent
 
 func (s *StorageClient) BuildWithdrawalTransaction(torrentHash []byte, owner *address.Address) (addr *address.Address, bodyData []byte, err error) {
 	return nil, nil, fmt.Errorf("not supported with storage daemon")
+}
+
+func (s *StorageClient) GetNotifier() <-chan bool {
+	return s.notifier
 }

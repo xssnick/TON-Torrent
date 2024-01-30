@@ -137,10 +137,10 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
             });
         });
 
-        EventsOn("select-torrent", (hash: string) => {
-            props.torrent = hash;
-            fetchContract();
-        })
+        // EventsOn("select-torrent", (hash: string) => {
+        //    props.torrent = hash;
+        //    fetchContract();
+        // })
 
         fetchContract();
         let inter = window.setInterval(fetchContract, 3000);
@@ -155,7 +155,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
 
         return () => {
             EventsOff("provider-added");
-            EventsOff("select-torrent");
+            // EventsOff("select-torrent");
             clearInterval(inter);
         };
     }, [props.torrent,address]);
@@ -213,7 +213,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                             tip!.style.opacity = "0";
                             tip!.style.visibility = "hidden";
                         }
-                    }><div id={"state-"+t.id} className={"item-state "+ statusSwitch(t.status)}></div></div>}{status == 'inactive' ? "Proof: "+t.lastProof : status.charAt(0).toUpperCase() + status.slice(1)}</td>
+                    }><div id={"state-"+t.id} className={"item-state "+ statusSwitch(t.status)}></div></div>}{status == 'inactive' ? "Proof "+t.lastProof : status.charAt(0).toUpperCase() + status.slice(1)}</td>
                     <td className={'small'}>{t.proofEvery}</td>
                     <td className={'small'}>{t.price}</td>
                     <td className={'small'}><button icon-type="remove" onClick={()=>{
@@ -241,12 +241,10 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
             <>{address ? <div key={props.torrent} className="providers-connect">
                 <div className="info-data-block" style={{ margin: "0 15px"}}>
                     <div className="basic" >
-                        <div className="item" style={{width: "21%"}}><span className="field">Available balance:</span></div>
-                        <div className="item" style={{width: "16%"}}>{ state.fetched ? <span className="value">{state.contractBalance}</span> : <span className="loader" style={{height: "12px", width: "12px"}}/>}</div>
-                        <div className="item" style={{width: "12%"}}><span className="field">Contract:</span></div>
-                        <div className="item" style={{width: "21%"}}>{ state.fetched ? <span className="value">{shortContractAddr}</span> :  <span className="loader" style={{height: "12px", width: "12px"}}/>}{ state.address.length > 14 && state.fetched ? <button icon-type="copy" onClick={copy(state.address)}/> : <></>} </div>
-                        <div className="item" style={{width: "13%"}}><span className="field">Authorized:</span></div>
-                        <div className="item" style={{flexGrow: "1", justifyContent: "flex-end"}}><span className="value">{shortAddr}</span><button icon-type="logout" onClick={()=>{
+                        <div className="item" style={{width: "37%"}}><span className="field">Available balance: </span> { state.fetched ? <span className="value" style={{paddingLeft: "5px"}}>{state.contractBalance}</span> : <span className="loader" style={{height: "12px", width: "12px"}}/>}</div>
+                        <div className="item" style={{width: "31%"}}><span className="field">Contract: </span>{ state.fetched ? <span className="value" style={{paddingLeft: "5px"}}>{shortContractAddr}</span> :  <span className="loader" style={{height: "12px", width: "12px"}}/>}{ state.address.length > 14 && state.fetched ? <button icon-type="copy" onClick={copy(state.address)}/> : <></>}</div>
+                        <div className="item" style={{width: "32%"}}><span className="field">Authorized: </span><span className="value" style={{paddingLeft: "5px"}}>{shortAddr}</span><button icon-type="copy" onClick={copy(address)}/></div>
+                        <div className="item" style={{flexGrow: "1", justifyContent: "flex-end"}}><button icon-type="logout" onClick={()=>{
                             tonConnectUI.disconnect().then();
                         }}/></div>
                     </div>
@@ -277,7 +275,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                     <button
                         className={state.providers.length > 0 ? "menu-item main" : "menu-item"}
                         onClick={() => {
-                            let providers = state.providers.filter(p => p.type != 'removed').map((p)=> p.data);
+                            let providers = state.providers.filter(p => p.type != 'removed').map((p) => p.data);
                             let justTopup = state.address.length >= 14 && state.providers.find((x) => x.type != 'committed') == undefined;
                             EventsEmit("want_set_providers", props.torrent, address, providers, justTopup);
                         }}>

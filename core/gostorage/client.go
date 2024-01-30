@@ -45,11 +45,14 @@ type Client struct {
 
 	infoCache map[string]*client.ProviderStorageInfo
 	mx        sync.RWMutex
+
+	notify chan bool
 }
 
 func NewClient(dbPath string, cfg Config) (*Client, error) {
 	c := &Client{
 		infoCache: map[string]*client.ProviderStorageInfo{},
+		notify:    make(chan bool, 10), // to refresh fast a bit after
 	}
 
 	ldb, err := leveldb.OpenFile(dbPath, nil)
@@ -73,7 +76,7 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 			os.Exit(1)
 		}
 	} else {
-		lsCfg, err = liteclient.GetConfigFromUrl(context.Background(), "https://ton.org/testnet-global.config.json")
+		lsCfg, err = liteclient.GetConfigFromUrl(context.Background(), "https://ton.org/global.config.json")
 		if err != nil {
 			pterm.Warning.Println("Failed to download ton config:", err.Error(), "; We will take it from static cache")
 			lsCfg = &liteclient.GlobalConfig{}
@@ -138,8 +141,9 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 
 	srv := storage.NewServer(dhtClient, gate, cfg.Key, serverMode)
 
+	ch := make(chan db.Event, 1)
 	c.connector = storage.NewConnector(srv)
-	c.storage, err = db.NewStorage(ldb, c.connector, false)
+	c.storage, err = db.NewStorage(ldb, c.connector, false, ch)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init storage: %w", err)
 	}
@@ -152,6 +156,21 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 
 	c.connector.SetDownloadLimit(d)
 	c.connector.SetUploadLimit(u)
+
+	go func() {
+		ticker := time.Tick(3 * time.Second)
+		for {
+			select {
+			case <-ch:
+			case <-ticker:
+			}
+
+			select {
+			case c.notify <- true:
+			default:
+			}
+		}
+	}()
 
 	return c, nil
 }
@@ -486,4 +505,8 @@ func (c *Client) SetSpeedLimits(ctx context.Context, download, upload int64) err
 	}
 
 	return nil
+}
+
+func (c *Client) GetNotifier() <-chan bool {
+	return c.notify
 }

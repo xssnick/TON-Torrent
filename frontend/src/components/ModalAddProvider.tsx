@@ -46,10 +46,7 @@ export class AddProviderModal extends Component<AddProviderModalProps, State> {
     next = () => {
         this.setState((current) => ({ ...current, canContinue: false, fetchStage: true }));
 
-        console.log(this.props.hash+" -- "+ this.state.providerKey)
         FetchProviderRates(this.props.hash, this.state.providerKey).then((rates) => {
-            console.log(rates);
-
             if (rates.Success) {
                 EventsEmit("provider-added", rates.Provider, this.props.hash);
                 this.props.onExit();

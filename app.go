@@ -207,6 +207,13 @@ func (a *App) ready(ctx context.Context) {
 			runtime2.EventsOn(a.ctx, "refresh", func(optionalData ...interface{}) {
 				_ = a.api.SyncTorrents()
 			})
+
+			for range cl.GetNotifier() {
+				_ = a.api.SyncTorrents()
+
+				// to not refresh too often
+				time.Sleep(70 * time.Millisecond)
+			}
 		}()
 	})
 }

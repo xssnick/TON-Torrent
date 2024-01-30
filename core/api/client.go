@@ -152,6 +152,7 @@ type StorageClient interface {
 	RequestProviderStorageInfo(ctx context.Context, torrentHash, providerKey []byte, owner *address.Address) (*client.ProviderStorageInfo, error)
 	BuildAddProviderTransaction(ctx context.Context, torrentHash []byte, owner *address.Address, providers []client.NewProviderData) (addr *address.Address, bodyData, stateInit []byte, err error)
 	BuildWithdrawalTransaction(torrentHash []byte, owner *address.Address) (addr *address.Address, bodyData []byte, err error)
+	GetNotifier() <-chan bool
 }
 
 type API struct {
@@ -171,16 +172,6 @@ func NewAPI(globalCtx context.Context, client StorageClient) *API {
 		client:    client,
 	}
 
-	go func() {
-		for {
-			err := api.SyncTorrents()
-			if err != nil {
-				log.Println("SYNC ERR:", err.Error())
-			}
-			time.Sleep(150 * time.Millisecond)
-		}
-	}()
-
 	return api
 }
 
@@ -193,6 +184,9 @@ func (a *API) SetSpeedRefresh(handler func(Speed)) {
 }
 
 func (a *API) SyncTorrents() error {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
 	torr, err := a.client.GetTorrents(a.globalCtx)
 	if err != nil {
 		log.Println("sync err", err.Error())
@@ -201,7 +195,19 @@ func (a *API) SyncTorrents() error {
 
 	var download, upload float64
 	var list []*Torrent
+iter:
 	for _, torrent := range torr.Torrents {
+		// optimization for inactive torrents, to fetch just once if inactive
+		if !torrent.ActiveUpload && !torrent.ActiveDownload {
+			for _, t := range a.torrents {
+				if t.State == "inactive" && t.ID == hex.EncodeToString(torrent.Hash) {
+					// nothing changed, just add it again
+					list = append(list, t)
+					continue iter
+				}
+			}
+		}
+
 		full, err := a.client.GetTorrentFull(a.globalCtx, torrent.Hash)
 		if err != nil {
 			continue
@@ -209,9 +215,13 @@ func (a *API) SyncTorrents() error {
 		download += full.Torrent.DownloadSpeed
 		upload += full.Torrent.UploadSpeed
 
-		peers, err := a.client.GetPeers(a.globalCtx, torrent.Hash)
-		if err != nil {
-			continue
+		var lnPeers = 0
+		if torrent.ActiveUpload || torrent.ActiveDownload {
+			peers, err := a.client.GetPeers(a.globalCtx, torrent.Hash)
+			if err != nil {
+				continue
+			}
+			lnPeers = len(peers.Peers)
 		}
 
 		uploaded, err := a.client.GetUploadStats(a.globalCtx, torrent.Hash)
@@ -219,17 +229,14 @@ func (a *API) SyncTorrents() error {
 			continue
 		}
 
-		tr := formatTorrent(full, len(peers.Peers), true, uploaded)
+		tr := formatTorrent(full, lnPeers, true, uploaded)
 		if tr == nil {
 			continue
 		}
 		list = append(list, tr)
 	}
 
-	a.mx.Lock()
 	a.torrents = list
-	a.mx.Unlock()
-
 	if a.onListRefresh != nil {
 		a.onListRefresh()
 	}
@@ -718,11 +725,11 @@ func (a *API) GetProviderContract(hash, ownerAddr string) ProviderContract {
 	for _, p := range data.Providers {
 		since := "Never"
 		snc := time.Since(p.LastProofAt)
-		if snc < time.Minute {
+		if snc < 2*time.Minute {
 			since = fmt.Sprint(int(snc.Seconds())) + " seconds ago"
-		} else if snc < time.Hour {
+		} else if snc < 2*time.Hour {
 			since = fmt.Sprint(int(snc.Minutes())) + " minutes ago"
-		} else if snc < 24*time.Hour {
+		} else if snc < 48*time.Hour {
 			since = fmt.Sprint(int(snc.Hours())) + " hours ago"
 		} else if snc < 1000*24*time.Hour {
 			since = fmt.Sprint(int(snc.Hours())/24) + " days ago"

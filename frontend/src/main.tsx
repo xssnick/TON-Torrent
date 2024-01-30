@@ -11,7 +11,7 @@ const root = createRoot(container!)
 
 root.render(
     <React.StrictMode>
-        <TonConnectUIProvider manifestUrl="https://xssnick.github.io/TON-Torrent/manifest.json">
+        <TonConnectUIProvider manifestUrl="https://ton.org/torrent/manifest.json">
             <App/>
         </TonConnectUIProvider>
     </React.StrictMode>

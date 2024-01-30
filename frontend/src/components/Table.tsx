@@ -146,7 +146,7 @@ export class Table extends Component<TableProps,State> {
             // report selected to callback
             let selected = this.state.torrents.filter((tr)=>{return tr.selected});
             this.props.onSelect(selected.map<SelectedTorrent>((ti) => {
-                EventsEmit("select-torrent", ti.id);
+                // EventsEmit("select-torrent", ti.id);
                 return {
                     hash: ti.id,
                     active: ti.state == "downloading" || ti.state == "seeding",
