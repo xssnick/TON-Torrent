@@ -799,6 +799,14 @@ func (a *API) FetchProviderRates(hash, provider string) ProviderRates {
 		return ProviderRates{Success: false, Reason: err.Error()}
 	}
 
+	if rates.SpaceAvailableMB < rates.Size {
+		return ProviderRates{Success: false, Reason: "torrent is too big for this provider"}
+	}
+
+	if !rates.Available {
+		return ProviderRates{Success: false, Reason: "provider is not available"}
+	}
+
 	span := uint32(86400)
 	if span > rates.MaxSpan {
 		span = rates.MaxSpan

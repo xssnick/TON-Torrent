@@ -69,7 +69,10 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
         let fetchContract = () => {
             if (!address) return;
 
+            let initialTorrent = props.torrent;
             GetProviderContract(props.torrent, address).then(provider => {
+                if (props.torrent != initialTorrent) return;
+
                 if (!provider.Success) {
                     return
                 }
@@ -137,11 +140,6 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
             });
         });
 
-        // EventsOn("select-torrent", (hash: string) => {
-        //    props.torrent = hash;
-        //    fetchContract();
-        // })
-
         fetchContract();
         let inter = window.setInterval(fetchContract, 3000);
 
@@ -155,7 +153,6 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
 
         return () => {
             EventsOff("provider-added");
-            // EventsOff("select-torrent");
             clearInterval(inter);
         };
     }, [props.torrent,address]);
