@@ -1,17 +1,13 @@
 package client
 
 import (
-	"context"
 	"encoding/binary"
 	"fmt"
-	"github.com/xssnick/tonutils-go/address"
 	"github.com/xssnick/tonutils-go/tl"
 	"github.com/xssnick/tonutils-go/tlb"
 	"github.com/xssnick/tonutils-go/tvm/cell"
-	"github.com/xssnick/tonutils-storage-provider/pkg/contract"
 	"github.com/xssnick/tonutils-storage/storage"
 	"math"
-	"time"
 )
 
 func init() {
@@ -215,39 +211,6 @@ type MetaFile struct {
 	Info      storage.TorrentInfo
 	RootProof *cell.Cell
 	Header    *storage.TorrentHeader
-}
-
-type NewProviderData struct {
-	Address       *address.Address
-	MaxSpan       uint32
-	PricePerMBDay tlb.Coins
-}
-
-type ProviderContractData struct {
-	Size      uint64
-	Address   *address.Address
-	Providers []contract.ProviderDataV1
-	Balance   tlb.Coins
-}
-
-type ProviderRates struct {
-	Available        bool
-	RatePerMBDay     tlb.Coins
-	MinBounty        tlb.Coins
-	SpaceAvailableMB uint64
-	MinSpan          uint32
-	MaxSpan          uint32
-
-	Size uint64
-}
-
-type ProviderStorageInfo struct {
-	Status   string
-	Reason   string
-	Progress float64
-
-	Context   context.Context
-	FetchedAt time.Time
 }
 
 func (t *Torrent) Parse(data []byte) (_ []byte, err error) {

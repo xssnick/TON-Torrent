@@ -11,6 +11,7 @@ import (
 	"github.com/pterm/pterm"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/tonutils/torrent-client/core/client"
+	"github.com/xssnick/tonutils-go/address"
 	"github.com/xssnick/tonutils-go/adnl"
 	"github.com/xssnick/tonutils-go/adnl/dht"
 	"github.com/xssnick/tonutils-go/liteclient"
@@ -19,12 +20,12 @@ import (
 	"github.com/xssnick/tonutils-storage-provider/pkg/transport"
 	"github.com/xssnick/tonutils-storage/config"
 	"github.com/xssnick/tonutils-storage/db"
+	"github.com/xssnick/tonutils-storage/provider"
 	"github.com/xssnick/tonutils-storage/storage"
 	"log"
 	"net"
 	"os"
 	"sort"
-	"sync"
 	"time"
 )
 
@@ -40,19 +41,14 @@ type Config struct {
 type Client struct {
 	storage   *db.Storage
 	connector storage.NetConnector
-	api       ton.APIClientWrapped
-	provider  *transport.Client
-
-	infoCache map[string]*client.ProviderStorageInfo
-	mx        sync.RWMutex
+	provider  *provider.Client
 
 	notify chan bool
 }
 
 func NewClient(dbPath string, cfg Config) (*Client, error) {
 	c := &Client{
-		infoCache: map[string]*client.ProviderStorageInfo{},
-		notify:    make(chan bool, 10), // to refresh fast a bit after
+		notify: make(chan bool, 10), // to refresh fast a bit after
 	}
 
 	ldb, err := leveldb.OpenFile(dbPath, nil)
@@ -88,7 +84,7 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 	}
 
 	lsPool := liteclient.NewConnectionPool()
-	c.api = ton.NewAPIClient(lsPool, ton.ProofCheckPolicyFast)
+	apiClient := ton.NewAPIClient(lsPool, ton.ProofCheckPolicyFast).WithRetry()
 
 	// connect async to not slow down main processes
 	go func() {
@@ -132,7 +128,6 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 	if err = gateProvider.StartClient(); err != nil {
 		return nil, fmt.Errorf("failed to start adnl gateway for provider: %w", err)
 	}
-	c.provider = transport.NewClient(gateProvider, dhtClient)
 
 	downloadGate := adnl.NewGateway(cfg.Key)
 	if err = downloadGate.StartClient(); err != nil {
@@ -148,6 +143,9 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to init storage: %w", err)
 	}
 	srv.SetStorage(c.storage)
+
+	prvClient := transport.NewClient(gateProvider, dhtClient)
+	c.provider = provider.NewClient(c.storage, apiClient, prvClient)
 
 	d, u, err := c.storage.GetSpeedLimits()
 	if err != nil {
@@ -509,4 +507,24 @@ func (c *Client) SetSpeedLimits(ctx context.Context, download, upload int64) err
 
 func (c *Client) GetNotifier() <-chan bool {
 	return c.notify
+}
+
+func (c *Client) FetchProviderContract(ctx context.Context, torrentHash []byte, owner *address.Address) (*provider.ProviderContractData, error) {
+	return c.provider.FetchProviderContract(ctx, torrentHash, owner)
+}
+
+func (c *Client) FetchProviderRates(ctx context.Context, torrentHash, providerKey []byte) (*provider.ProviderRates, error) {
+	return c.provider.FetchProviderRates(ctx, torrentHash, providerKey)
+}
+
+func (c *Client) RequestProviderStorageInfo(ctx context.Context, torrentHash, providerKey []byte, owner *address.Address) (*provider.ProviderStorageInfo, error) {
+	return c.provider.RequestProviderStorageInfo(ctx, torrentHash, providerKey, owner)
+}
+
+func (c *Client) BuildAddProviderTransaction(ctx context.Context, torrentHash []byte, owner *address.Address, providers []provider.NewProviderData) (addr *address.Address, bodyData, stateInit []byte, err error) {
+	return c.provider.BuildAddProviderTransaction(ctx, torrentHash, owner, providers)
+}
+
+func (c *Client) BuildWithdrawalTransaction(torrentHash []byte, owner *address.Address) (addr *address.Address, bodyData []byte, err error) {
+	return c.provider.BuildWithdrawalTransaction(torrentHash, owner)
 }
