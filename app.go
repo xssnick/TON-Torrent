@@ -49,7 +49,7 @@ func NewApp() *App {
 	a := &App{}
 	oshook.HookStartup(a.openFile, a.openHash)
 	adnl.Logger = func(v ...any) {}
-	storage.Logger = func(v ...any) {} //log.Println
+	storage.Logger = log.Println
 
 	var err error
 	a.rootPath, err = PrepareRootPath()

@@ -342,6 +342,10 @@ func formatTorrent(full *client.TorrentFull, peersNum int, hide0Speed bool, uplo
 		state = "inactive"
 	}
 
+	if !torrent.Verified {
+		state = "verifying"
+	}
+
 	path := torrent.RootDir
 	if torrent.DirName != nil {
 		path += "/" + *torrent.DirName

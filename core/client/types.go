@@ -200,6 +200,8 @@ type Torrent struct {
 	DownloadSpeed  float64
 	UploadSpeed    float64
 	FatalError     *string // 2
+
+	Verified bool
 }
 
 type TorrentsList struct {

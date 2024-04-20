@@ -278,6 +278,7 @@ func (c *Client) getTorrent(hash []byte, withFiles bool) (*client.TorrentFull, e
 
 	var files []client.FileInfo
 	activeDownload, activeUpload := t.IsActive()
+	verificationInProgress, _ := t.GetLastVerifiedAt()
 	torrent := client.Torrent{
 		Hash:           t.BagID,
 		AddedAt:        uint32(t.CreatedAt.Unix()),
@@ -285,6 +286,7 @@ func (c *Client) getTorrent(hash []byte, withFiles bool) (*client.TorrentFull, e
 		ActiveDownload: activeDownload,
 		ActiveUpload:   activeUpload,
 		Completed:      false,
+		Verified:       !verificationInProgress,
 		FatalError:     nil,
 	}
 	if t.Info != nil {
