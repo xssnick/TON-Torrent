@@ -50,6 +50,8 @@ func NewApp() *App {
 	oshook.HookStartup(a.openFile, a.openHash)
 	adnl.Logger = func(v ...any) {}
 	storage.Logger = log.Println
+	storage.DownloadThreads = 60
+	storage.DownloadPrefetch = storage.DownloadThreads * 8
 
 	var err error
 	a.rootPath, err = PrepareRootPath()
