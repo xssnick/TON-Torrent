@@ -120,7 +120,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
         }
 
         EventsOn("provider-added", (p: any, hash: string) => {
-            if (hash != props.torrent) {
+            if (hash !== props.torrent) {
                 return;
             }
 
