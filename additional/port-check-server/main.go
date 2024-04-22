@@ -13,7 +13,7 @@ func main() {
 	}
 	defer listen.Close()
 
-	println("started on tcp 9099")
+	log.Println("started on tcp 9099")
 	for {
 		conn, err := listen.Accept()
 		if err != nil {
@@ -25,7 +25,7 @@ func main() {
 }
 
 func handle(conn net.Conn) {
-	println("conn from", conn.RemoteAddr().String())
+	log.Println("conn from", conn.RemoteAddr().String())
 	defer conn.Close()
 
 	buffer := make([]byte, 8)
@@ -35,7 +35,7 @@ func handle(conn net.Conn) {
 	}
 
 	if string(buffer[:2]) == "ME" {
-		println("check request from", conn.RemoteAddr().String())
+		log.Println("check request from", conn.RemoteAddr().String())
 
 		conn.Write([]byte("OK"))
 
