@@ -8,9 +8,9 @@ require (
 	github.com/pterm/pterm v0.12.59
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/wailsapp/wails/v2 v2.5.1
-	github.com/xssnick/tonutils-go v1.8.9-0.20240125180557-86af89e735af
-	github.com/xssnick/tonutils-storage v0.4.0
-	github.com/xssnick/tonutils-storage-provider v0.1.0
+	github.com/xssnick/tonutils-go v1.9.5
+	github.com/xssnick/tonutils-storage v0.6.3
+	github.com/xssnick/tonutils-storage-provider v0.2.1-0.20240417140301-cd9a5cee4f3b
 )
 
 require (
@@ -24,6 +24,7 @@ require (
 	github.com/gookit/color v1.5.3 // indirect
 	github.com/huin/goupnp v1.1.0 // indirect
 	github.com/jchv/go-winloader v0.0.0-20210711035445-715c2860da7e // indirect
+	github.com/kevinms/leakybucket-go v0.0.0-20200115003610-082473db97ca // indirect
 	github.com/labstack/echo/v4 v4.9.0 // indirect
 	github.com/labstack/gommon v0.3.1 // indirect
 	github.com/leaanthony/go-ansi-parser v1.0.1 // indirect

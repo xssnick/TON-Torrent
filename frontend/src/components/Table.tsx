@@ -56,6 +56,8 @@ export function textState(state: string, peers: number) {
     switch (state) {
         case "seeding":
             return "Seeding";
+        case "verifying":
+            return "Verifying";
         case "downloading":
             return peers > 0 ? "Downloading" : "Searching for peers";
         case "fail":
@@ -257,7 +259,7 @@ export class Table extends Component<TableProps,State> {
                         tip!.style.opacity = "0";
                         tip!.style.visibility = "hidden";
                     }
-                }><div id={"state-"+t.id} className={"item-state "+(t.state == 'downloading' && t.peersNum == 0 ? 'searching' : t.state)}></div></div><span>{t.name}</span></div></td>
+                }><div id={"state-"+t.id} className={"item-state "+(t.state == 'verifying' || (t.state == 'downloading' && t.peersNum == 0) ? 'searching' : t.state)}></div></div><span>{t.name}</span></div></td>
                 <td style={{width:"130px"}}><div className="progress-block-small">
                     <span style={{textAlign:"left", width:"38px"}}>{t.progress}%</span>
                     <div className="progress-bar-small-form">

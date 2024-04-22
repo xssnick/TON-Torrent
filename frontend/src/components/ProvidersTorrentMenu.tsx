@@ -23,6 +23,7 @@ export interface Provider {
     proofEvery: string
     price: string
     status: string
+    peer: string
     reason: string
     type: 'new' | 'committed' | 'removed'
     data: any
@@ -84,6 +85,8 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                     return;
                 }
 
+                console.log(provider);
+
                 setState((current) => {
                     let ps: Provider[] = [];
                     if (provider.Providers) {
@@ -102,6 +105,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                                 price: p.PricePerDay,
                                 status: p.Status,
                                 reason: p.Reason,
+                                peer: p.Peer,
                                 type: curI != -1 ? current.providers[curI].type : 'committed',
                                 data: p.Data,
                             });
@@ -116,7 +120,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
         }
 
         EventsOn("provider-added", (p: any, hash: string) => {
-            if (hash != props.torrent) {
+            if (hash !== props.torrent) {
                 return;
             }
 
@@ -132,6 +136,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                     price: p.PricePerDay,
                     status: "",
                     reason: "",
+                    peer: "",
                     type: 'new',
                     data: p.Data,
                 });
@@ -157,14 +162,17 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
         };
     }, [props.torrent,address]);
 
-    const statusSwitch = (status: string) => {
+    const statusSwitch = (status: string, peer: string) => {
         if (status === 'error') {
             return 'fail';
         } else if (status === 'downloading') {
             return 'downloading';
         } else if (status === 'active') {
-            return 'seeding';
-        } else if (status === 'resolving' || status.startsWith('warning-')) {
+            if (peer != '') {
+                return 'seeding';
+            }
+            return 'active-op';
+        }  else if (status === 'resolving' || status.startsWith('warning-')) {
             return 'searching';
         } else {
             return 'inactive';
@@ -187,15 +195,26 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                 status = status.slice(8)
             }
 
+            let statusText = status.charAt(0).toUpperCase() + status.slice(1);
+            let reason = t.reason;
+
+            if ((status == 'balance' || status == 'active') && t.peer != '') {
+                statusText = "Peer"
+                reason += ", peer connected: "+ t.peer.slice(0,8);
+            } else if (status == 'balance') {
+                statusText = "Active"
+            }
+
             items.push(
                 <tr key={t.id} className={cl}>
                     <td style={{maxWidth:"200px"}}>{t.id}</td>
                     <td className={'small'} style={{display:"flex"}}>{ t.type == 'new' ? '' : <div className={"item-state-container"} onMouseEnter={(e) =>{
                         let tip = document.getElementById("tip");
-                        tip!.textContent = t.reason != "" ? t.reason.charAt(0).toUpperCase() + t.reason.slice(1) : status.charAt(0).toUpperCase() + status.slice(1);
+                        tip!.textContent = reason != "" ? reason.charAt(0).toUpperCase() + reason.slice(1) : status.charAt(0).toUpperCase() + status.slice(1);
                         if (status == 'inactive') {
                             tip!.textContent = "Not connected"
                         }
+
                         let rectItem = document.getElementById("state-"+t.id)!.getBoundingClientRect()
                         let rectTip = tip!.getBoundingClientRect();
 
@@ -210,7 +229,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                             tip!.style.opacity = "0";
                             tip!.style.visibility = "hidden";
                         }
-                    }><div id={"state-"+t.id} className={"item-state "+ statusSwitch(t.status)}></div></div>}{status == 'inactive' ? "Proof "+t.lastProof : status.charAt(0).toUpperCase() + status.slice(1)}</td>
+                    }><div id={"state-"+t.id} className={"item-state "+ statusSwitch(t.status, t.peer)}></div></div>}{status == 'inactive' ? "Proof "+t.lastProof : statusText}</td>
                     <td className={'small'}>{t.proofEvery}</td>
                     <td className={'small'}>{t.price}</td>
                     <td className={'small'}><button icon-type="remove" onClick={()=>{
