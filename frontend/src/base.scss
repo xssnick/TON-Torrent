@@ -232,6 +232,27 @@ img {
     }
 }
 
+.foot-bar .tunnel {
+    width: 175px;
+    display: flex;
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-left: 5px;
+
+    color: var(--text-secondary, $secondaryText);
+    font-variant-numeric: lining-nums tabular-nums;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 16px;
+    letter-spacing: -0.007px;
+
+    span img {
+        height: 21px;
+        margin: 0 2px 2px;
+    }
+}
+
 .foot-bar .speed span {
     font-size: 11px;
     margin: auto;

@@ -86,6 +86,10 @@ export function OpenFolderSelectFile(arg1) {
   return window['go']['main']['App']['OpenFolderSelectFile'](arg1);
 }
 
+export function OpenTunnelConfig() {
+  return window['go']['main']['App']['OpenTunnelConfig']();
+}
+
 export function RemoveTorrent(arg1, arg2, arg3) {
   return window['go']['main']['App']['RemoveTorrent'](arg1, arg2, arg3);
 }
@@ -94,8 +98,8 @@ export function RequestProviderStorageInfo(arg1, arg2, arg3) {
   return window['go']['main']['App']['RequestProviderStorageInfo'](arg1, arg2, arg3);
 }
 
-export function SaveConfig(arg1, arg2, arg3, arg4, arg5, arg6) {
-  return window['go']['main']['App']['SaveConfig'](arg1, arg2, arg3, arg4, arg5, arg6);
+export function SaveConfig(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['main']['App']['SaveConfig'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
 export function SetActive(arg1, arg2) {

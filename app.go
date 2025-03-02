@@ -5,7 +5,10 @@ import (
 	"crypto/ed25519"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/ton-blockchain/adnl-tunnel/config"
 	"github.com/tonutils/torrent-client/core/api"
 	"github.com/tonutils/torrent-client/core/client"
 	"github.com/tonutils/torrent-client/core/gostorage"
@@ -169,6 +172,11 @@ func (a *App) ready(ctx context.Context) {
 					lAddr = "0.0.0.0"
 				}
 
+				if len(addr) < 2 {
+					a.Throw(fmt.Errorf("ListenAddr in config.json is not valid"))
+					return
+				}
+
 				cfg := gostorage.Config{
 					Key:               ed25519.NewKeyFromSeed(a.config.Key),
 					ListenAddr:        lAddr + ":" + addr[1],
@@ -186,10 +194,28 @@ func (a *App) ready(ctx context.Context) {
 					cfg.ExternalIP = ""
 				}
 
+				tun := a.config.TunnelConfigPath
+			retry:
 				var err error
-				cl, err = gostorage.NewClient(a.rootPath+"/tonutils-storage-db", cfg)
+				cl, err = gostorage.NewClient(a.rootPath+"/tonutils-storage-db", tun, cfg, func(addr string) {
+					go func() {
+						// wait till frontend init, to display event
+						for !a.loaded {
+							time.Sleep(50 * time.Millisecond)
+						}
+						runtime2.EventsEmit(a.ctx, "tunnel_assigned", addr)
+						println("TUNNEL ASSIGNED:", addr)
+					}()
+				})
 				if err != nil {
+					if errors.Is(err, gostorage.ErrTunnelConfigGenerated) {
+						// generated example config, for now start without tunnel
+						a.ShowMsg(gostorage.ErrTunnelConfigGenerated.Error())
+						tun = ""
+						goto retry
+					}
 					a.Throw(fmt.Errorf("failed to init go storage: %w", err))
+					return
 				}
 			}
 
@@ -328,6 +354,65 @@ func (a *App) OpenDir() string {
 		log.Println(err.Error())
 	}
 	return str
+}
+
+func (a *App) OpenTunnelConfig() string {
+	path, err := runtime2.OpenFileDialog(a.ctx, runtime2.OpenDialogOptions{
+		DefaultDirectory: "",
+		DefaultFilename:  "tunnel-config.json",
+		Title:            "Open Tunnel Config",
+		Filters: []runtime2.FileFilter{
+			{
+				DisplayName: "tunnel-config.json",
+				Pattern:     "*.json",
+			},
+		},
+		ShowHiddenFiles:            false,
+		CanCreateDirectories:       false,
+		ResolvesAliases:            false,
+		TreatPackagesAsDirectories: false,
+	})
+	if err != nil {
+		println(err.Error())
+		return ""
+	}
+
+	if path != "" {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			_, _ = runtime2.MessageDialog(a.ctx, runtime2.MessageDialogOptions{
+				Type:          runtime2.ErrorDialog,
+				Title:         "Failed to read tunnel config",
+				Message:       err.Error(),
+				DefaultButton: "Ok",
+			})
+			return ""
+		}
+
+		if len(data) > 0 {
+			var cfg config.ClientConfig
+			if err = json.Unmarshal(data, &cfg); err != nil {
+				_, _ = runtime2.MessageDialog(a.ctx, runtime2.MessageDialogOptions{
+					Type:          runtime2.ErrorDialog,
+					Title:         "Failed to parse tunnel config",
+					Message:       err.Error(),
+					DefaultButton: "Ok",
+				})
+				return ""
+			}
+
+			if len(cfg.OutGateway.Key) != 32 {
+				_, _ = runtime2.MessageDialog(a.ctx, runtime2.MessageDialogOptions{
+					Type:    runtime2.ErrorDialog,
+					Title:   "Failed to parse tunnel config",
+					Message: "Invalid config format",
+				})
+				return ""
+			}
+		}
+	}
+
+	return path
 }
 
 type TorrentCreateResult struct {
@@ -539,12 +624,17 @@ func (a *App) GetConfig() *Config {
 	return a.config
 }
 
-func (a *App) SaveConfig(downloads string, useTonutilsStorage, seedMode bool, storageExtIP, daemonControlAddr, daemonDB string) string {
+func (a *App) SaveConfig(downloads string, useTonutilsStorage, seedMode bool, storageExtIP, daemonControlAddr, daemonDB, tunnelConfigPath string) string {
 	notify := false
 	a.config.DownloadsPath = downloads
 
 	if useTonutilsStorage != !a.config.UseDaemon {
 		a.config.UseDaemon = !useTonutilsStorage
+		notify = true
+	}
+
+	if tunnelConfigPath != a.config.TunnelConfigPath {
+		a.config.TunnelConfigPath = tunnelConfigPath
 		notify = true
 	}
 

@@ -2,9 +2,11 @@ import React, {MouseEvent, Component} from 'react';
 import LogoLight from "../public/light/logo.svg"
 import ResizerLight from "../public/light/resizer.svg"
 import DownloadLight from "../public/light/download.svg"
+import TunnelLight from "../public/light/tunnel.svg"
 import LogoDark from "../public/dark/logo.svg"
 import ResizerDark from "../public/dark/resizer.svg"
 import DownloadDark from "../public/dark/download.svg"
+import TunnelDark from "../public/dark/tunnel.svg"
 import './tooltip.css';
 import {Filter, Refresh, SelectedTorrent, Table} from "./components/Table";
 import {AddTorrentModal} from "./components/ModalAddTorrent";
@@ -50,6 +52,8 @@ interface State {
     addProviderTorrentHash?: string
     removeHashes?: string[]
     doProviderTxModalData?: DoProviderTxModalData
+
+    tunnelAddr?: string
 }
 
 export class App extends Component<{}, State> {
@@ -141,6 +145,9 @@ export class App extends Component<{}, State> {
         })
         EventsOn("daemon_ready", (data)=> {
             this.setState((current)=>({...current, ready: true}));
+        })
+        EventsOn("tunnel_assigned", (addr: string)=> {
+            this.setState((current)=>({...current, tunnelAddr: addr}));
         })
         WaitReady().then()
 
@@ -349,9 +356,15 @@ export class App extends Component<{}, State> {
                         </div>
                     </div> : ""}
                     <div className="foot-bar">
+                        {this.state.tunnelAddr ? <div className="tunnel">
+                            <span><img src={this.state.isDark ? TunnelDark : TunnelLight}
+                                       alt=""/>{this.state.tunnelAddr}</span>
+                        </div>:  ""}
                         <div className="speed">
-                            <span><img src={this.state.isDark ? DownloadDark : DownloadLight} alt=""/>{this.state.overallDownloadSpeed}</span>
-                            <span><img className="upload" src={this.state.isDark ? DownloadDark : DownloadLight} alt=""/>{this.state.overallUploadSpeed}</span>
+                            <span><img src={this.state.isDark ? DownloadDark : DownloadLight}
+                                       alt=""/>{this.state.overallDownloadSpeed}</span>
+                            <span><img className="upload" src={this.state.isDark ? DownloadDark : DownloadLight}
+                                       alt=""/>{this.state.overallUploadSpeed}</span>
                         </div>
                     </div>
                 </div>

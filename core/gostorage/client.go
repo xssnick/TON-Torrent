@@ -7,12 +7,16 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/pterm/pterm"
 	"github.com/syndtr/goleveldb/leveldb"
+	tunnelConfig "github.com/ton-blockchain/adnl-tunnel/config"
+	"github.com/ton-blockchain/adnl-tunnel/tunnel"
 	"github.com/tonutils/torrent-client/core/client"
 	"github.com/xssnick/tonutils-go/address"
 	"github.com/xssnick/tonutils-go/adnl"
+	adnlAddress "github.com/xssnick/tonutils-go/adnl/address"
 	"github.com/xssnick/tonutils-go/adnl/dht"
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/tl"
@@ -24,7 +28,9 @@ import (
 	"github.com/xssnick/tonutils-storage/storage"
 	"log"
 	"net"
+	"net/netip"
 	"os"
+	"runtime"
 	"sort"
 	"time"
 )
@@ -46,23 +52,29 @@ type Client struct {
 	notify chan bool
 }
 
-func NewClient(dbPath string, cfg Config) (*Client, error) {
+var ErrTunnelConfigGenerated = errors.New("generated tunnel config; fill it with the desired route and restart")
+
+func NewClient(dbPath, tunnelConfigPath string, cfg Config, onTunnel func(addr string)) (*Client, error) {
 	c := &Client{
 		notify: make(chan bool, 10), // to refresh fast a bit after
 	}
 
-	ldb, err := leveldb.OpenFile(dbPath, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load db: %w", err)
-	}
-
 	var ip net.IP
+	var port uint16
 	if cfg.ExternalIP != "" {
 		ip = net.ParseIP(cfg.ExternalIP)
 		if ip == nil {
-			return nil, fmt.Errorf("external ip is invalid")
+			pterm.Error.Println("External ip is invalid")
+			os.Exit(1)
 		}
 	}
+
+	addr, err := netip.ParseAddrPort(cfg.ListenAddr)
+	if err != nil {
+		pterm.Error.Println("Listen addr is invalid")
+		os.Exit(1)
+	}
+	port = addr.Port()
 
 	var lsCfg *liteclient.GlobalConfig
 	if cfg.NetworkConfigPath != "" {
@@ -72,7 +84,7 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 			os.Exit(1)
 		}
 	} else {
-		lsCfg, err = liteclient.GetConfigFromUrl(context.Background(), "https://ton.org/global.config.json")
+		lsCfg, err = liteclient.GetConfigFromUrl(context.Background(), "https://ton-blockchain.github.io/global.config.json")
 		if err != nil {
 			pterm.Warning.Println("Failed to download ton config:", err.Error(), "; We will take it from static cache")
 			lsCfg = &liteclient.GlobalConfig{}
@@ -98,21 +110,92 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 		}
 	}()
 
-	gate := adnl.NewGateway(cfg.Key)
+	var gate *adnl.Gateway
+	var netMgr adnl.NetManager
+	if tunnelConfigPath != "" {
+		data, err := os.ReadFile(tunnelConfigPath)
+		if err == nil && len(data) == 0 {
+			err = os.Remove(tunnelConfigPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to remove empty tunnel config: %w", err)
+			}
+			// to replace empty
+			err = os.ErrNotExist
+		}
+
+		if err != nil {
+			if os.IsNotExist(err) {
+				if _, err = tunnelConfig.GenerateClientConfig(tunnelConfigPath); err != nil {
+					return nil, fmt.Errorf("failed to generate tunnel config: %w", err)
+				}
+				pterm.Info.Println("Generated tunnel config; fill it with the desired route and restart to enable tunnel")
+				return nil, ErrTunnelConfigGenerated
+			}
+			return nil, fmt.Errorf("failed to load tunnel config: %w", err)
+		}
+
+		var tunCfg tunnelConfig.ClientConfig
+		if err = json.Unmarshal(data, &tunCfg); err != nil {
+			return nil, fmt.Errorf("failed to parse tunnel config: %w", err)
+		}
+
+		var tun *tunnel.RegularOutTunnel
+		tun, port, ip, err = tunnel.PrepareTunnel(&tunCfg, lsCfg)
+		if err != nil {
+			return nil, fmt.Errorf("tunnel preparation failed: %w", err)
+		}
+		netMgr = adnl.NewMultiNetReader(tun)
+
+		gate = adnl.NewGatewayWithNetManager(cfg.Key, netMgr)
+		tun.SetOutAddressChangedHandler(func(addr *net.UDPAddr) {
+			gate.SetAddressList([]*adnlAddress.UDP{
+				{
+					IP:   addr.IP,
+					Port: int32(addr.Port),
+				},
+			})
+			onTunnel(addr.String())
+		})
+		onTunnel(fmt.Sprintf("%s:%d", ip.String(), port))
+
+		pterm.Info.Println("Using tunnel - IP:", ip.String(), " Port:", port)
+	} else {
+		dl, err := adnl.DefaultListener(cfg.ListenAddr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create default listener: %w", err)
+		}
+		netMgr = adnl.NewMultiNetReader(dl)
+		gate = adnl.NewGatewayWithNetManager(cfg.Key, netMgr)
+	}
+
+	listenThreads := runtime.NumCPU()
+	if listenThreads > 32 {
+		listenThreads = 32
+	}
 
 	serverMode := ip != nil
 	if serverMode {
-		gate.SetExternalIP(ip)
-		if err = gate.StartServer(cfg.ListenAddr); err != nil {
+		gate.SetAddressList([]*adnlAddress.UDP{
+			{
+				IP:   ip,
+				Port: int32(port),
+			},
+		})
+		if err = gate.StartServer(cfg.ListenAddr, listenThreads); err != nil {
 			return nil, fmt.Errorf("failed to start adnl gateway in server mode: %w", err)
 		}
 	} else {
-		if err = gate.StartClient(); err != nil {
+		if err = gate.StartClient(listenThreads); err != nil {
 			return nil, fmt.Errorf("failed to start adnl gateway in client mode: %w", err)
 		}
 	}
 
-	dhtGate := adnl.NewGateway(cfg.Key)
+	_, dhtAdnlKey, err := ed25519.GenerateKey(nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate ed25519 dht adnl key: %w", err)
+	}
+
+	dhtGate := adnl.NewGatewayWithNetManager(dhtAdnlKey, netMgr)
 	if err = dhtGate.StartClient(); err != nil {
 		return nil, fmt.Errorf("failed to init dht adnl gateway: %w", err)
 	}
@@ -124,17 +207,17 @@ func NewClient(dbPath string, cfg Config) (*Client, error) {
 
 	providerGateSeed := sha256.Sum256(cfg.Key.Seed())
 	gateKey := ed25519.NewKeyFromSeed(providerGateSeed[:])
-	gateProvider := adnl.NewGateway(gateKey)
+	gateProvider := adnl.NewGatewayWithNetManager(gateKey, netMgr)
 	if err = gateProvider.StartClient(); err != nil {
 		return nil, fmt.Errorf("failed to start adnl gateway for provider: %w", err)
 	}
 
-	downloadGate := adnl.NewGateway(cfg.Key)
-	if err = downloadGate.StartClient(); err != nil {
-		return nil, fmt.Errorf("failed to init downloader gateway: %w", err)
-	}
-
 	srv := storage.NewServer(dhtClient, gate, cfg.Key, serverMode)
+
+	ldb, err := leveldb.OpenFile(dbPath, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load db: %w", err)
+	}
 
 	ch := make(chan db.Event, 1)
 	c.connector = storage.NewConnector(srv)
@@ -371,7 +454,8 @@ func (c *Client) GetTorrentMeta(ctx context.Context, hash []byte) ([]byte, error
 		Info:   *t.Info,
 		Header: t.Header,
 	}
-	return mf.Serialize()
+
+	return tl.Serialize(mf, true)
 }
 
 func (c *Client) GetPeers(ctx context.Context, hash []byte) (*client.PeersList, error) {

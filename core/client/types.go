@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"github.com/xssnick/tonutils-go/tl"
@@ -215,6 +216,8 @@ type MetaFile struct {
 	Header    *storage.TorrentHeader
 }
 
+var BoolTrue = tl.CRC("boolTrue = Bool")
+
 func (t *Torrent) Parse(data []byte) (_ []byte, err error) {
 	// Manual parse because of not standard array definition
 	if len(data) < 36 {
@@ -268,11 +271,11 @@ func (t *Torrent) Parse(data []byte) (_ []byte, err error) {
 	}
 	t.RootDir = string(rootDir)
 
-	t.ActiveDownload = binary.LittleEndian.Uint32(data) == tl.BoolTrue
+	t.ActiveDownload = binary.LittleEndian.Uint32(data) == BoolTrue
 	data = data[4:]
-	t.ActiveUpload = binary.LittleEndian.Uint32(data) == tl.BoolTrue
+	t.ActiveUpload = binary.LittleEndian.Uint32(data) == BoolTrue
 	data = data[4:]
-	t.Completed = binary.LittleEndian.Uint32(data) == tl.BoolTrue
+	t.Completed = binary.LittleEndian.Uint32(data) == BoolTrue
 	data = data[4:]
 
 	t.DownloadSpeed = math.Float64frombits(binary.LittleEndian.Uint64(data))
@@ -294,8 +297,8 @@ func (t *Torrent) Parse(data []byte) (_ []byte, err error) {
 	return data, nil
 }
 
-func (t *Torrent) Serialize() ([]byte, error) {
-	return nil, fmt.Errorf("not implemented")
+func (t *Torrent) Serialize(buf *bytes.Buffer) error {
+	return fmt.Errorf("not implemented")
 }
 
 func (d *Double) Parse(data []byte) (_ []byte, err error) {
@@ -306,10 +309,11 @@ func (d *Double) Parse(data []byte) (_ []byte, err error) {
 	return data[8:], nil
 }
 
-func (d *Double) Serialize() ([]byte, error) {
+func (d *Double) Serialize(buf *bytes.Buffer) error {
 	var data = make([]byte, 8)
 	binary.LittleEndian.PutUint64(data, math.Float64bits(d.Value))
-	return data, nil
+	buf.Write(data)
+	return nil
 }
 
 func (d *MetaFile) Parse(data []byte) (_ []byte, err error) {
@@ -377,13 +381,13 @@ func (d *MetaFile) Parse(data []byte) (_ []byte, err error) {
 	return nil, nil
 }
 
-func (d *MetaFile) Serialize() (data []byte, err error) {
+func (d *MetaFile) Serialize(buf *bytes.Buffer) (err error) {
 	var flags uint32
 
 	var proof, info, header []byte
 	infoCell, err := tlb.ToCell(d.Info)
 	if err != nil {
-		return nil, fmt.Errorf("failed to serialize info to cell: %w", err)
+		return fmt.Errorf("failed to serialize info to cell: %w", err)
 	}
 	info = infoCell.ToBOC()
 
@@ -395,11 +399,11 @@ func (d *MetaFile) Serialize() (data []byte, err error) {
 		flags |= 2
 		header, err = tl.Serialize(d.Header, false)
 		if err != nil {
-			return nil, fmt.Errorf("failed to serialize header: %w", err)
+			return fmt.Errorf("failed to serialize header: %w", err)
 		}
 	}
 
-	data = make([]byte, 8)
+	data := make([]byte, 8)
 	binary.LittleEndian.PutUint32(data, flags)
 	binary.LittleEndian.PutUint32(data[4:], uint32(len(info)))
 	if d.RootProof != nil {
@@ -410,5 +414,6 @@ func (d *MetaFile) Serialize() (data []byte, err error) {
 	data = append(data, info...)
 	data = append(data, proof...)
 	data = append(data, header...)
-	return data, nil
+	buf.Write(data)
+	return nil
 }
