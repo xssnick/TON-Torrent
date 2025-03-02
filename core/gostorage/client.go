@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -292,6 +293,14 @@ func (c *Client) AddByHash(ctx context.Context, hash []byte, dir string) (*clien
 }
 
 func (c *Client) AddByMeta(ctx context.Context, meta []byte, dir string) (*client.TorrentFull, error) {
+	if len(meta) < 8 {
+		return nil, fmt.Errorf("too short meta")
+	}
+	if binary.LittleEndian.Uint32(meta) == 0x6a7181e0 {
+		// skip id, for compatibility with boxed and not boxed
+		meta = meta[4:]
+	}
+
 	var ti client.MetaFile
 	_, err := tl.Parse(&ti, meta, false)
 	if err != nil {

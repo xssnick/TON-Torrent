@@ -42,6 +42,8 @@ func init() {
 
 	tl.Register(DaemonError{}, "storage.daemon.queryError message:string = storage.daemon.QueryError")
 	tl.Register(Success{}, "storage.daemon.success = storage.daemon.Success")
+
+	tl.Register(MetaFile{}, "torrent_file#6a7181e0 flags:(## 32) info_boc_size:uint32 root_proof_boc_size:flags.0?uint32 info_boc:(info_boc_size * [uint8]) root_proof_boc:flags.0?(root_proof_boc_size * [uint8]) header:flags.1?TorrentHeader = TorrentMeta")
 }
 
 type DaemonError struct {

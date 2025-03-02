@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/base64"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -257,6 +258,15 @@ func (a *App) WaitReady() {
 			}
 
 			runtime2.EventsEmit(a.ctx, "daemon_ready")
+			runtime2.OnFileDrop(a.ctx, func(x, y int, paths []string) {
+				if len(paths) == 0 {
+					return
+				}
+				if !strings.HasSuffix(paths[0], ".tonbag") {
+					return
+				}
+				a.openFilePath(paths[0])
+			})
 
 			if a.openFileData != nil {
 				a.openFile(a.openFileData)
@@ -332,6 +342,15 @@ func (a *App) openFile(data []byte) {
 		// wait for loading
 		a.openFileData = data
 	}
+}
+
+func (a *App) openFilePath(path string) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+	a.openFile(data)
 }
 
 func (a *App) openHash(hash string) {
@@ -576,6 +595,14 @@ func (a *App) AddTorrentByMeta(meta string) TorrentAddResult {
 }
 
 func (a *App) addByMeta(meta []byte) TorrentAddResult {
+	if len(meta) < 8 {
+		return TorrentAddResult{Err: "too short meta"}
+	}
+	if binary.LittleEndian.Uint32(meta) == 0x6a7181e0 {
+		// skip id, for compatibility with boxed and not boxed
+		meta = meta[4:]
+	}
+
 	var ti client.MetaFile
 	_, err := tl.Parse(&ti, meta, false)
 	if err != nil {
