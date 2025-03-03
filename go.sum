@@ -135,8 +135,8 @@ github.com/syndtr/goleveldb v1.0.0 h1:fBdIW9lB4Iz0n9khmH8w27SJ3QEJ7+IgjPEwGSZiFd
 github.com/syndtr/goleveldb v1.0.0/go.mod h1:ZVVdQEZoIme9iO1Ch2Jdy24qqXrMMOU6lpPAyBWyWuQ=
 github.com/tkrajina/go-reflector v0.5.8 h1:yPADHrwmUbMq4RGEyaOUpz2H90sRsETNVpjzo3DLVQQ=
 github.com/tkrajina/go-reflector v0.5.8/go.mod h1:ECbqLgccecY5kPmPmXg1MrHW585yMcDkVl6IvJe64T4=
-github.com/ton-blockchain/adnl-tunnel v0.0.0-20250227065935-bdeeba972e50 h1:cOZg2CMDyolYJmvUilT+ADQZEEw3KZr3sqUWAu0zJTA=
-github.com/ton-blockchain/adnl-tunnel v0.0.0-20250227065935-bdeeba972e50/go.mod h1:oGjNyVCIItWKbJ/kUd32gg2EeaxTtUUBToldPq9wUd4=
+github.com/ton-blockchain/adnl-tunnel v0.0.0-20250303064129-b1f4c72ad756 h1:wdCq3XAuEr2Ee2COJ6F7FFejMGFLzaEQI/0epDgldMs=
+github.com/ton-blockchain/adnl-tunnel v0.0.0-20250303064129-b1f4c72ad756/go.mod h1:cgzF7+cqsdaEhoPw1+Aw5L4UEkJXKeAloYuNCyjvmA0=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasttemplate v1.2.2 h1:lxLXG0uE3Qnshl9QyaK6XJxMXlQZELvChBOCmQD0Loo=
@@ -156,8 +156,8 @@ github.com/xssnick/ton-payment-network v0.0.0-20250211055352-ed9cef403ce1 h1:qm8
 github.com/xssnick/ton-payment-network v0.0.0-20250211055352-ed9cef403ce1/go.mod h1:HK2Gt9vHZ0mNA/z447N+icByDZxdXW+wPWYRdoWpHPw=
 github.com/xssnick/tonutils-go v1.11.1-0.20250301170704-e54bf77ab0e5 h1:w3recKdjasN9AvSlb3dxWKAQludUmKh+Iem+Q4kz74s=
 github.com/xssnick/tonutils-go v1.11.1-0.20250301170704-e54bf77ab0e5/go.mod h1:Wj8TFiUUc7IGdLn2X/ZDzmMs/1b4fsF3iJzH/l+PXTI=
-github.com/xssnick/tonutils-storage v0.7.2-0.20250301171829-7381c57de4f3 h1:y5ANQ0fKW/3mZwyYPr2k5AjIop9TKFkX74KREOgSwws=
-github.com/xssnick/tonutils-storage v0.7.2-0.20250301171829-7381c57de4f3/go.mod h1:LgudzAHdPew8xgBxo+vSgxaMW2ZdlttK1L2X3Padjd4=
+github.com/xssnick/tonutils-storage v0.7.2 h1:1OkN5mNIh6hat9OiK4izKOkLF4EZ99Rh58QoRgLNxos=
+github.com/xssnick/tonutils-storage v0.7.2/go.mod h1:7zvCxnUOTVoAObQNNWOU8spr9bxENjskgAUGOSI6Bmo=
 github.com/xssnick/tonutils-storage-provider v0.2.1-0.20240417140301-cd9a5cee4f3b h1:prvgFJOva8KIbI9lFb6D27etp1+ugt4EODMBXxRUsos=
 github.com/xssnick/tonutils-storage-provider v0.2.1-0.20240417140301-cd9a5cee4f3b/go.mod h1:7xA5QMPIdKygiZwyqq3na+3KG58boW6Ja/6/LIuhUcc=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=

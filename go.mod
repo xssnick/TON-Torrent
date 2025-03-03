@@ -7,10 +7,10 @@ require (
 	github.com/jcuga/go-upnp v0.0.0-20160830125909-492b17f02cbb
 	github.com/pterm/pterm v0.12.80
 	github.com/syndtr/goleveldb v1.0.0
-	github.com/ton-blockchain/adnl-tunnel v0.0.0-20250227065935-bdeeba972e50
+	github.com/ton-blockchain/adnl-tunnel v0.0.0-20250303064129-b1f4c72ad756
 	github.com/wailsapp/wails/v2 v2.10.0
 	github.com/xssnick/tonutils-go v1.11.1-0.20250301170704-e54bf77ab0e5
-	github.com/xssnick/tonutils-storage v0.7.2-0.20250301171829-7381c57de4f3
+	github.com/xssnick/tonutils-storage v0.7.2
 	github.com/xssnick/tonutils-storage-provider v0.2.1-0.20240417140301-cd9a5cee4f3b
 )
 
