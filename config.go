@@ -27,6 +27,8 @@ type Config struct {
 	NetworkConfigPath string
 	FetchIPOnStartup  bool
 
+	TunnelConfigPath string
+
 	mx sync.Mutex
 }
 

@@ -27,7 +27,7 @@ func Run(ctx context.Context, root, path string, listen, controlPort string, onF
 	netConfigPath := root + "/global.config.json"
 	_, err = os.Stat(netConfigPath)
 	if os.IsNotExist(err) { // download network config if not exists
-		resp, err := http.Get("https://ton.org/global.config.json")
+		resp, err := http.Get("https://ton-blockchain.github.io/global.config.json")
 		if err != nil {
 			return nil, err
 		}

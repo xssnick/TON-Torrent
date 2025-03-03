@@ -45,11 +45,13 @@ export function OpenFolder(arg1:string):Promise<void>;
 
 export function OpenFolderSelectFile(arg1:string):Promise<void>;
 
+export function OpenTunnelConfig():Promise<string>;
+
 export function RemoveTorrent(arg1:string,arg2:boolean,arg3:boolean):Promise<string>;
 
 export function RequestProviderStorageInfo(arg1:string,arg2:string,arg3:string):Promise<api.ProviderStorageInfo>;
 
-export function SaveConfig(arg1:string,arg2:boolean,arg3:boolean,arg4:string,arg5:string,arg6:string):Promise<string>;
+export function SaveConfig(arg1:string,arg2:boolean,arg3:boolean,arg4:string,arg5:string,arg6:string,arg7:string):Promise<string>;
 
 export function SetActive(arg1:string,arg2:boolean):Promise<string>;
 
