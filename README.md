@@ -7,11 +7,11 @@ TON Storage UI based on [tonutils-storage](https://github.com/xssnick/tonutils-s
 <img align="right"  width="500" alt="Preview" src="https://github.com/xssnick/TON-Torrent/assets/9332353/c8065c0e-b7f2-4b6f-bcf0-37d0180d1dbe">
 
 **Download**
-* [Windows x64](https://github.com/xssnick/TON-Torrent/releases/download/v1.3.0/ton-torrent-windows-x64-installer.exe)
-* [Mac Apple Silicon](https://github.com/xssnick/TON-Torrent/releases/download/v1.3.0/ton-torrent-mac-apple-silicon.dmg)
-* [Mac Intel](https://github.com/xssnick/TON-Torrent/releases/download/v1.3.0/ton-torrent-mac-intel.dmg)
-* [Linux AMD64](https://github.com/xssnick/TON-Torrent/releases/download/v1.3.0/ton-torrent-linux-amd64.deb)
-* [Linux ARM64](https://github.com/xssnick/TON-Torrent/releases/download/v1.3.0/ton-torrent-linux-arm64.deb)
+* [Windows x64](https://github.com/xssnick/TON-Torrent/releases/latest/download/ton-torrent-windows-x64-installer.exe)
+* [Mac Apple Silicon](https://github.com/xssnick/TON-Torrent/releases/latest/download/ton-torrent-mac-apple-silicon.dmg)
+* [Mac Intel](https://github.com/xssnick/TON-Torrent/releases/latest/download/ton-torrent-mac-intel.dmg)
+* [Linux AMD64](https://github.com/xssnick/TON-Torrent/releases/latest/download/ton-torrent-linux-amd64.deb)
+* [Linux ARM64](https://github.com/xssnick/TON-Torrent/releases/latest/download/ton-torrent-linux-arm64.deb)
 
 **Install**
 * For Windows click on installer
@@ -34,6 +34,20 @@ If you want to use C++ storage daemon and you have it running on your machine, y
 
 To build, you need to install [Wails](https://wails.io/), then run:
 `make build-[mac|windows|linux-[deb|tar]]`
+
+## Tunnel usage
+
+Tunnels adds ability to rent address+port from another node, for example to can share your bags even to peers with non-public IP.
+This is useful when your provider not gives you public ip address, but you want to host your ton-site or bags from local computer.
+This can also speed up download speed becuase you can connect to more peers.
+
+1. Create empty file with name `tunnel-config.json`
+2. At Settings select this file as tunnel config.
+3. Restart TON Torrent, on next start it will generate basic config in this file.
+4. Fill config with desired tunnel route and start TON Torrent again.
+5. You will be connected to peers through tunnel.
+
+In case of fail, or if you want to disable tunnel - remove tunnel-config file, restart app and clear config in Settings. 
 
 ### Live Development
 
