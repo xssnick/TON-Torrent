@@ -9,8 +9,8 @@ require (
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/ton-blockchain/adnl-tunnel v0.0.0-20250303064129-b1f4c72ad756
 	github.com/wailsapp/wails/v2 v2.10.0
-	github.com/xssnick/tonutils-go v1.11.1-0.20250301170704-e54bf77ab0e5
-	github.com/xssnick/tonutils-storage v0.7.2
+	github.com/xssnick/tonutils-go v1.11.1-0.20250303084128-490b8e738613
+	github.com/xssnick/tonutils-storage v0.7.3-0.20250303084349-897e254ede45
 	github.com/xssnick/tonutils-storage-provider v0.2.1-0.20240417140301-cd9a5cee4f3b
 )
 
