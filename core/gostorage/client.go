@@ -151,7 +151,7 @@ func NewClient(dbPath, tunnelConfigPath string, cfg Config, onTunnel func(addr s
 		tun.SetOutAddressChangedHandler(func(addr *net.UDPAddr) {
 			gate.SetAddressList([]*adnlAddress.UDP{
 				{
-					IP:   addr.IP,
+					IP:   addr.IP.To4(),
 					Port: int32(addr.Port),
 				},
 			})
@@ -178,7 +178,7 @@ func NewClient(dbPath, tunnelConfigPath string, cfg Config, onTunnel func(addr s
 	if serverMode {
 		gate.SetAddressList([]*adnlAddress.UDP{
 			{
-				IP:   ip,
+				IP:   ip.To4(),
 				Port: int32(port),
 			},
 		})
