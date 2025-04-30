@@ -203,10 +203,7 @@ func (a *App) ready(ctx context.Context) {
 			if !a.config.UseDaemon || err != nil {
 				addr := strings.Split(a.config.ListenAddr, ":")
 
-				lAddr := "127.0.0.1"
-				if len(addr[0]) > 0 {
-					lAddr = "0.0.0.0"
-				}
+				lAddr := "0.0.0.0"
 
 				if len(addr) < 2 {
 					a.Throw(fmt.Errorf("ListenAddr in config.json is not valid"))
