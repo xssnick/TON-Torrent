@@ -58,6 +58,8 @@ func LoadConfig(dir string) (*Config, error) {
 			return nil, err
 		}
 		cfg.TunnelConfig.Payments.DBPath = dir + "/payments-db"
+		cfg.TunnelConfig.Payments.ChannelsConfig.SupportedCoins.Ton.BalanceControl.DepositUpToAmount = "3"
+		cfg.TunnelConfig.Payments.ChannelsConfig.SupportedCoins.Ton.BalanceControl.DepositWhenAmountLessThan = "1"
 
 		err = cfg.SaveConfig(dir)
 		if err != nil {
@@ -93,6 +95,8 @@ func LoadConfig(dir string) (*Config, error) {
 			return nil, err
 		}
 		cfg.TunnelConfig.Payments.DBPath = dir + "/payments-db"
+		cfg.TunnelConfig.Payments.ChannelsConfig.SupportedCoins.Ton.BalanceControl.DepositUpToAmount = "3"
+		cfg.TunnelConfig.Payments.ChannelsConfig.SupportedCoins.Ton.BalanceControl.DepositWhenAmountLessThan = "1"
 
 		err = cfg.SaveConfig(dir)
 		if err != nil {
