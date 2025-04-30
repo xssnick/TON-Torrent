@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"encoding/json"
+	tunnelConfig "github.com/ton-blockchain/adnl-tunnel/config"
 	"net"
 	"os"
 	"path/filepath"
@@ -13,6 +14,7 @@ import (
 )
 
 type Config struct {
+	Version       uint
 	DownloadsPath string
 	SeedMode      bool
 	ListenAddr    string
@@ -27,12 +29,13 @@ type Config struct {
 	NetworkConfigPath string
 	FetchIPOnStartup  bool
 
-	TunnelConfigPath string
+	TunnelConfig *tunnelConfig.ClientConfig
 
 	mx sync.Mutex
 }
 
 func LoadConfig(dir string) (*Config, error) {
+	var cfg *Config
 	path := dir + "/config.json"
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
@@ -41,13 +44,20 @@ func LoadConfig(dir string) (*Config, error) {
 			return nil, err
 		}
 
-		cfg := &Config{
+		cfg = &Config{
+			Version:           1,
 			DaemonControlAddr: "127.0.0.1:15555",
 			DownloadsPath:     downloadsPath(),
 			ListenAddr:        ":13333",
 			Key:               priv.Seed(),
 			UseDaemon:         false,
 		}
+
+		cfg.TunnelConfig, err = tunnelConfig.GenerateClientConfig()
+		if err != nil {
+			return nil, err
+		}
+		cfg.TunnelConfig.Payments.DBPath = dir + "/payments-db"
 
 		err = cfg.SaveConfig(dir)
 		if err != nil {
@@ -61,7 +71,6 @@ func LoadConfig(dir string) (*Config, error) {
 			return nil, err
 		}
 
-		var cfg Config
 		err = json.Unmarshal(data, &cfg)
 		if err != nil {
 			return nil, err
@@ -75,10 +84,23 @@ func LoadConfig(dir string) (*Config, error) {
 			cfg.Key = priv.Seed()
 			_ = cfg.SaveConfig(dir)
 		}
-		return &cfg, nil
 	}
 
-	return nil, err
+	if cfg.Version < 1 {
+		cfg.Version = 1
+		cfg.TunnelConfig, err = tunnelConfig.GenerateClientConfig()
+		if err != nil {
+			return nil, err
+		}
+		cfg.TunnelConfig.Payments.DBPath = dir + "/payments-db"
+
+		err = cfg.SaveConfig(dir)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return cfg, nil
 }
 
 func (cfg *Config) SaveConfig(dir string) error {

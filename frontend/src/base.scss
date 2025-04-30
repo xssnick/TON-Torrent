@@ -253,6 +253,27 @@ img {
     }
 }
 
+.foot-bar .tunnel-paid {
+    width: 175px;
+    display: flex;
+    margin-top: auto;
+    margin-bottom: auto;
+    margin-left: 5px;
+
+    color: var(--text-secondary, $secondaryText);
+    font-variant-numeric: lining-nums tabular-nums;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 16px;
+    letter-spacing: -0.007px;
+
+    span img {
+        height: 12px;
+        margin: 0 5px 3px;
+    }
+}
+
 .foot-bar .speed span {
     font-size: 11px;
     margin: auto;
@@ -584,6 +605,23 @@ img {
 }
 .top-button.start.disabled {
     background-image: var(--play-disabled-img);
+}
+
+
+.type-input {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 5px;
+    label {
+        line-height: 18px;
+        color: var(--text-black, $text-black);
+        font-size: 13px;
+        font-style: normal;
+        font-weight: 400;
+        letter-spacing: -0.008px;
+    }
 }
 
 .create-input {
@@ -925,6 +963,90 @@ button[data-tc-connect-button="true"]:hover {
     width: 16px;
     height: 16px;
     background-size: cover;
+}
+
+
+.checkbox-file {
+    margin: 4px 0px 0;
+    position: relative;
+    padding-left: 22px;
+    font-size: 12px;
+    line-height: 18px;
+    color: var(--text-primary, $text-black);
+}
+
+.checkbox-file.daemon {
+    margin: 0;
+    color: var(--text-primary, $text-black);
+
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 20px; /* 142.857% */
+    letter-spacing: -0.008px;
+}
+
+.checkbox-file.folder {
+    font-weight: bold;
+}
+
+.checkbox-file .size {
+    font-size: 9px;
+    color: var(--text-primary, $text-black);
+}
+
+.checkbox-file button {
+    background-image: var(--expand-img);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    border: 0;
+    background-color: transparent;
+
+    height: 14px;
+    margin: 0 0 0 4px;
+    cursor: pointer;
+}
+
+/* Hide the browser's default checkbox */
+.checkbox-file input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+/* Create a custom checkbox */
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 16px;
+    width: 16px;
+
+    border-radius: 4.5px;
+    border: 0.5px solid var(--card-border, $cardBorderDefault);
+    background: var(--table-back, $tableBack);
+    cursor: pointer;
+}
+
+.checkmark:after {
+    content: '';
+    border-radius: 4.5px;
+    background-color: $ton;
+    background-image: url(assets/images/icons/check.svg);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 12px 12px;
+    height: 16px;
+    width: 16px;
+    display: none;
+}
+
+/* Show the checkmark when checked */
+.checkbox-file input:checked ~ .checkmark:after {
+    display: block;
 }
 
 #App {

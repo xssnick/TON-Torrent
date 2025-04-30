@@ -8,9 +8,9 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/pterm/pterm"
+	"github.com/rs/zerolog/log"
 	"github.com/syndtr/goleveldb/leveldb"
 	tunnelConfig "github.com/ton-blockchain/adnl-tunnel/config"
 	"github.com/ton-blockchain/adnl-tunnel/tunnel"
@@ -21,13 +21,13 @@ import (
 	"github.com/xssnick/tonutils-go/adnl/dht"
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/tl"
+	"github.com/xssnick/tonutils-go/tlb"
 	"github.com/xssnick/tonutils-go/ton"
 	"github.com/xssnick/tonutils-storage-provider/pkg/transport"
 	"github.com/xssnick/tonutils-storage/config"
 	"github.com/xssnick/tonutils-storage/db"
 	"github.com/xssnick/tonutils-storage/provider"
 	"github.com/xssnick/tonutils-storage/storage"
-	"log"
 	"net"
 	"net/netip"
 	"os"
@@ -53,12 +53,12 @@ type Client struct {
 	notify chan bool
 }
 
-var ErrTunnelConfigGenerated = errors.New("generated tunnel config; fill it with the desired route and restart")
-
-func NewClient(dbPath, tunnelConfigPath string, cfg Config, onTunnel func(addr string)) (*Client, error) {
+func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tunnelConfig.ClientConfig, onTunnel func(addr string), onTunnelStop func(), tunAcceptor func(to, from []*tunnel.SectionInfo) bool, reRouter func() bool, reportLoadingState func(string), onPaidUpdate func(coins tlb.Coins)) (*Client, error) {
 	c := &Client{
 		notify: make(chan bool, 10), // to refresh fast a bit after
 	}
+
+	reportLoadingState("Checking config...")
 
 	var ip net.IP
 	var port uint16
@@ -77,6 +77,8 @@ func NewClient(dbPath, tunnelConfigPath string, cfg Config, onTunnel func(addr s
 	}
 	port = addr.Port()
 
+	reportLoadingState("Fetching ton network config...")
+
 	var lsCfg *liteclient.GlobalConfig
 	if cfg.NetworkConfigPath != "" {
 		lsCfg, err = liteclient.GetConfigFromFile(cfg.NetworkConfigPath)
@@ -85,7 +87,7 @@ func NewClient(dbPath, tunnelConfigPath string, cfg Config, onTunnel func(addr s
 			os.Exit(1)
 		}
 	} else {
-		lsCfg, err = liteclient.GetConfigFromUrl(context.Background(), "https://ton-blockchain.github.io/global.config.json")
+		lsCfg, err = liteclient.GetConfigFromUrl(closerCtx, "https://ton-blockchain.github.io/global.config.json")
 		if err != nil {
 			pterm.Warning.Println("Failed to download ton config:", err.Error(), "; We will take it from static cache")
 			lsCfg = &liteclient.GlobalConfig{}
@@ -96,13 +98,15 @@ func NewClient(dbPath, tunnelConfigPath string, cfg Config, onTunnel func(addr s
 		}
 	}
 
+	reportLoadingState("Initializing liteclient...")
+
 	lsPool := liteclient.NewConnectionPool()
-	apiClient := ton.NewAPIClient(lsPool, ton.ProofCheckPolicyFast).WithRetry()
+	apiClient := ton.NewAPIClient(lsPool, ton.ProofCheckPolicyFast).WithRetry(3)
 
 	// connect async to not slow down main processes
 	go func() {
 		for {
-			if err := lsPool.AddConnectionsFromConfig(context.Background(), lsCfg); err != nil {
+			if err := lsPool.AddConnectionsFromConfig(closerCtx, lsCfg); err != nil {
 				pterm.Warning.Println("Failed to add connections from ton config:", err.Error())
 				time.Sleep(5 * time.Second)
 				continue
@@ -113,54 +117,103 @@ func NewClient(dbPath, tunnelConfigPath string, cfg Config, onTunnel func(addr s
 
 	var gate *adnl.Gateway
 	var netMgr adnl.NetManager
-	if tunnelConfigPath != "" {
-		data, err := os.ReadFile(tunnelConfigPath)
-		if err == nil && len(data) == 0 {
-			err = os.Remove(tunnelConfigPath)
-			if err != nil {
-				return nil, fmt.Errorf("failed to remove empty tunnel config: %w", err)
-			}
-			// to replace empty
-			err = os.ErrNotExist
+	if tunCfg != nil && tunCfg.NodesPoolConfigPath != "" {
+		reportLoadingState("Preparing ADNL tunnel...")
+
+		data, err := os.ReadFile(tunCfg.NodesPoolConfigPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load tunnel nodes pool config: %w", err)
 		}
 
-		if err != nil {
-			if os.IsNotExist(err) {
-				if _, err = tunnelConfig.GenerateClientConfig(tunnelConfigPath); err != nil {
-					return nil, fmt.Errorf("failed to generate tunnel config: %w", err)
+		var tunNodesCfg tunnelConfig.SharedConfig
+		if err = json.Unmarshal(data, &tunNodesCfg); err != nil {
+			return nil, fmt.Errorf("failed to parse tunnel nodes pool config: %w", err)
+		}
+
+		tunnel.AskReroute = reRouter
+		tunnel.Acceptor = tunAcceptor
+		events := make(chan any, 1)
+		go tunnel.RunTunnel(closerCtx, tunCfg, &tunNodesCfg, lsCfg, log.Logger, events)
+
+		initUpd := make(chan any, 1)
+		inited := false
+		go func() {
+			atm := &tunnel.AtomicSwitchableRegularTunnel{}
+			for event := range events {
+				switch e := event.(type) {
+				case tunnel.StoppedEvent:
+					onTunnelStop()
+					return
+				case tunnel.MsgEvent:
+					reportLoadingState(e.Msg)
+				case tunnel.UpdatedEvent:
+					log.Info().Msg("tunnel updated")
+
+					e.Tunnel.SetOutAddressChangedHandler(func(addr *net.UDPAddr) {
+						gate.SetAddressList([]*adnlAddress.UDP{
+							{
+								IP:   addr.IP,
+								Port: int32(addr.Port),
+							},
+						})
+						onTunnel(addr.String())
+					})
+					onTunnel(fmt.Sprintf("%s:%d", e.ExtIP.String(), e.ExtPort))
+
+					go func() {
+						for {
+							select {
+							case <-e.Tunnel.AliveCtx().Done():
+								return
+							case <-time.After(5 * time.Second):
+								onPaidUpdate(e.Tunnel.CalcPaidAmount()["TON"])
+							}
+						}
+					}()
+
+					atm.SwitchTo(e.Tunnel)
+					if !inited {
+						inited = true
+						netMgr = adnl.NewMultiNetReader(atm)
+						gate = adnl.NewGatewayWithNetManager(cfg.Key, netMgr)
+
+						select {
+						case initUpd <- e:
+						default:
+						}
+					} else {
+						gate.SetAddressList([]*adnlAddress.UDP{
+							{
+								IP:   e.ExtIP,
+								Port: int32(e.ExtPort),
+							},
+						})
+
+						log.Info().Msg("connection switched to new tunnel")
+					}
+				case tunnel.ConfigurationErrorEvent:
+					log.Err(e.Err).Msg("tunnel configuration error, will retry...")
+				case error:
+					select {
+					case initUpd <- e:
+					default:
+					}
 				}
-				pterm.Info.Println("Generated tunnel config; fill it with the desired route and restart to enable tunnel")
-				return nil, ErrTunnelConfigGenerated
 			}
-			return nil, fmt.Errorf("failed to load tunnel config: %w", err)
+		}()
+
+		switch x := (<-initUpd).(type) {
+		case tunnel.UpdatedEvent:
+			ip = x.ExtIP
+			port = x.ExtPort
+
+			pterm.Info.Println("Using tunnel - IP:", x.ExtIP.String(), " Port:", x.ExtPort)
+		case error:
+			return nil, fmt.Errorf("tunnel preparation failed: %w", x)
 		}
-
-		var tunCfg tunnelConfig.ClientConfig
-		if err = json.Unmarshal(data, &tunCfg); err != nil {
-			return nil, fmt.Errorf("failed to parse tunnel config: %w", err)
-		}
-
-		var tun *tunnel.RegularOutTunnel
-		tun, port, ip, err = tunnel.PrepareTunnel(&tunCfg, lsCfg)
-		if err != nil {
-			return nil, fmt.Errorf("tunnel preparation failed: %w", err)
-		}
-		netMgr = adnl.NewMultiNetReader(tun)
-
-		gate = adnl.NewGatewayWithNetManager(cfg.Key, netMgr)
-		tun.SetOutAddressChangedHandler(func(addr *net.UDPAddr) {
-			gate.SetAddressList([]*adnlAddress.UDP{
-				{
-					IP:   addr.IP.To4(),
-					Port: int32(addr.Port),
-				},
-			})
-			onTunnel(addr.String())
-		})
-		onTunnel(fmt.Sprintf("%s:%d", ip.String(), port))
-
-		pterm.Info.Println("Using tunnel - IP:", ip.String(), " Port:", port)
 	} else {
+		reportLoadingState("Binding UDP port...")
+
 		dl, err := adnl.DefaultListener(cfg.ListenAddr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create default listener: %w", err)
@@ -168,6 +221,8 @@ func NewClient(dbPath, tunnelConfigPath string, cfg Config, onTunnel func(addr s
 		netMgr = adnl.NewMultiNetReader(dl)
 		gate = adnl.NewGatewayWithNetManager(cfg.Key, netMgr)
 	}
+
+	reportLoadingState("Starting ADNL server...")
 
 	listenThreads := runtime.NumCPU()
 	if listenThreads > 32 {
@@ -213,6 +268,8 @@ func NewClient(dbPath, tunnelConfigPath string, cfg Config, onTunnel func(addr s
 		return nil, fmt.Errorf("failed to start adnl gateway for provider: %w", err)
 	}
 
+	reportLoadingState("Loading storage...")
+
 	srv := storage.NewServer(dhtClient, gate, cfg.Key, serverMode)
 
 	ldb, err := leveldb.OpenFile(dbPath, nil)
@@ -222,7 +279,7 @@ func NewClient(dbPath, tunnelConfigPath string, cfg Config, onTunnel func(addr s
 
 	ch := make(chan db.Event, 1)
 	c.connector = storage.NewConnector(srv)
-	c.storage, err = db.NewStorage(ldb, c.connector, false, ch)
+	c.storage, err = db.NewStorage(ldb, c.connector, 0, false, false, false, ch)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init storage: %w", err)
 	}
@@ -253,6 +310,8 @@ func NewClient(dbPath, tunnelConfigPath string, cfg Config, onTunnel func(addr s
 			}
 		}
 	}()
+
+	reportLoadingState("Initialized")
 
 	return c, nil
 }
@@ -478,7 +537,7 @@ func (c *Client) GetPeers(ctx context.Context, hash []byte) (*client.PeersList, 
 	}
 
 	var list client.PeersList
-	list.TotalParts = int64(t.PiecesNum())
+	list.TotalParts = int64(t.Info.PiecesNum())
 
 	for s, p := range t.GetPeers() {
 		adnlAddr, _ := hex.DecodeString(s)
@@ -594,7 +653,7 @@ func (c *Client) SetSpeedLimits(ctx context.Context, download, upload int64) err
 	c.connector.SetUploadLimit(uint64(upload))
 	err := c.storage.SetSpeedLimits(uint64(download), uint64(upload))
 	if err != nil {
-		log.Println("UI SET LIMITS ERR:", err)
+		log.Error().Err(err).Msg("UI SET LIMITS ERR")
 	}
 
 	return nil

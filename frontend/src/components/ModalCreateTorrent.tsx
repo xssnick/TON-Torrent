@@ -1,6 +1,13 @@
 import React, {Component} from 'react';
 import {baseModal} from "./Modal";
-import {CancelCreateTorrent, CreateTorrent, ExportMeta, OpenDir, OpenFolderSelectFile} from "../../wailsjs/go/main/App";
+import {
+    CancelCreateTorrent,
+    CreateTorrent,
+    ExportMeta,
+    OpenDir,
+    OpenFile,
+    OpenFolderSelectFile
+} from "../../wailsjs/go/main/App";
 import {EventsOff, EventsOn} from "../../wailsjs/runtime";
 
 interface State {
@@ -8,6 +15,7 @@ interface State {
     canContinue: boolean
     path: string
     name: string
+    singleFile: boolean
 
     creationProgress: string
 
@@ -26,6 +34,7 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
             err: "",
             canContinue: false,
             createdStage: false,
+            singleFile: false,
             path: "",
             name: "",
             creationProgress: "0"
@@ -88,13 +97,28 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
                             this.state.path.length > 23 ? "..."+this.state.path.slice(this.state.path.length-23,this.state.path.length) : this.state.path
                         }</span>
                         <button onClick={() => {
-                            OpenDir().then((p: string) => {
+                            let e = (p: string) => {
                                 if (p.length > 0) {
                                     let can = p.length > 0 && this.state.name.length > 0;
                                     this.setState((current) => ({...current, path: p, canContinue: can}))
                                 }
-                            })
-                        }}>Select folder</button>
+                            }
+
+                            if (this.state.singleFile) {
+                                OpenFile().then(e)
+                            } else {
+                                OpenDir().then(e)
+                            }
+                        }}>{this.state.singleFile ? "Select file" : "Select folder"}</button>
+                    </div>
+                    <div className="type-input">
+                        <label className="checkbox-file single-file">Single File
+                            <input type="checkbox" checked={this.state.singleFile}
+                                   onChange={(e) => {
+                                       this.setState((current) => ({...current, path: "", canContinue: false, singleFile: !this.state.singleFile}))
+                                   }}/>
+                            <span className="checkmark"></span>
+                        </label>
                     </div>
                     {this.state.err ? <span className="error">{this.state.err}</span> : ""}
                 </div>
@@ -112,6 +136,6 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
                     </button>
                 </div>}
             </>
-        ));
+        ), 2);
     }
 }
