@@ -15,7 +15,6 @@
   top: 0;
   left: 0;
   background: rgba(0, 0, 0, 0.40);
-  z-index: 500;
 }
 
 .modal-back {
@@ -437,89 +436,6 @@
   background: var(--dark-feedback-colors-error, #FF5C5C);
 }
 
-.checkbox-file {
-  margin: 4px 0px 0;
-  position: relative;
-  padding-left: 22px;
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--text-primary, $text-black);
-}
-
-.checkbox-file.daemon {
-  margin: 0;
-  color: var(--text-primary, $text-black);
-
-  font-size: 14px;
-  font-style: normal;
-  font-weight: 400;
-  line-height: 20px; /* 142.857% */
-  letter-spacing: -0.008px;
-}
-
-.checkbox-file.folder {
-  font-weight: bold;
-}
-
-.checkbox-file .size {
-  font-size: 9px;
-  color: var(--text-primary, $text-black);
-}
-
-.checkbox-file button {
-  background-image: var(--expand-img);
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  border: 0;
-  background-color: transparent;
-
-  height: 14px;
-  margin: 0 0 0 4px;
-  cursor: pointer;
-}
-
-/* Hide the browser's default checkbox */
-.checkbox-file input {
-  position: absolute;
-  opacity: 0;
-  cursor: pointer;
-  height: 0;
-  width: 0;
-}
-
-/* Create a custom checkbox */
-.checkmark {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 16px;
-  width: 16px;
-
-  border-radius: 4.5px;
-  border: 0.5px solid var(--card-border, $cardBorderDefault);
-  background: var(--table-back, $tableBack);
-  cursor: pointer;
-}
-
-.checkmark:after {
-  content: '';
-  border-radius: 4.5px;
-  background-color: $ton;
-  background-image: url(assets/images/icons/check.svg);
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: 12px 12px;
-  height: 16px;
-  width: 16px;
-  display: none;
-}
-
-/* Show the checkmark when checked */
-.checkbox-file input:checked ~ .checkmark:after {
-  display: block;
-}
-
 .dir-space {
   display: flex;
   flex-direction: column;
@@ -534,11 +450,13 @@
   height: 100%;
   margin: auto;
 }
+
 .loader-text {
   font-size: 14px;
   padding-top: 5px;
 }
 .loader {
+  margin-bottom: 10px;
   width: 30px;
   height: 30px;
   border: 3px solid #0088cc;
@@ -549,6 +467,7 @@
   animation: rotation 1s linear infinite;
   margin: auto;
 }
+
 @keyframes rotation {
   0% {
     transform: rotate(0deg);
@@ -579,16 +498,19 @@
 }
 
 .daemon-waiter {
-  position: fixed;
-  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   height: 100%;
+  width: 100%;
+  position: absolute;
   top: 0;
   left: 0;
   background: rgba(0, 0, 0, 0.40);
   z-index: 500;
-  display: flex;
-  flex-direction: column;
 }
+
 
 .loader-block {
   margin: auto;
@@ -599,6 +521,7 @@
   border-radius: 10px;
   background: var(--back, $baseBack);
 }
+
 .loader {
   width: 48px;
   height: 48px;
@@ -608,4 +531,20 @@
   display: inline-block;
   box-sizing: border-box;
   animation: rotation 1s linear infinite;
+}
+
+.status-message {
+  margin-top: 5px;
+  border-radius: 10px;
+  color: var(--text-primary, $text-black);
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 24px;
+  text-align: center;
+  max-width: 40%;
+  position: absolute;
+  top: calc(50% + 85px);
+  transform: translateY(-50%);
+  z-index: 505;
 }

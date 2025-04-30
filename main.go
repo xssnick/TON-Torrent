@@ -7,7 +7,6 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 	"github.com/wailsapp/wails/v2/pkg/options/windows"
-	"runtime"
 )
 
 //go:embed all:frontend/dist
@@ -17,11 +16,11 @@ func main() {
 	// Create an instance of the app structure
 	app := NewApp()
 
-	hideOnClose := false
+	/*hideOnClose := false
 	if runtime.GOOS == "darwin" {
 		// TODO: it works fine only on mac, implement it for other os too
 		hideOnClose = true
-	}
+	}*/
 
 	// Create application with options
 	err := wails.Run(&options.App{
@@ -35,7 +34,7 @@ func main() {
 			EnableFileDrop:     true,
 			DisableWebViewDrop: true,
 		},
-		HideWindowOnClose: hideOnClose,
+		HideWindowOnClose: false,
 		BackgroundColour:  &options.RGBA{R: 0, G: 0, B: 0, A: 1},
 		AssetServer: &assetserver.Options{
 			Assets: assets,

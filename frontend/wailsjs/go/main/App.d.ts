@@ -17,6 +17,8 @@ export function CheckHeader(arg1:string):Promise<boolean>;
 
 export function CreateTorrent(arg1:string,arg2:string):Promise<main.TorrentCreateResult>;
 
+export function DummySec():Promise<Array<main.SectionInfo>>;
+
 export function ExportMeta(arg1:string):Promise<string>;
 
 export function FetchProviderRates(arg1:string,arg2:string):Promise<api.ProviderRates>;
@@ -26,6 +28,8 @@ export function GetConfig():Promise<main.Config>;
 export function GetFiles(arg1:string):Promise<Array<api.File>>;
 
 export function GetInfo(arg1:string):Promise<api.TorrentInfo>;
+
+export function GetPaymentNetworkWalletAddr():Promise<string>;
 
 export function GetPeers(arg1:string):Promise<Array<api.Peer>>;
 
@@ -41,17 +45,21 @@ export function IsDarkTheme():Promise<boolean>;
 
 export function OpenDir():Promise<string>;
 
+export function OpenFile():Promise<string>;
+
 export function OpenFolder(arg1:string):Promise<void>;
 
 export function OpenFolderSelectFile(arg1:string):Promise<void>;
 
-export function OpenTunnelConfig():Promise<string>;
+export function OpenTunnelConfig():Promise<main.TunnelConfigInfo>;
 
 export function RemoveTorrent(arg1:string,arg2:boolean,arg3:boolean):Promise<string>;
 
 export function RequestProviderStorageInfo(arg1:string,arg2:string,arg3:string):Promise<api.ProviderStorageInfo>;
 
 export function SaveConfig(arg1:string,arg2:boolean,arg3:boolean,arg4:string,arg5:string,arg6:string,arg7:string):Promise<string>;
+
+export function SaveTunnelConfig(arg1:number,arg2:boolean):Promise<string>;
 
 export function SetActive(arg1:string,arg2:boolean):Promise<string>;
 

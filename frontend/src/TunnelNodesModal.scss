@@ -1,0 +1,94 @@
+.tunnel-nodes-modal {
+  width: 400px;
+  margin: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+
+  .modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    text-align: center;
+    color: var(--text-primary, $text-black);
+  }
+
+  .nodes-route {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 12px;
+
+    .node-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+
+      .node {
+        font-family: monospace;
+        font-size: 14px;
+        font-weight: 500;
+        margin: 4px;
+        padding: 4px 8px;
+        background: var(--table-back, $tableBack);
+        color: var(--text-primary, $text-black);
+        border: 1px solid var(--card-border, $cardBorderDefault);
+        border-radius: 4px;
+      }
+
+      .outer {
+        border: 1px solid var(--ton, #0098ea);
+      }
+
+      .arrow {
+        font-size: 12px;
+        font-weight: bold;
+        color: var(--ton, #0098ea);
+
+        &.up {
+          position: absolute;
+          top: -16px; /* Расстояние от верхней границы узла */
+        }
+
+        &.down {
+          position: absolute;
+          bottom: -16px; /* Расстояние от нижней границы узла */
+        }
+      }
+    }
+
+    .horizontal-arrow {
+      font-size: 16px;
+      font-weight: bold;
+      margin: 0 4px;
+      color: var(--text-secondary, #728a96);
+      rotate: -90deg;
+    }
+  }
+
+  .prices {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    text-align: center;
+
+    .price {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      font-weight: 500;
+
+      .label {
+        color: var(--text-secondary, #728a96);
+      }
+
+      .value {
+        color: var(--text-primary, $text-black);
+      }
+    }
+  }
+
+}

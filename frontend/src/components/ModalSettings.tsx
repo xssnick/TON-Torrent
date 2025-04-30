@@ -22,6 +22,7 @@ interface State {
 
 interface SettingsModalProps {
     onExit: () => void;
+    onTunnelConfig: (maxNoPayments: number, max: number) => void;
 }
 
 export class SettingsModal extends Component<SettingsModalProps, State> {
@@ -52,7 +53,7 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                 daemonDB: cfg.DaemonDBPath,
                 daemonMasterAddr: cfg.DaemonControlAddr,
                 seedFiles: cfg.SeedMode,
-                tunnelConfig: cfg.TunnelConfigPath,
+                tunnelConfig: cfg.TunnelConfig.NodesPoolConfigPath,
             }))
         })
         GetSpeedLimit().then((lim: any) => {
@@ -102,8 +103,16 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                     <div className="create-input">
                         <span>{this.state.tunnelConfig == "" ? "Not selected" : (this.state.tunnelConfig.length > 25 ? "..." + this.state.tunnelConfig.slice(this.state.tunnelConfig.length - 25, this.state.tunnelConfig.length) : this.state.tunnelConfig)}</span>
                         <button onClick={() => {
-                            OpenTunnelConfig().then((p: string) => {
-                                this.setState((current) => ({...current, tunnelConfig: p}))
+                            OpenTunnelConfig().then((p: any) => {
+                                let path = "";
+                                if (p) {
+                                    path = p.Path;
+                                }
+                                this.setState((current) => ({...current, tunnelConfig: path}));
+
+                                if (path != "") {
+                                    this.props.onTunnelConfig(p.MaxFree, p.Max);
+                                }
                             })
                         }}>Select
                         </button>

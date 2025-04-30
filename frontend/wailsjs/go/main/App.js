@@ -30,6 +30,10 @@ export function CreateTorrent(arg1, arg2) {
   return window['go']['main']['App']['CreateTorrent'](arg1, arg2);
 }
 
+export function DummySec() {
+  return window['go']['main']['App']['DummySec']();
+}
+
 export function ExportMeta(arg1) {
   return window['go']['main']['App']['ExportMeta'](arg1);
 }
@@ -48,6 +52,10 @@ export function GetFiles(arg1) {
 
 export function GetInfo(arg1) {
   return window['go']['main']['App']['GetInfo'](arg1);
+}
+
+export function GetPaymentNetworkWalletAddr() {
+  return window['go']['main']['App']['GetPaymentNetworkWalletAddr']();
 }
 
 export function GetPeers(arg1) {
@@ -78,6 +86,10 @@ export function OpenDir() {
   return window['go']['main']['App']['OpenDir']();
 }
 
+export function OpenFile() {
+  return window['go']['main']['App']['OpenFile']();
+}
+
 export function OpenFolder(arg1) {
   return window['go']['main']['App']['OpenFolder'](arg1);
 }
@@ -100,6 +112,10 @@ export function RequestProviderStorageInfo(arg1, arg2, arg3) {
 
 export function SaveConfig(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['SaveConfig'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+}
+
+export function SaveTunnelConfig(arg1, arg2) {
+  return window['go']['main']['App']['SaveTunnelConfig'](arg1, arg2);
 }
 
 export function SetActive(arg1, arg2) {

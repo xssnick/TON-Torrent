@@ -243,6 +243,6 @@ export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
                     </button>
                 </div>
             </>
-        ));
+        ), 8);
     }
 }

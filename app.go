@@ -7,19 +7,24 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/ton-blockchain/adnl-tunnel/config"
+	"github.com/ton-blockchain/adnl-tunnel/tunnel"
 	"github.com/tonutils/torrent-client/core/api"
 	"github.com/tonutils/torrent-client/core/client"
 	"github.com/tonutils/torrent-client/core/gostorage"
 	"github.com/tonutils/torrent-client/core/upnp"
 	"github.com/tonutils/torrent-client/oshook"
 	runtime2 "github.com/wailsapp/wails/v2/pkg/runtime"
+	"github.com/xssnick/ton-payment-network/tonpayments/chain"
 	"github.com/xssnick/tonutils-go/adnl"
+	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/tl"
+	"github.com/xssnick/tonutils-go/tlb"
+	"github.com/xssnick/tonutils-go/ton"
 	"github.com/xssnick/tonutils-storage/storage"
 	"log"
+	"math/big"
 	"os"
 	"os/exec"
 	"runtime"
@@ -31,19 +36,26 @@ import (
 
 // App struct
 type App struct {
-	ctx           context.Context
-	api           *api.API
-	daemonProcess *os.Process
-	rootPath      string
-	config        *Config
-	loaded        bool
+	ctx                   context.Context
+	api                   *api.API
+	daemonProcess         *os.Process
+	rootPath              string
+	config                *Config
+	loaded                bool
+	frontMounted          bool
+	tunnelSettingsUpdated bool
 
 	openFileData []byte
 	openFileHash string
 
 	lastCreateProgressReport time.Time
 	creationCtx              context.Context
-	cancelCreation           func()
+	cancelCreation           context.CancelFunc
+
+	closerCtx context.Context
+	closeCtx  context.CancelFunc
+
+	tunnelCtx context.Context
 
 	mx sync.RWMutex
 }
@@ -54,8 +66,11 @@ func NewApp() *App {
 	oshook.HookStartup(a.openFile, a.openHash)
 	adnl.Logger = func(v ...any) {}
 	storage.Logger = log.Println
-	storage.DownloadThreads = 120
+	storage.DownloadThreads = runtime.NumCPU() * 2
 	storage.DownloadPrefetch = storage.DownloadThreads * 5
+
+	tunnel.ChannelCapacityForNumPayments = 50
+	tunnel.ChannelPacketsToPrepay = 20000
 
 	var err error
 	a.rootPath, err = PrepareRootPath()
@@ -74,15 +89,26 @@ func NewApp() *App {
 }
 
 func (a *App) exit(ctx context.Context) {
+	log.Println("Exiting...")
+
+	a.closeCtx()
 	if a.daemonProcess != nil {
 		_ = a.daemonProcess.Kill()
 	}
+
+	if a.tunnelCtx != nil {
+		log.Println("Stopping tunnel...")
+		<-a.tunnelCtx.Done()
+		log.Println("Tunnel stopped")
+	}
+	log.Println("Graceful exit completed")
 }
 
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	a.closerCtx, a.closeCtx = context.WithCancel(a.ctx)
 }
 
 func (a *App) Throw(err error) {
@@ -151,6 +177,15 @@ func (a *App) prepare() {
 
 var oncePrepare sync.Once
 
+type SectionInfo struct {
+	Name  string
+	Outer bool
+}
+
+func (a *App) DummySec() []SectionInfo {
+	return []SectionInfo{}
+}
+
 func (a *App) ready(ctx context.Context) {
 	oncePrepare.Do(func() {
 		a.prepare()
@@ -195,24 +230,124 @@ func (a *App) ready(ctx context.Context) {
 					cfg.ExternalIP = ""
 				}
 
-				tun := a.config.TunnelConfigPath
+				var stopTunnel context.CancelFunc
+				if a.config.TunnelConfig != nil && a.config.TunnelConfig.NodesPoolConfigPath != "" {
+					a.tunnelCtx, stopTunnel = context.WithCancel(context.Background())
+				}
+
+				tunCfg := a.config.TunnelConfig
+
 			retry:
 				var err error
-				cl, err = gostorage.NewClient(a.rootPath+"/tonutils-storage-db", tun, cfg, func(addr string) {
+				cl, err = gostorage.NewClient(a.closerCtx, a.rootPath+"/tonutils-storage-db", cfg, tunCfg, func(addr string) {
 					go func() {
 						// wait till frontend init, to display event
 						for !a.loaded {
 							time.Sleep(50 * time.Millisecond)
 						}
 						runtime2.EventsEmit(a.ctx, "tunnel_assigned", addr)
-						println("TUNNEL ASSIGNED:", addr)
+						log.Println("TUNNEL ASSIGNED:", addr)
 					}()
+				}, func() {
+					stopTunnel()
+				}, func(to, from []*tunnel.SectionInfo) bool {
+					if tunCfg == nil {
+						// skip all routes
+						return false
+					}
+
+					var priceIn, priceOut = big.NewInt(0), big.NewInt(0)
+					var sect []SectionInfo
+					for i, n := range append(to, from...) {
+						sect = append(sect, SectionInfo{
+							Name:  base64.StdEncoding.EncodeToString(n.Keys.ReceiverPubKey)[:8],
+							Outer: i == len(to)-1,
+						})
+
+						if n.PaymentInfo != nil {
+							if n.PaymentInfo.ExtraCurrencyID != 0 || n.PaymentInfo.JettonMaster != nil {
+								a.ShowWarnMsg("Route has node with payment in currency other than TON, it is not yet supported in Torrent, rerouting")
+								return false
+							}
+
+							// consider 1 packet = 512 bytes, actually more, but this is avg payload
+							var packetsPerMB int64 = 2048
+
+							amt := new(big.Int).SetUint64(n.PaymentInfo.PricePerPacket)
+							amt.Mul(amt, big.NewInt(packetsPerMB))
+
+							vcFee := big.NewInt(0)
+							for _, section := range n.PaymentInfo.PaymentTunnel {
+								vcFee.Add(vcFee, section.MinFee)
+							}
+
+							packetsPerChannel := tunnel.ChannelCapacityForNumPayments * tunnel.ChannelPacketsToPrepay
+							// channel fee per 1 mb
+							feeDiv := new(big.Float).Quo(new(big.Float).SetInt64(packetsPerMB), new(big.Float).SetInt64(packetsPerChannel))
+
+							feePer1MB, _ := feeDiv.Mul(new(big.Float).SetInt(vcFee), feeDiv).Int(vcFee)
+							amt.Add(amt, feePer1MB)
+
+							if i < len(to)-1 {
+								priceOut.Add(priceOut, amt)
+							} else if i == len(to)-1 {
+								priceOut.Add(priceOut, amt)
+								priceIn.Add(priceOut, amt)
+							} else {
+								priceIn.Add(priceOut, amt)
+							}
+						}
+					}
+
+					for !a.frontMounted {
+						time.Sleep(10 * time.Millisecond)
+					}
+					runtime2.EventsEmit(a.ctx, "tunnel_check", sect, tlb.FromNanoTON(priceIn).String(), tlb.FromNanoTON(priceOut).String())
+
+					ch := make(chan bool, 1)
+					runtime2.EventsOn(a.ctx, "tunnel_check_result", func(optionalData ...interface{}) {
+						runtime2.EventsOff(a.ctx, "tunnel_check_result")
+						if len(optionalData) == 0 {
+							// cancel tunnel, start without it
+							tunCfg = nil
+							ch <- false
+							return
+						}
+
+						ch <- optionalData[0].(bool)
+					})
+					return <-ch
+				}, func() bool {
+					if tunCfg == nil {
+						return false
+					}
+
+					for !a.frontMounted {
+						time.Sleep(10 * time.Millisecond)
+					}
+					runtime2.EventsEmit(a.ctx, "tunnel_reinit_ask")
+
+					ch := make(chan bool, 1)
+					runtime2.EventsOn(a.ctx, "tunnel_reinit_ask_result", func(optionalData ...interface{}) {
+						runtime2.EventsOff(a.ctx, "tunnel_reinit_ask_result")
+						ch <- optionalData[0].(bool)
+					})
+					return <-ch
+				}, func(s string) {
+					for !a.frontMounted {
+						time.Sleep(10 * time.Millisecond)
+					}
+
+					runtime2.EventsEmit(a.ctx, "report_state", s)
+				}, func(coins tlb.Coins) {
+					runtime2.EventsEmit(a.ctx, "tunnel_paid_updated", coins.String())
 				})
 				if err != nil {
-					if errors.Is(err, gostorage.ErrTunnelConfigGenerated) {
-						// generated example config, for now start without tunnel
-						a.ShowMsg(gostorage.ErrTunnelConfigGenerated.Error())
-						tun = ""
+					if strings.HasPrefix(err.Error(), "tunnel preparation failed:") {
+						if tunCfg != nil {
+							a.ShowWarnMsg("Failed to prepare tunnel, will start without it\n\nError: " + err.Error())
+							tunCfg = nil
+						}
 						goto retry
 					}
 					a.Throw(fmt.Errorf("failed to init go storage: %w", err))
@@ -251,6 +386,7 @@ var onceCheck = sync.Once{}
 
 func (a *App) WaitReady() {
 	onceCheck.Do(func() {
+		a.frontMounted = true
 		go func() {
 			// wait for daemon ready
 			for !a.loaded {
@@ -330,6 +466,15 @@ func (a *App) BuildWithdrawalContractData(hash, ownerAddr string) *api.Transacti
 	return t
 }
 
+func (a *App) GetPaymentNetworkWalletAddr() string {
+	w, err := chain.InitWallet(ton.NewAPIClient(liteclient.NewOfflineClient()), ed25519.NewKeyFromSeed(a.config.TunnelConfig.Payments.WalletPrivateKey))
+	if err != nil {
+		log.Println(err.Error())
+		return "{ERROR}"
+	}
+	return w.WalletAddress().String()
+}
+
 func (a *App) openFile(data []byte) {
 	if a.loaded {
 		res := a.addByMeta(data)
@@ -375,14 +520,28 @@ func (a *App) OpenDir() string {
 	return str
 }
 
-func (a *App) OpenTunnelConfig() string {
+func (a *App) OpenFile() string {
+	str, err := runtime2.OpenFileDialog(a.ctx, runtime2.OpenDialogOptions{})
+	if err != nil {
+		log.Println(err.Error())
+	}
+	return str
+}
+
+type TunnelConfigInfo struct {
+	Max     int
+	MaxFree int
+	Path    string
+}
+
+func (a *App) OpenTunnelConfig() *TunnelConfigInfo {
 	path, err := runtime2.OpenFileDialog(a.ctx, runtime2.OpenDialogOptions{
 		DefaultDirectory: "",
-		DefaultFilename:  "tunnel-config.json",
-		Title:            "Open Tunnel Config",
+		DefaultFilename:  "nodes-pool.json",
+		Title:            "Open Nodes Pool Config",
 		Filters: []runtime2.FileFilter{
 			{
-				DisplayName: "tunnel-config.json",
+				DisplayName: "nodes-pool.json",
 				Pattern:     "*.json",
 			},
 		},
@@ -393,7 +552,7 @@ func (a *App) OpenTunnelConfig() string {
 	})
 	if err != nil {
 		println(err.Error())
-		return ""
+		return nil
 	}
 
 	if path != "" {
@@ -405,33 +564,40 @@ func (a *App) OpenTunnelConfig() string {
 				Message:       err.Error(),
 				DefaultButton: "Ok",
 			})
-			return ""
+			return nil
 		}
 
-		if len(data) > 0 {
-			var cfg config.ClientConfig
-			if err = json.Unmarshal(data, &cfg); err != nil {
-				_, _ = runtime2.MessageDialog(a.ctx, runtime2.MessageDialogOptions{
-					Type:          runtime2.ErrorDialog,
-					Title:         "Failed to parse tunnel config",
-					Message:       err.Error(),
-					DefaultButton: "Ok",
-				})
-				return ""
-			}
+		var sharedCfg config.SharedConfig
+		if err = json.Unmarshal(data, &sharedCfg); err != nil {
+			_, _ = runtime2.MessageDialog(a.ctx, runtime2.MessageDialogOptions{
+				Type:          runtime2.ErrorDialog,
+				Title:         "Failed to parse tunnel config",
+				Message:       err.Error(),
+				DefaultButton: "Ok",
+			})
+			return nil
+		}
 
-			if len(cfg.OutGateway.Key) != 32 {
-				_, _ = runtime2.MessageDialog(a.ctx, runtime2.MessageDialogOptions{
-					Type:    runtime2.ErrorDialog,
-					Title:   "Failed to parse tunnel config",
-					Message: "Invalid config format",
-				})
-				return ""
+		if len(sharedCfg.NodesPool) == 0 {
+			_, _ = runtime2.MessageDialog(a.ctx, runtime2.MessageDialogOptions{
+				Type:    runtime2.ErrorDialog,
+				Title:   "Failed to parse nodes pool config",
+				Message: "Invalid nodes pool config format",
+			})
+			return nil
+		}
+
+		maxFree := 0
+		for _, node := range sharedCfg.NodesPool {
+			if node.Payment == nil {
+				maxFree++
 			}
 		}
+
+		return &TunnelConfigInfo{Path: path, Max: len(sharedCfg.NodesPool), MaxFree: maxFree}
 	}
 
-	return path
+	return &TunnelConfigInfo{Path: ""}
 }
 
 type TorrentCreateResult struct {
@@ -450,7 +616,7 @@ func (a *App) CreateTorrent(dir, description string) TorrentCreateResult {
 }
 
 func (a *App) CancelCreateTorrent() {
-	println("CANCEL CREATION")
+	log.Println("CANCEL CREATION")
 	if a.cancelCreation != nil {
 		a.cancelCreation()
 	}
@@ -651,6 +817,20 @@ func (a *App) GetConfig() *Config {
 	return a.config
 }
 
+func (a *App) SaveTunnelConfig(num uint, payments bool) string {
+	a.config.TunnelConfig.TunnelSectionsNum = num
+	a.config.TunnelConfig.PaymentsEnabled = payments
+
+	err := a.config.SaveConfig(a.rootPath)
+	if err != nil {
+		log.Println(err.Error())
+		return err.Error()
+	}
+	a.tunnelSettingsUpdated = true
+
+	return ""
+}
+
 func (a *App) SaveConfig(downloads string, useTonutilsStorage, seedMode bool, storageExtIP, daemonControlAddr, daemonDB, tunnelConfigPath string) string {
 	notify := false
 	a.config.DownloadsPath = downloads
@@ -660,8 +840,13 @@ func (a *App) SaveConfig(downloads string, useTonutilsStorage, seedMode bool, st
 		notify = true
 	}
 
-	if tunnelConfigPath != a.config.TunnelConfigPath {
-		a.config.TunnelConfigPath = tunnelConfigPath
+	if a.tunnelSettingsUpdated {
+		notify = true
+		a.tunnelSettingsUpdated = false
+	}
+
+	if tunnelConfigPath != a.config.TunnelConfig.NodesPoolConfigPath {
+		a.config.TunnelConfig.NodesPoolConfigPath = tunnelConfigPath
 		notify = true
 	}
 
