@@ -22,6 +22,7 @@ export interface Provider {
     lastProof: string
     proofEvery: string
     price: string
+    pricePerProof: string
     status: string
     peer: string
     reason: string
@@ -103,6 +104,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                                 lastProof: p.LastProof,
                                 proofEvery: p.Span,
                                 price: p.PricePerDay,
+                                pricePerProof: p.PricePerProof,
                                 status: p.Status,
                                 reason: p.Reason,
                                 peer: p.Peer,
@@ -134,6 +136,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                     lastProof: p.LastProof,
                     proofEvery: p.Span,
                     price: p.PricePerDay,
+                    pricePerProof: p.PricePerProof,
                     status: "",
                     reason: "",
                     peer: "",
@@ -232,6 +235,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                     }><div id={"state-"+t.id} className={"item-state "+ statusSwitch(t.status, t.peer)}></div></div>}{status == 'inactive' ? "Proof "+t.lastProof : statusText}</td>
                     <td className={'small'}>{t.proofEvery}</td>
                     <td className={'small'}>{t.price}</td>
+                    <td className={'small'}>{t.pricePerProof}</td>
                     <td className={'small'}><button icon-type="remove" onClick={()=>{
                         let prs = state.providers;
                         if (t.type == 'new') {
@@ -273,6 +277,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                             <th>State</th>
                             <th>Proof every</th>
                             <th>Price per day</th>
+                            <th>Price per proof</th>
                             <th></th>
                         </tr>
                     </thead>

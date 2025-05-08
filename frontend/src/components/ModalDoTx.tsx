@@ -86,5 +86,5 @@ export const DoTxModal: React.FC<DoTxModalProps> = (props) => {
                 </button>
             </div>
         </>
-    ), 4);
+    ));
 }

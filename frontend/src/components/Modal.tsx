@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-export const baseModal = (onHide: () => void, content: JSX.Element, depth: number = 0) => {
+export const baseModal = (onHide: () => void, content: JSX.Element) => {
     const modal = (
         <>
-            <div className="modal-backdrop" style={{zIndex: 1000+depth}} onClick={onHide}/>
-            <div className="modal-wrap" style={{zIndex: 1000+depth+1}}>
-                <div className="modal-back" style={{zIndex: 1000+depth+1}}>
+            <div className="modal-backdrop"/>
+            <div className="modal-wrap">
+                <div className="modal-back">
                     <div className="modal-content">{content}</div>
                 </div>
             </div>

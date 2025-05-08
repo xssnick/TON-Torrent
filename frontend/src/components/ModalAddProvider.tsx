@@ -88,6 +88,6 @@ export class AddProviderModal extends Component<AddProviderModalProps, State> {
                     </button>
                 </div>}
             </>
-        ), 4);
+        ));
     }
 }

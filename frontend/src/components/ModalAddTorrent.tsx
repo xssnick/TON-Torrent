@@ -159,6 +159,7 @@ export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
                 let idLabel = "lab_"+file.Path;
                 items.push(<label id={idLabel} className="checkbox-file folder">{file.Name} <span className="size">[{file.Size}]</span>
                     <input type="checkbox" defaultChecked={true} onInput={(e)=> {
+                        console.log(e.target);
                         let dep = document.getElementById(id)!;
                         for (const el of dep.getElementsByClassName("checkbox-file")) {
                             (el.children.item(1) as HTMLInputElement)!.checked = e.currentTarget.checked
@@ -243,6 +244,6 @@ export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
                     </button>
                 </div>
             </>
-        ), 8);
+        ));
     }
 }

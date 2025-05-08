@@ -988,6 +988,9 @@ button[data-tc-connect-button="true"]:hover {
 
 .checkbox-file.folder {
     font-weight: bold;
+    input {
+        width: 0;
+    }
 }
 
 .checkbox-file .size {

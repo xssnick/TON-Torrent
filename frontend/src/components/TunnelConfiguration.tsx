@@ -122,7 +122,7 @@ export const TunnelConfigurationModal: React.FC<TunnelConfigurationModalProps> =
         </div>
     );
 
-    return baseModal(onClose, content, 10);
+    return baseModal(onClose, content);
 };
 
 export default TunnelConfigurationModal;
