@@ -36,6 +36,6 @@ export class ReinitTunnelConfirm extends Component<ReinitTunnelConfirmProps, {}>
                     </button>
                 </div>
             </>
-        ), 12);
+        ));
     }
 }

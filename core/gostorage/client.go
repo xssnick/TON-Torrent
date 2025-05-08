@@ -55,7 +55,7 @@ type Client struct {
 
 func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tunnelConfig.ClientConfig, onTunnel func(addr string), onTunnelStop func(), tunAcceptor func(to, from []*tunnel.SectionInfo) bool, reRouter func() bool, reportLoadingState func(string), onPaidUpdate func(coins tlb.Coins)) (*Client, error) {
 	c := &Client{
-		notify: make(chan bool, 10), // to refresh fast a bit after
+		notify: make(chan bool, 1), // to refresh fast a bit after
 	}
 
 	reportLoadingState("Checking config...")
@@ -297,7 +297,7 @@ func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tun
 	c.connector.SetUploadLimit(u)
 
 	go func() {
-		ticker := time.Tick(3 * time.Second)
+		ticker := time.Tick(1000 * time.Millisecond)
 		for {
 			select {
 			case <-ch:

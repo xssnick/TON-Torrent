@@ -136,6 +136,6 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
                     </button>
                 </div>}
             </>
-        ), 2);
+        ));
     }
 }

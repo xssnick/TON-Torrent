@@ -96,6 +96,7 @@ export namespace api {
 	    Key: string;
 	    LastProof: string;
 	    PricePerDay: string;
+	    PricePerProof: string;
 	    Span: string;
 	    Status: string;
 	    Reason: string;
@@ -112,6 +113,7 @@ export namespace api {
 	        this.Key = source["Key"];
 	        this.LastProof = source["LastProof"];
 	        this.PricePerDay = source["PricePerDay"];
+	        this.PricePerProof = source["PricePerProof"];
 	        this.Span = source["Span"];
 	        this.Status = source["Status"];
 	        this.Reason = source["Reason"];

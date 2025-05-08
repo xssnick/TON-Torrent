@@ -111,15 +111,16 @@ type ProviderRates struct {
 }
 
 type Provider struct {
-	Key         string
-	LastProof   string
-	PricePerDay string
-	Span        string
-	Status      string
-	Reason      string
-	Peer        string
-	Progress    float64
-	Data        NewProviderData
+	Key           string
+	LastProof     string
+	PricePerDay   string
+	PricePerProof string
+	Span          string
+	Status        string
+	Reason        string
+	Peer          string
+	Progress      float64
+	Data          NewProviderData
 }
 
 type ProviderStorageInfo struct {
@@ -759,11 +760,16 @@ func (a *API) GetProviderContract(hash, ownerAddr string) ProviderContract {
 		perDay := new(big.Float).Mul(ratePerMB, szMB)
 
 		perDayNano, _ := perDay.Int(nil)
+
+		inter := new(big.Float).Quo(new(big.Float).SetUint64(uint64(p.MaxSpan)), big.NewFloat(86400))
+		perProofNano, _ := new(big.Float).Mul(perDay, inter).Int(nil)
+
 		prv := &Provider{
-			Key:         strings.ToUpper(hex.EncodeToString(p.Key)),
-			LastProof:   since,
-			Span:        every,
-			PricePerDay: tlb.FromNanoTON(perDayNano).String() + " TON",
+			Key:           strings.ToUpper(hex.EncodeToString(p.Key)),
+			LastProof:     since,
+			Span:          every,
+			PricePerDay:   tlb.FromNanoTON(perDayNano).String(),
+			PricePerProof: tlb.FromNanoTON(perProofNano).String(),
 			Data: NewProviderData{
 				Key:           hex.EncodeToString(p.Key),
 				MaxSpan:       p.MaxSpan,
@@ -871,12 +877,17 @@ func (a *API) FetchProviderRates(hash, provider string) ProviderRates {
 
 	ratePerMBNano, _ := ratePerMB.Int(nil)
 	perDayNano, _ := perDay.Int(nil)
+
+	inter := new(big.Float).Quo(new(big.Float).SetUint64(uint64(span)), big.NewFloat(86400))
+	perProofNano, _ := new(big.Float).Mul(perDay, inter).Int(nil)
+
 	return ProviderRates{
 		Success: true,
 		Provider: Provider{
-			Key:         strings.ToUpper(hex.EncodeToString(providerBytes)),
-			PricePerDay: tlb.FromNanoTON(perDayNano).String() + " TON",
-			Span:        every,
+			Key:           strings.ToUpper(hex.EncodeToString(providerBytes)),
+			PricePerDay:   tlb.FromNanoTON(perDayNano).String(),
+			PricePerProof: tlb.FromNanoTON(perProofNano).String(),
+			Span:          every,
 			Data: NewProviderData{
 				Key:           hex.EncodeToString(providerBytes),
 				MaxSpan:       span,

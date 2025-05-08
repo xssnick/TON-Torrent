@@ -17,7 +17,6 @@ import (
 	"github.com/tonutils/torrent-client/oshook"
 	runtime2 "github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/xssnick/ton-payment-network/tonpayments/chain"
-	"github.com/xssnick/tonutils-go/adnl"
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/tl"
 	"github.com/xssnick/tonutils-go/tlb"
@@ -64,10 +63,7 @@ type App struct {
 func NewApp() *App {
 	a := &App{}
 	oshook.HookStartup(a.openFile, a.openHash)
-	adnl.Logger = func(v ...any) {}
 	storage.Logger = log.Println
-	storage.DownloadThreads = runtime.NumCPU() * 2
-	storage.DownloadPrefetch = storage.DownloadThreads * 5
 
 	tunnel.ChannelCapacityForNumPayments = 50
 	tunnel.ChannelPacketsToPrepay = 20000

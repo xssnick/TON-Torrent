@@ -11,9 +11,9 @@ require (
 	github.com/ton-blockchain/adnl-tunnel v0.0.0-20250429164353-050cce94afa7
 	github.com/wailsapp/wails/v2 v2.10.0
 	github.com/xssnick/ton-payment-network v0.0.0-20250429164316-0667c269d7ad
-	github.com/xssnick/tonutils-go v1.12.1-0.20250425082124-8d5183ff82da
-	github.com/xssnick/tonutils-storage v0.8.6
-	github.com/xssnick/tonutils-storage-provider v0.2.1-0.20240417140301-cd9a5cee4f3b
+	github.com/xssnick/tonutils-go v1.12.1-0.20250506172952-babc5a2fe793
+	github.com/xssnick/tonutils-storage v1.0.1
+	github.com/xssnick/tonutils-storage-provider v0.3.5
 )
 
 require (
@@ -62,9 +62,9 @@ require (
 	github.com/xssnick/raptorq v1.0.0 // indirect
 	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
-	golang.org/x/sync v0.13.0 // indirect
-	golang.org/x/sys v0.32.0 // indirect
-	golang.org/x/term v0.31.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/sync v0.14.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/term v0.32.0 // indirect
+	golang.org/x/text v0.25.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 )

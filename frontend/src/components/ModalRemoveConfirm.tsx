@@ -65,6 +65,6 @@ export class RemoveConfirmModal extends Component<RemoveConfirmModalProps, State
                     </button>
                 </div>
             </>
-        ), 4);
+        ));
     }
 }
