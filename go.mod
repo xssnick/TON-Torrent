@@ -8,11 +8,11 @@ require (
 	github.com/pterm/pterm v0.12.80
 	github.com/rs/zerolog v1.34.0
 	github.com/syndtr/goleveldb v1.0.0
-	github.com/ton-blockchain/adnl-tunnel v0.0.0-20250429164353-050cce94afa7
+	github.com/ton-blockchain/adnl-tunnel v0.0.0-20250509194852-232a9c53bd31
 	github.com/wailsapp/wails/v2 v2.10.0
-	github.com/xssnick/ton-payment-network v0.0.0-20250429164316-0667c269d7ad
-	github.com/xssnick/tonutils-go v1.12.1-0.20250506172952-babc5a2fe793
-	github.com/xssnick/tonutils-storage v1.0.1
+	github.com/xssnick/ton-payment-network v0.1.2-0.20250509194518-ac5c48f2446e
+	github.com/xssnick/tonutils-go v1.12.1-0.20250508133817-83128a4c7520
+	github.com/xssnick/tonutils-storage v1.0.2
 	github.com/xssnick/tonutils-storage-provider v0.3.5
 )
 

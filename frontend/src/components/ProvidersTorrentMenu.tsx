@@ -81,6 +81,15 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
 
                 if (!provider.Deployed) {
                     setState((current) => {
+                        // Load new providers from local cache
+                        const cachedProviders = JSON.parse(localStorage.getItem('providers_' + props.torrent) || '[]') as Provider[];
+                        for (const cachedProvider of cachedProviders) {
+                            const existingProvider = current.providers.find(v => v.id === cachedProvider.id);
+                            if (!existingProvider) {
+                                current.providers.push({...cachedProvider, type: 'new'});
+                            }
+                        }
+
                         return {...current, providers: current.providers.filter(v => v.type == 'new'), fetched: true, address: ""}
                     });
                     return;
@@ -115,6 +124,15 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                     }
                     // push new
                     ps.push(...current.providers.filter(v => v.type == 'new'));
+                    
+                    // Load new providers from local cache
+                    const cachedProviders = JSON.parse(localStorage.getItem('providers_' + props.torrent) || '[]') as Provider[];
+                    for (const cachedProvider of cachedProviders) {
+                        const existingProvider = current.providers.find(v => v.id === cachedProvider.id);
+                        if (!existingProvider) {
+                            ps.push({...cachedProvider, type: 'new'});
+                        }
+                    }
 
                     return {...current, providers: ps, fetched: true, contractBalance: provider.Balance, address: provider.Address}
                 });
@@ -131,7 +149,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                     return current;
                 }
 
-                current.providers.push({
+                let newProvider: Provider = {
                     id: p.Key,
                     lastProof: p.LastProof,
                     proofEvery: p.Span,
@@ -142,7 +160,16 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                     peer: "",
                     type: 'new',
                     data: p.Data,
-                });
+                };
+
+                current.providers.push(newProvider);
+
+                // Save provider to local cache
+                let cachedProviders = JSON.parse(localStorage.getItem('providers') || '[]') as Provider[];
+                if (!cachedProviders.find(v => v.id === p.Key)) {
+                    cachedProviders.push(newProvider);
+                    localStorage.setItem('providers_'+props.torrent, JSON.stringify(cachedProviders));
+                }
 
                 return {...current, providers: current.providers}
             });
@@ -238,8 +265,17 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                     <td className={'small'}>{t.pricePerProof}</td>
                     <td className={'small'}><button icon-type="remove" onClick={()=>{
                         let prs = state.providers;
+
+                        // Save provider to local cache
+                        let cachedProviders = JSON.parse(localStorage.getItem('providers') || '[]') as Provider[];
+                        if (cachedProviders.find(v => v.id === prs[i].id)) {
+                            cachedProviders = cachedProviders.filter(v => v.id !== prs[i].id);
+                            localStorage.setItem('providers_' + props.torrent, JSON.stringify(cachedProviders));
+                        }
+
                         if (t.type == 'new') {
                             prs.splice(i,1);
+                            localStorage.setItem('providers_'+props.torrent, JSON.stringify(prs));
                         } else if (t.type == 'removed') {
                             prs[i].type = 'committed';
                         } else if (t.type == 'committed') {

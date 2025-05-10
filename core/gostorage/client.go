@@ -270,7 +270,7 @@ func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tun
 
 	reportLoadingState("Loading storage...")
 
-	srv := storage.NewServer(dhtClient, gate, cfg.Key, serverMode)
+	srv := storage.NewServer(dhtClient, gate, cfg.Key, serverMode, 8)
 
 	ldb, err := leveldb.OpenFile(dbPath, nil)
 	if err != nil {

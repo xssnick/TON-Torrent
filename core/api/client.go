@@ -755,14 +755,24 @@ func (a *API) GetProviderContract(hash, ownerAddr string) ProviderContract {
 			every = fmt.Sprint(p.MaxSpan/86400) + " Days"
 		}
 
-		ratePerMB := new(big.Float).SetInt(p.RatePerMB.Nano())
-		szMB := new(big.Float).Quo(new(big.Float).SetUint64(data.Size), big.NewFloat(1024*1024))
-		perDay := new(big.Float).Mul(ratePerMB, szMB)
+		secPerDay := big.NewFloat(86400)
 
+		ratePerMB := new(big.Float).SetInt(p.RatePerMB.Nano())
+
+		sizeMB := new(big.Float).Quo(
+			new(big.Float).SetUint64(data.Size),
+			big.NewFloat(1024*1024),
+		)
+
+		perDay := new(big.Float).Mul(ratePerMB, sizeMB)
 		perDayNano, _ := perDay.Int(nil)
 
-		inter := new(big.Float).Quo(new(big.Float).SetUint64(uint64(p.MaxSpan)), big.NewFloat(86400))
-		perProofNano, _ := new(big.Float).Mul(perDay, inter).Int(nil)
+		interval := new(big.Float).Quo( // span / 86400
+			new(big.Float).SetUint64(uint64(p.MaxSpan)),
+			secPerDay,
+		)
+		perProof := new(big.Float).Mul(perDay, interval)
+		perProofNano, _ := perProof.Int(nil)
 
 		prv := &Provider{
 			Key:           strings.ToUpper(hex.EncodeToString(p.Key)),
@@ -821,13 +831,13 @@ func (a *API) GetProviderContract(hash, ownerAddr string) ProviderContract {
 	}
 }
 
-func (a *API) FetchProviderRates(hash, provider string) ProviderRates {
+func (a *API) FetchProviderRates(hash, prv string) ProviderRates {
 	hashBytes, err := toHashBytes(hash)
 	if err != nil {
 		return ProviderRates{Success: false, Reason: "failed to parse torrent hash: " + err.Error()}
 	}
 
-	providerBytes, err := toHashBytes(provider)
+	providerBytes, err := toHashBytes(prv)
 	if err != nil {
 		return ProviderRates{Success: false, Reason: "failed to parse provider hash: " + err.Error()}
 	}
@@ -845,53 +855,18 @@ func (a *API) FetchProviderRates(hash, provider string) ProviderRates {
 		return ProviderRates{Success: false, Reason: "provider is not available"}
 	}
 
-	span := uint32(86400)
-	if span > rates.MaxSpan {
-		span = rates.MaxSpan
-	} else if span < rates.MinSpan {
-		span = rates.MinSpan
-	}
-
-	every := ""
-	if span < 3600 {
-		every = fmt.Sprint(span/60) + " minutes"
-	} else if span < 100*3600 {
-		every = fmt.Sprint(span/3600) + " hours"
-	} else {
-		every = fmt.Sprint(span/86400) + " days"
-	}
-
-	ratePerMB := new(big.Float).SetInt(rates.RatePerMBDay.Nano())
-	min := new(big.Float).SetInt(rates.MinBounty.Nano())
-
-	szMB := new(big.Float).Quo(new(big.Float).SetUint64(rates.Size), big.NewFloat(1024*1024))
-	perDay := new(big.Float).Mul(ratePerMB, szMB)
-	if perDay.Cmp(min) < 0 {
-		// increase reward to fit min bounty
-		coff := new(big.Float).Quo(min, perDay)
-		coff = coff.Add(coff, big.NewFloat(0.01)) // increase a bit to not be less than needed
-
-		ratePerMB = new(big.Float).Mul(ratePerMB, coff)
-		perDay = new(big.Float).Mul(ratePerMB, szMB)
-	}
-
-	ratePerMBNano, _ := ratePerMB.Int(nil)
-	perDayNano, _ := perDay.Int(nil)
-
-	inter := new(big.Float).Quo(new(big.Float).SetUint64(uint64(span)), big.NewFloat(86400))
-	perProofNano, _ := new(big.Float).Mul(perDay, inter).Int(nil)
-
+	offer := provider.CalculateBestProviderOffer(rates)
 	return ProviderRates{
 		Success: true,
 		Provider: Provider{
 			Key:           strings.ToUpper(hex.EncodeToString(providerBytes)),
-			PricePerDay:   tlb.FromNanoTON(perDayNano).String(),
-			PricePerProof: tlb.FromNanoTON(perProofNano).String(),
-			Span:          every,
+			PricePerDay:   tlb.FromNanoTON(offer.PerDayNano).String(),
+			PricePerProof: tlb.FromNanoTON(offer.PerProofNano).String(),
+			Span:          offer.Every,
 			Data: NewProviderData{
 				Key:           hex.EncodeToString(providerBytes),
-				MaxSpan:       span,
-				PricePerMBDay: ratePerMBNano.String(),
+				MaxSpan:       offer.Span,
+				PricePerMBDay: offer.RatePerMBNano.String(),
 			},
 		},
 	}
