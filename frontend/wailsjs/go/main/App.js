@@ -54,6 +54,10 @@ export function GetInfo(arg1) {
   return window['go']['main']['App']['GetInfo'](arg1);
 }
 
+export function GetMaxTunnelNodes() {
+  return window['go']['main']['App']['GetMaxTunnelNodes']();
+}
+
 export function GetPaymentNetworkWalletAddr() {
   return window['go']['main']['App']['GetPaymentNetworkWalletAddr']();
 }
@@ -102,6 +106,10 @@ export function OpenTunnelConfig() {
   return window['go']['main']['App']['OpenTunnelConfig']();
 }
 
+export function ReinitApp() {
+  return window['go']['main']['App']['ReinitApp']();
+}
+
 export function RemoveTorrent(arg1, arg2, arg3) {
   return window['go']['main']['App']['RemoveTorrent'](arg1, arg2, arg3);
 }
@@ -110,8 +118,8 @@ export function RequestProviderStorageInfo(arg1, arg2, arg3) {
   return window['go']['main']['App']['RequestProviderStorageInfo'](arg1, arg2, arg3);
 }
 
-export function SaveConfig(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
-  return window['go']['main']['App']['SaveConfig'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+export function SaveConfig(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['SaveConfig'](arg1, arg2, arg3, arg4);
 }
 
 export function SaveTunnelConfig(arg1, arg2) {

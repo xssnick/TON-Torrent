@@ -20,11 +20,8 @@ type Config struct {
 	ListenAddr    string
 	Key           []byte
 
-	IsDarkTheme       bool
-	UseDaemon         bool
-	DaemonDBPath      string
-	DaemonControlAddr string
-	PortsChecked      bool
+	IsDarkTheme  bool
+	PortsChecked bool
 
 	NetworkConfigPath string
 	FetchIPOnStartup  bool
@@ -45,12 +42,10 @@ func LoadConfig(dir string) (*Config, error) {
 		}
 
 		cfg = &Config{
-			Version:           1,
-			DaemonControlAddr: "127.0.0.1:15555",
-			DownloadsPath:     downloadsPath(),
-			ListenAddr:        ":13333",
-			Key:               priv.Seed(),
-			UseDaemon:         false,
+			Version:       1,
+			DownloadsPath: downloadsPath(),
+			ListenAddr:    ":13333",
+			Key:           priv.Seed(),
 		}
 
 		cfg.TunnelConfig, err = tunnelConfig.GenerateClientConfig()

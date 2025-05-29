@@ -1,6 +1,14 @@
 import React, {Component} from 'react';
 import {baseModal} from "./Modal";
-import {GetConfig, GetSpeedLimit, OpenDir, SaveConfig, SetSpeedLimit, OpenTunnelConfig} from "../../wailsjs/go/main/App";
+import {
+    GetConfig,
+    GetSpeedLimit,
+    OpenDir,
+    SaveConfig,
+    SetSpeedLimit,
+    OpenTunnelConfig,
+    ReinitApp
+} from "../../wailsjs/go/main/App";
 import {BrowserOpenURL} from "../../wailsjs/runtime";
 
 interface State {
@@ -8,21 +16,16 @@ interface State {
     tunnelConfig: string
     addr: string
     addrValid: boolean
-    addrDaemonValid: boolean
     uploadSpeed: string
     downloadSpeed: string
 
-    useTonutils: boolean
     seedFiles: boolean
-    daemonMasterAddr: string
-    daemonDB: string
 
     err?: string
 }
 
 interface SettingsModalProps {
     onExit: () => void;
-    onTunnelConfig: (maxNoPayments: number, max: number) => void;
 }
 
 export class SettingsModal extends Component<SettingsModalProps, State> {
@@ -33,13 +36,9 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
             downloads: "",
             addr: "",
             addrValid: true,
-            addrDaemonValid: true,
             uploadSpeed: "",
             downloadSpeed: "",
-            useTonutils: true,
             seedFiles: false,
-            daemonDB: "",
-            daemonMasterAddr: "",
             tunnelConfig: "",
         };
     }
@@ -74,10 +73,10 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
             u = Number(this.state.uploadSpeed);
         }
 
-        SaveConfig(this.state.downloads, this.state.useTonutils, this.state.seedFiles, this.state.addr, this.state.daemonMasterAddr, this.state.daemonDB, this.state.tunnelConfig).then(()=>{
-            SetSpeedLimit(d, u).then()
+        SaveConfig(this.state.downloads, this.state.seedFiles, this.state.addr, this.state.tunnelConfig).then(()=>{
+            SetSpeedLimit(d, u).then();
         });
-        this.props.onExit()
+        this.props.onExit();
     }
 
     render() {
@@ -109,10 +108,6 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                                     path = p.Path;
                                 }
                                 this.setState((current) => ({...current, tunnelConfig: path}));
-
-                                if (path != "") {
-                                    this.props.onTunnelConfig(p.MaxFree, p.Max);
-                                }
                             })
                         }}>Select
                         </button>
@@ -136,15 +131,6 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                         </div>
                     </div>
                     <div className="set-speed">
-                        <label className="checkbox-file daemon">Use tonutils-storage implementation
-                            <input type="checkbox" className="file-to-download" checked={this.state.useTonutils}
-                                   onChange={(e) => {
-                                       this.setState((current) => ({...current, useTonutils: !this.state.useTonutils}))
-                                   }}/>
-                            <span className="checkmark"></span>
-                        </label>
-                    </div>
-                    <div className="set-speed" style={{display: this.state.useTonutils ? 'block' : 'none'}}>
                         <label className="checkbox-file daemon">Static seed mode
                             <input type="checkbox" className="file-to-download" checked={this.state.seedFiles}
                                    onChange={(e) => {
@@ -154,7 +140,7 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                         </label>
                     </div>
                     <div className="set-speed"
-                         style={{display: (this.state.useTonutils && this.state.seedFiles) ? 'block' : 'none'}}>
+                         style={{display: this.state.seedFiles ? 'block' : 'none'}}>
                         <span className="field-name">External ip and port to listen on</span>
                         <input type="text"
                                pattern="((\b25[0-5]|\b2[0-4][0-9]|\b[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3})(?::((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4})))\b"
@@ -169,39 +155,6 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                             this.setState((current) => ({...current, addr: e.target.value, addrValid: valid}))
                         }}/>
                     </div>
-                    <div className="daemon-config" style={{display: this.state.useTonutils ? 'none' : 'block'}}>
-                        <span className="field-name">Daemon control address</span>
-                        <input type="text"
-                               pattern="((\b25[0-5]|\b2[0-4][0-9]|\b[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3})(?::((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4})))\b"
-                               value={this.state.daemonMasterAddr} onChange={(e) => {
-                            let valid = e.target.validity.valid
-                            if (!valid) {
-                                if (!e.target.classList.contains("invalid"))
-                                    e.target.classList.add("invalid")
-                            } else {
-                                e.target.classList.remove("invalid")
-                            }
-                            this.setState((current) => ({
-                                ...current,
-                                daemonMasterAddr: e.target.value,
-                                addrDaemonValid: valid
-                            }))
-                        }}/>
-                        <span className="field-name">Daemon DB path</span>
-                        <div className="create-input">
-                                <span>{
-                                    this.state.daemonDB.length > 25 ? "..." + this.state.daemonDB.slice(this.state.daemonDB.length - 25, this.state.daemonDB.length) : this.state.daemonDB
-                                }</span>
-                            <button onClick={() => {
-                                OpenDir().then((p: string) => {
-                                    if (p.length > 0) {
-                                        this.setState((current) => ({...current, daemonDB: p}))
-                                    }
-                                })
-                            }}>Select
-                            </button>
-                        </div>
-                    </div>
                     {this.state.err ? <span className="error">{this.state.err}</span> : ""}
                 </div>
                 <div className="modal-control">
@@ -209,10 +162,8 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                         Cancel
                     </button>
                     <button className="main-button" disabled={
-                        (!this.state.addrValid && this.state.useTonutils && this.state.seedFiles)
-                        || (this.state.addr.startsWith(":") && this.state.useTonutils && this.state.seedFiles)
-                        || (!this.state.addrDaemonValid && !this.state.useTonutils)
-                        || (this.state.daemonDB.length == 0 && !this.state.useTonutils)
+                        (!this.state.addrValid  && this.state.seedFiles)
+                        || (this.state.addr.startsWith(":") && this.state.seedFiles)
                     } onClick={() => {
                         this.next()
                     }}>
@@ -220,7 +171,7 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                     </button>
                 </div>
                 <div className="modal-version">
-                    <span className="version">Version 1.6.1</span>
+                    <span className="version">Version 1.7.0</span>
                     <span className="check" onClick={() => {
                         BrowserOpenURL("https://github.com/xssnick/TON-Torrent/releases")
                     }}>Check updates</span>

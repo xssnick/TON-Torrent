@@ -91,4 +91,147 @@
     }
   }
 
+  .config-block {
+    display: flex;
+    flex-direction: column;
+    margin: auto;
+
+    .field-group {
+      color: var(--text-primary, $text-black);
+
+      margin-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+
+      &.checkbox-group {
+
+        display: flex;
+        flex-direction: column; // Stack all items vertically
+        align-items: center;   // Center everything in the group horizontally
+
+        .checkbox-container {
+          display: flex;
+          align-items: center;  // Align checkbox and label side-by-side vertically
+          justify-content: center; // Ensure the entire container is centered horizontally
+        }
+
+        .payments-label {
+          display: flex;
+          align-items: center; // Ensure the checkbox and text (label) are aligned vertically
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--text-primary, $text-black);
+        }
+
+        .ton-address {
+          text-align: center;
+          font-size: 9.5px;
+          color: var(--text-secondary, $secondaryText);
+
+          label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            color: var(--text-primary, $text-black);
+          }
+
+          .address-input {
+            display: block;
+            width: 300px;
+            font-family: monospace;
+            font-weight: 500;
+            color: $text-black;
+            background: var(--address-bg, #f8f9fa);
+            padding: 4px 8px;
+            border: 1px solid var(--card-border, #dde3e6);
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+          }
+
+          .address-input:focus {
+            outline: 2px solid var(--ton, #0098ea);
+          }
+        }
+
+        .important-text {
+          padding-top: 15px;      // Spacing between the address and the important text
+          color: #dc3545;       // Red color for emphasis
+          font-size: 10px;      // Maintain a consistent font size
+          line-height: 1.5;     // Ensure better readability for long text
+          text-align: center;   // Center the text horizontally
+        }
+
+        .styled-checkbox {
+          width: 16px;
+          height: 16px;
+          border-radius: 4px;
+          appearance: none;
+          margin-right: 8px;    // Space between the checkbox and the label
+          border: 1px solid var(--card-border, #dde3e6);
+          background: var(--buttonTorrentMenuInactive, #edf1f6);
+          cursor: pointer;
+          position: relative;
+
+          &:checked {
+            background: var(--ton, #0098ea);
+            border-color: var(--ton, #0098ea);
+          }
+
+          &:checked::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 5px;
+            width: 4px;
+            height: 8px;
+            border: solid #fff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+          }
+        }
+      }
+
+      .field-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary, $secondaryText);
+        margin-bottom: 6px;
+        text-align: center; // Ensure all field labels are centered
+      }
+
+      .nodes-control {
+        display: flex;
+        align-items: center;
+        justify-content: center; // Center the whole control (buttons + counter)
+        gap: 12px; // Add proper spacing between the buttons and counter
+
+        .nodes-btn {
+          width: 32px;
+          height: 32px;
+          background: var(--table-back, #f7f9fb);
+          border: 1px solid var(--card-border, #dde3e6);
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 16px;
+          font-weight: bold;
+          color: var(--text-primary, $text-black);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+
+          &:hover {
+            background: var(--buttonTorrentMenuActive, rgba(118, 152, 187, 0.12));
+          }
+        }
+
+        .nodes-count {
+          width: 32px;
+          text-align: center;
+          font-size: 16px;
+          font-weight: 600;
+        }
+      }
+    }
+  }
 }

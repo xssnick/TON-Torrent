@@ -120,10 +120,18 @@ export class Table extends Component<TableProps,State> {
     componentDidMount() {
         EventsOn("update", () => {
             this.update();
-        })
+        });
+        EventsOn("daemon_ready", (ready: boolean)=> {
+            if (!ready) {
+                this.setState({
+                    torrents: []
+                });
+            }
+        });
     }
     componentWillUnmount() {
-        EventsOff("update")
+        EventsOff("update");
+        EventsOff("daemon_ready");
     }
 
     clickRow(t: TorrentItem) {

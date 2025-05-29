@@ -578,9 +578,6 @@ export namespace main {
 	    ListenAddr: string;
 	    Key: number[];
 	    IsDarkTheme: boolean;
-	    UseDaemon: boolean;
-	    DaemonDBPath: string;
-	    DaemonControlAddr: string;
 	    PortsChecked: boolean;
 	    NetworkConfigPath: string;
 	    FetchIPOnStartup: boolean;
@@ -598,9 +595,6 @@ export namespace main {
 	        this.ListenAddr = source["ListenAddr"];
 	        this.Key = source["Key"];
 	        this.IsDarkTheme = source["IsDarkTheme"];
-	        this.UseDaemon = source["UseDaemon"];
-	        this.DaemonDBPath = source["DaemonDBPath"];
-	        this.DaemonControlAddr = source["DaemonControlAddr"];
 	        this.PortsChecked = source["PortsChecked"];
 	        this.NetworkConfigPath = source["NetworkConfigPath"];
 	        this.FetchIPOnStartup = source["FetchIPOnStartup"];

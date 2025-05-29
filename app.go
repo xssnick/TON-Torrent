@@ -35,14 +35,12 @@ import (
 
 // App struct
 type App struct {
-	ctx                   context.Context
-	api                   *api.API
-	daemonProcess         *os.Process
-	rootPath              string
-	config                *Config
-	loaded                bool
-	frontMounted          bool
-	tunnelSettingsUpdated bool
+	ctx          context.Context
+	api          *api.API
+	rootPath     string
+	config       *Config
+	loaded       bool
+	frontMounted bool
 
 	openFileData []byte
 	openFileHash string
@@ -54,7 +52,7 @@ type App struct {
 	closerCtx context.Context
 	closeCtx  context.CancelFunc
 
-	tunnelCtx context.Context
+	stoppedCtx context.Context
 
 	mx sync.RWMutex
 }
@@ -65,8 +63,8 @@ func NewApp() *App {
 	oshook.HookStartup(a.openFile, a.openHash)
 	storage.Logger = log.Println
 
-	tunnel.ChannelCapacityForNumPayments = 50
-	tunnel.ChannelPacketsToPrepay = 20000
+	tunnel.ChannelCapacityForNumPayments = 40
+	tunnel.ChannelPacketsToPrepay = 50000
 
 	var err error
 	a.rootPath, err = PrepareRootPath()
@@ -88,15 +86,7 @@ func (a *App) exit(ctx context.Context) {
 	log.Println("Exiting...")
 
 	a.closeCtx()
-	if a.daemonProcess != nil {
-		_ = a.daemonProcess.Kill()
-	}
-
-	if a.tunnelCtx != nil {
-		log.Println("Stopping tunnel...")
-		<-a.tunnelCtx.Done()
-		log.Println("Tunnel stopped")
-	}
+	<-a.stoppedCtx.Done()
 	log.Println("Graceful exit completed")
 }
 
@@ -182,203 +172,243 @@ func (a *App) DummySec() []SectionInfo {
 	return []SectionInfo{}
 }
 
+func (a *App) initializeStorage() {
+	log.Println("Initializing storage")
+
+	addr := strings.Split(a.config.ListenAddr, ":")
+
+	lAddr := "0.0.0.0"
+
+	if len(addr) < 2 {
+		a.Throw(fmt.Errorf("ListenAddr in config.json is not valid"))
+		return
+	}
+
+	cfg := gostorage.Config{
+		Key:               ed25519.NewKeyFromSeed(a.config.Key),
+		ListenAddr:        lAddr + ":" + addr[1],
+		ExternalIP:        addr[0],
+		DownloadsPath:     a.config.DownloadsPath,
+		NetworkConfigPath: a.config.NetworkConfigPath,
+	}
+	if !a.config.SeedMode {
+		cfg.ExternalIP = ""
+	}
+
+	if cfg.ExternalIP == "0.0.0.0" {
+		a.ShowWarnMsg("external ip cannot be 0.0.0.0, disabling seed mode, " +
+			"change ip in settings to your real external ip")
+		cfg.ExternalIP = ""
+	}
+
+	var stop context.CancelFunc
+	a.stoppedCtx, stop = context.WithCancel(context.Background())
+
+	tunCfg := a.config.TunnelConfig
+
+retry:
+	cl, err := gostorage.NewClient(a.closerCtx, a.rootPath+"/tonutils-storage-db", cfg, tunCfg, func(addr string) {
+		go func() {
+			// wait till frontend init, to display event
+			for !a.loaded {
+				time.Sleep(50 * time.Millisecond)
+			}
+			runtime2.EventsEmit(a.ctx, "tunnel_assigned", addr)
+			log.Println("TUNNEL ASSIGNED:", addr)
+		}()
+	}, func() {
+		stop()
+	}, func(to, from []*tunnel.SectionInfo) int {
+		var priceIn, priceOut = big.NewInt(0), big.NewInt(0)
+		var sect []SectionInfo
+		for i, n := range append(to, from...) {
+			sect = append(sect, SectionInfo{
+				Name:  base64.StdEncoding.EncodeToString(n.Keys.ReceiverPubKey)[:8],
+				Outer: i == len(to)-1,
+			})
+
+			if n.PaymentInfo != nil {
+				if n.PaymentInfo.ExtraCurrencyID != 0 || n.PaymentInfo.JettonMaster != nil {
+					a.ShowWarnMsg("Route has node with payment in currency other than TON, it is not yet supported in Torrent, rerouting")
+					return tunnel.AcceptorDecisionCancel
+				}
+
+				// consider 1 packet = 512 bytes, actually more, but this is avg payload
+				var packetsPerMB int64 = 2048
+
+				amt := new(big.Int).SetUint64(n.PaymentInfo.PricePerPacket)
+				amt.Mul(amt, big.NewInt(packetsPerMB))
+
+				vcFee := big.NewInt(0)
+				for _, section := range n.PaymentInfo.PaymentTunnel {
+					vcFee.Add(vcFee, section.MinFee)
+				}
+
+				packetsPerChannel := tunnel.ChannelCapacityForNumPayments * tunnel.ChannelPacketsToPrepay
+				// channel fee per 1 mb
+				feeDiv := new(big.Float).Quo(new(big.Float).SetInt64(packetsPerMB), new(big.Float).SetInt64(packetsPerChannel))
+
+				feePer1MB, _ := feeDiv.Mul(new(big.Float).SetInt(vcFee), feeDiv).Int(vcFee)
+				amt.Add(amt, feePer1MB)
+
+				if i < len(to)-1 {
+					priceOut.Add(priceOut, amt)
+				} else if i == len(to)-1 {
+					priceOut.Add(priceOut, amt)
+					priceIn.Add(priceOut, amt)
+				} else {
+					priceIn.Add(priceOut, amt)
+				}
+			}
+		}
+
+		for !a.frontMounted {
+			time.Sleep(10 * time.Millisecond)
+		}
+		runtime2.EventsEmit(a.ctx, "tunnel_check", sect, tlb.FromNanoTON(priceIn).String(), tlb.FromNanoTON(priceOut).String())
+
+		ch := make(chan int, 1)
+		runtime2.EventsOn(a.ctx, "tunnel_check_result", func(optionalData ...interface{}) {
+			runtime2.EventsOff(a.ctx, "tunnel_check_result")
+			if len(optionalData) == 0 {
+				// cancel tunnel, start without it
+				tunCfg = nil
+				ch <- tunnel.AcceptorDecisionCancel
+				return
+			}
+
+			if optionalData[0].(bool) {
+				ch <- tunnel.AcceptorDecisionAccept
+			} else {
+				ch <- tunnel.AcceptorDecisionReject
+				if len(optionalData) > 1 {
+					tunCfg.TunnelSectionsNum = uint(optionalData[1].(float64))
+					a.SaveTunnelConfig(tunCfg.TunnelSectionsNum, true)
+				}
+			}
+		})
+
+		select {
+		case <-a.closerCtx.Done():
+			return tunnel.AcceptorDecisionCancel
+		case v := <-ch:
+			return v
+		}
+	}, func() bool {
+		for !a.frontMounted {
+			time.Sleep(10 * time.Millisecond)
+		}
+		runtime2.EventsEmit(a.ctx, "tunnel_reinit_ask")
+
+		ch := make(chan bool, 1)
+		runtime2.EventsOn(a.ctx, "tunnel_reinit_ask_result", func(optionalData ...interface{}) {
+			runtime2.EventsOff(a.ctx, "tunnel_reinit_ask_result")
+			ch <- optionalData[0].(bool)
+		})
+
+		select {
+		case <-a.closerCtx.Done():
+			return false
+		case v := <-ch:
+			return v
+		}
+	}, func(s string) {
+		for !a.frontMounted {
+			time.Sleep(10 * time.Millisecond)
+		}
+
+		runtime2.EventsEmit(a.ctx, "report_state", s)
+	}, func(coins tlb.Coins) {
+		runtime2.EventsEmit(a.ctx, "tunnel_paid_updated", coins.String())
+	})
+	if err != nil {
+		if strings.HasPrefix(err.Error(), "tunnel preparation failed:") {
+			if tunCfg != nil {
+				a.ShowWarnMsg("Failed to prepare tunnel, will start without it\n\nError: " + err.Error())
+				tunCfg = nil
+			}
+			goto retry
+		}
+		a.Throw(fmt.Errorf("failed to init go storage: %w", err))
+		return
+	}
+
+	// loading done, hook again to steal it from webview
+	a.api = api.NewAPI(a.closerCtx, cl)
+	a.api.SetOnListRefresh(func() {
+		runtime2.EventsEmit(a.ctx, "update")
+		runtime2.EventsEmit(a.ctx, "update_peers")
+		runtime2.EventsEmit(a.ctx, "update_files")
+		runtime2.EventsEmit(a.ctx, "update_info")
+	})
+	a.api.SetSpeedRefresh(func(speed api.Speed) {
+		runtime2.EventsEmit(a.ctx, "speed", speed)
+	})
+	a.loaded = true
+
+	runtime2.EventsOn(a.ctx, "refresh", func(optionalData ...interface{}) {
+		_ = a.api.SyncTorrents()
+	})
+	defer runtime2.EventsOff(a.ctx, "refresh")
+
+	nf := cl.GetNotifier()
+	for {
+		select {
+		case <-a.closerCtx.Done():
+			return
+		case <-nf:
+		}
+		_ = a.api.SyncTorrents()
+
+		// to not refresh too often
+		time.Sleep(70 * time.Millisecond)
+	}
+}
+
 func (a *App) ready(ctx context.Context) {
 	oncePrepare.Do(func() {
 		a.prepare()
 
-		go func() {
-			var err error
-			var cl api.StorageClient
-			if a.config.UseDaemon {
-				cl, err = client.ConnectToStorageDaemon(a.config.DaemonControlAddr, a.config.DaemonDBPath)
-				if err != nil {
-					a.ShowWarnMsg("Failed to connect to storage daemon, falling back to tonutils-storage.\n\n" + err.Error())
-				}
-			}
-
-			if !a.config.UseDaemon || err != nil {
-				addr := strings.Split(a.config.ListenAddr, ":")
-
-				lAddr := "0.0.0.0"
-
-				if len(addr) < 2 {
-					a.Throw(fmt.Errorf("ListenAddr in config.json is not valid"))
-					return
-				}
-
-				cfg := gostorage.Config{
-					Key:               ed25519.NewKeyFromSeed(a.config.Key),
-					ListenAddr:        lAddr + ":" + addr[1],
-					ExternalIP:        addr[0],
-					DownloadsPath:     a.config.DownloadsPath,
-					NetworkConfigPath: a.config.NetworkConfigPath,
-				}
-				if !a.config.SeedMode {
-					cfg.ExternalIP = ""
-				}
-
-				if cfg.ExternalIP == "0.0.0.0" {
-					a.ShowWarnMsg("external ip cannot be 0.0.0.0, disabling seed mode, " +
-						"change ip in settings to your real external ip")
-					cfg.ExternalIP = ""
-				}
-
-				var stopTunnel context.CancelFunc
-				if a.config.TunnelConfig != nil && a.config.TunnelConfig.NodesPoolConfigPath != "" {
-					a.tunnelCtx, stopTunnel = context.WithCancel(context.Background())
-				}
-
-				tunCfg := a.config.TunnelConfig
-
-			retry:
-				var err error
-				cl, err = gostorage.NewClient(a.closerCtx, a.rootPath+"/tonutils-storage-db", cfg, tunCfg, func(addr string) {
-					go func() {
-						// wait till frontend init, to display event
-						for !a.loaded {
-							time.Sleep(50 * time.Millisecond)
-						}
-						runtime2.EventsEmit(a.ctx, "tunnel_assigned", addr)
-						log.Println("TUNNEL ASSIGNED:", addr)
-					}()
-				}, func() {
-					stopTunnel()
-				}, func(to, from []*tunnel.SectionInfo) bool {
-					if tunCfg == nil {
-						// skip all routes
-						return false
-					}
-
-					var priceIn, priceOut = big.NewInt(0), big.NewInt(0)
-					var sect []SectionInfo
-					for i, n := range append(to, from...) {
-						sect = append(sect, SectionInfo{
-							Name:  base64.StdEncoding.EncodeToString(n.Keys.ReceiverPubKey)[:8],
-							Outer: i == len(to)-1,
-						})
-
-						if n.PaymentInfo != nil {
-							if n.PaymentInfo.ExtraCurrencyID != 0 || n.PaymentInfo.JettonMaster != nil {
-								a.ShowWarnMsg("Route has node with payment in currency other than TON, it is not yet supported in Torrent, rerouting")
-								return false
-							}
-
-							// consider 1 packet = 512 bytes, actually more, but this is avg payload
-							var packetsPerMB int64 = 2048
-
-							amt := new(big.Int).SetUint64(n.PaymentInfo.PricePerPacket)
-							amt.Mul(amt, big.NewInt(packetsPerMB))
-
-							vcFee := big.NewInt(0)
-							for _, section := range n.PaymentInfo.PaymentTunnel {
-								vcFee.Add(vcFee, section.MinFee)
-							}
-
-							packetsPerChannel := tunnel.ChannelCapacityForNumPayments * tunnel.ChannelPacketsToPrepay
-							// channel fee per 1 mb
-							feeDiv := new(big.Float).Quo(new(big.Float).SetInt64(packetsPerMB), new(big.Float).SetInt64(packetsPerChannel))
-
-							feePer1MB, _ := feeDiv.Mul(new(big.Float).SetInt(vcFee), feeDiv).Int(vcFee)
-							amt.Add(amt, feePer1MB)
-
-							if i < len(to)-1 {
-								priceOut.Add(priceOut, amt)
-							} else if i == len(to)-1 {
-								priceOut.Add(priceOut, amt)
-								priceIn.Add(priceOut, amt)
-							} else {
-								priceIn.Add(priceOut, amt)
-							}
-						}
-					}
-
-					for !a.frontMounted {
-						time.Sleep(10 * time.Millisecond)
-					}
-					runtime2.EventsEmit(a.ctx, "tunnel_check", sect, tlb.FromNanoTON(priceIn).String(), tlb.FromNanoTON(priceOut).String())
-
-					ch := make(chan bool, 1)
-					runtime2.EventsOn(a.ctx, "tunnel_check_result", func(optionalData ...interface{}) {
-						runtime2.EventsOff(a.ctx, "tunnel_check_result")
-						if len(optionalData) == 0 {
-							// cancel tunnel, start without it
-							tunCfg = nil
-							ch <- false
-							return
-						}
-
-						ch <- optionalData[0].(bool)
-					})
-					return <-ch
-				}, func() bool {
-					if tunCfg == nil {
-						return false
-					}
-
-					for !a.frontMounted {
-						time.Sleep(10 * time.Millisecond)
-					}
-					runtime2.EventsEmit(a.ctx, "tunnel_reinit_ask")
-
-					ch := make(chan bool, 1)
-					runtime2.EventsOn(a.ctx, "tunnel_reinit_ask_result", func(optionalData ...interface{}) {
-						runtime2.EventsOff(a.ctx, "tunnel_reinit_ask_result")
-						ch <- optionalData[0].(bool)
-					})
-					return <-ch
-				}, func(s string) {
-					for !a.frontMounted {
-						time.Sleep(10 * time.Millisecond)
-					}
-
-					runtime2.EventsEmit(a.ctx, "report_state", s)
-				}, func(coins tlb.Coins) {
-					runtime2.EventsEmit(a.ctx, "tunnel_paid_updated", coins.String())
-				})
-				if err != nil {
-					if strings.HasPrefix(err.Error(), "tunnel preparation failed:") {
-						if tunCfg != nil {
-							a.ShowWarnMsg("Failed to prepare tunnel, will start without it\n\nError: " + err.Error())
-							tunCfg = nil
-						}
-						goto retry
-					}
-					a.Throw(fmt.Errorf("failed to init go storage: %w", err))
-					return
-				}
-			}
-
-			// loading done, hook again to steal it from webview
-			a.api = api.NewAPI(ctx, cl)
-			a.api.SetOnListRefresh(func() {
-				runtime2.EventsEmit(a.ctx, "update")
-				runtime2.EventsEmit(a.ctx, "update_peers")
-				runtime2.EventsEmit(a.ctx, "update_files")
-				runtime2.EventsEmit(a.ctx, "update_info")
-			})
-			a.api.SetSpeedRefresh(func(speed api.Speed) {
-				runtime2.EventsEmit(a.ctx, "speed", speed)
-			})
-			a.loaded = true
-
-			runtime2.EventsOn(a.ctx, "refresh", func(optionalData ...interface{}) {
-				_ = a.api.SyncTorrents()
-			})
-
-			for range cl.GetNotifier() {
-				_ = a.api.SyncTorrents()
-
-				// to not refresh too often
-				time.Sleep(70 * time.Millisecond)
-			}
-		}()
+		go a.initializeStorage()
 	})
 }
 
 var onceCheck = sync.Once{}
 
+func (a *App) ReinitApp() {
+	a.loaded = false
+	runtime2.EventsEmit(a.ctx, "daemon_ready", false)
+
+	a.closeCtx()
+	log.Println("Stopping storage...")
+	<-a.stoppedCtx.Done()
+	log.Println("Storage stopped")
+	a.closerCtx, a.closeCtx = context.WithCancel(a.ctx)
+	go a.initializeStorage()
+
+	go func() {
+		// wait for ready
+		for !a.loaded {
+			time.Sleep(50 * time.Millisecond)
+		}
+
+		runtime2.EventsEmit(a.ctx, "daemon_ready", true)
+	}()
+}
+
+func (a *App) GetMaxTunnelNodes() int {
+	res := a.parseTunnelConfig(a.config.TunnelConfig.NodesPoolConfigPath)
+	if res == nil {
+		return 0
+	}
+
+	return res.Max
+}
+
 func (a *App) WaitReady() {
 	onceCheck.Do(func() {
+		log.Println("Frontend is ready")
+
 		a.frontMounted = true
 		go func() {
 			// wait for daemon ready
@@ -386,7 +416,7 @@ func (a *App) WaitReady() {
 				time.Sleep(50 * time.Millisecond)
 			}
 
-			runtime2.EventsEmit(a.ctx, "daemon_ready")
+			runtime2.EventsEmit(a.ctx, "daemon_ready", true)
 			runtime2.OnFileDrop(a.ctx, func(x, y int, paths []string) {
 				if len(paths) == 0 {
 					return
@@ -548,6 +578,10 @@ func (a *App) OpenTunnelConfig() *TunnelConfigInfo {
 		return nil
 	}
 
+	return a.parseTunnelConfig(path)
+}
+
+func (a *App) parseTunnelConfig(path string) *TunnelConfigInfo {
 	if path != "" {
 		data, err := os.ReadFile(path)
 		if err != nil {
@@ -819,49 +853,27 @@ func (a *App) SaveTunnelConfig(num uint, payments bool) string {
 		log.Println(err.Error())
 		return err.Error()
 	}
-	a.tunnelSettingsUpdated = true
 
 	return ""
 }
 
-func (a *App) SaveConfig(downloads string, useTonutilsStorage, seedMode bool, storageExtIP, daemonControlAddr, daemonDB, tunnelConfigPath string) string {
-	notify := false
+func (a *App) SaveConfig(downloads string, seedMode bool, storageExtIP, tunnelConfigPath string) string {
+	reload := false
 	a.config.DownloadsPath = downloads
-
-	if useTonutilsStorage != !a.config.UseDaemon {
-		a.config.UseDaemon = !useTonutilsStorage
-		notify = true
-	}
-
-	if a.tunnelSettingsUpdated {
-		notify = true
-		a.tunnelSettingsUpdated = false
-	}
 
 	if tunnelConfigPath != a.config.TunnelConfig.NodesPoolConfigPath {
 		a.config.TunnelConfig.NodesPoolConfigPath = tunnelConfigPath
-		notify = true
+		reload = true
 	}
 
-	if useTonutilsStorage {
-		if a.config.SeedMode != seedMode {
-			notify = true
-			a.config.SeedMode = seedMode
-		}
+	if a.config.SeedMode != seedMode {
+		reload = true
+		a.config.SeedMode = seedMode
+	}
 
-		if a.config.SeedMode && a.config.ListenAddr != storageExtIP {
-			a.config.ListenAddr = storageExtIP
-			notify = true
-		}
-	} else {
-		if a.config.DaemonDBPath != daemonDB {
-			a.config.DaemonDBPath = daemonDB
-			notify = true
-		}
-		if a.config.DaemonControlAddr != daemonControlAddr {
-			a.config.DaemonControlAddr = daemonControlAddr
-			notify = true
-		}
+	if a.config.SeedMode && a.config.ListenAddr != storageExtIP {
+		a.config.ListenAddr = storageExtIP
+		reload = true
 	}
 
 	err := a.config.SaveConfig(a.rootPath)
@@ -870,8 +882,8 @@ func (a *App) SaveConfig(downloads string, useTonutilsStorage, seedMode bool, st
 		return err.Error()
 	}
 
-	if notify {
-		a.ShowMsg("Some settings will be changed on the next launch.\nPlease restart the app to apply them.")
+	if reload {
+		a.ReinitApp()
 	}
 
 	return ""

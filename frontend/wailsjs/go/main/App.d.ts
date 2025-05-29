@@ -29,6 +29,8 @@ export function GetFiles(arg1:string):Promise<Array<api.File>>;
 
 export function GetInfo(arg1:string):Promise<api.TorrentInfo>;
 
+export function GetMaxTunnelNodes():Promise<number>;
+
 export function GetPaymentNetworkWalletAddr():Promise<string>;
 
 export function GetPeers(arg1:string):Promise<Array<api.Peer>>;
@@ -53,11 +55,13 @@ export function OpenFolderSelectFile(arg1:string):Promise<void>;
 
 export function OpenTunnelConfig():Promise<main.TunnelConfigInfo>;
 
+export function ReinitApp():Promise<void>;
+
 export function RemoveTorrent(arg1:string,arg2:boolean,arg3:boolean):Promise<string>;
 
 export function RequestProviderStorageInfo(arg1:string,arg2:string,arg3:string):Promise<api.ProviderStorageInfo>;
 
-export function SaveConfig(arg1:string,arg2:boolean,arg3:boolean,arg4:string,arg5:string,arg6:string,arg7:string):Promise<string>;
+export function SaveConfig(arg1:string,arg2:boolean,arg3:string,arg4:string):Promise<string>;
 
 export function SaveTunnelConfig(arg1:number,arg2:boolean):Promise<string>;
 

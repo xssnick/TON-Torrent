@@ -47,16 +47,49 @@ type Config struct {
 
 type Client struct {
 	storage   *db.Storage
+	srv       *storage.Server
 	connector storage.NetConnector
 	provider  *provider.Client
 
 	notify chan bool
 }
 
-func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tunnelConfig.ClientConfig, onTunnel func(addr string), onTunnelStop func(), tunAcceptor func(to, from []*tunnel.SectionInfo) bool, reRouter func() bool, reportLoadingState func(string), onPaidUpdate func(coins tlb.Coins)) (*Client, error) {
+func NewClient(globalCtx context.Context, dbPath string, cfg Config, tunCfg *tunnelConfig.ClientConfig, onTunnel func(addr string), onStopped func(), tunAcceptor func(to, from []*tunnel.SectionInfo) int, reRouter func() bool, reportLoadingState func(string), onPaidUpdate func(coins tlb.Coins)) (*Client, error) {
 	c := &Client{
 		notify: make(chan bool, 1), // to refresh fast a bit after
 	}
+
+	closerCtx, closerCancel := context.WithCancel(globalCtx)
+
+	tunStop := make(chan bool, 1)
+
+	var success bool
+	var destroyed bool
+	var tunnelInitialized bool
+
+	var toClose []func()
+	destroy := func(final bool) {
+		if !final && success {
+			return
+		}
+		if destroyed {
+			return
+		}
+		destroyed = true
+
+		closerCancel()
+
+		if tunnelInitialized {
+			<-tunStop
+		}
+
+		for _, f := range toClose {
+			f()
+		}
+
+		onStopped()
+	}
+	defer destroy(false)
 
 	reportLoadingState("Checking config...")
 
@@ -66,14 +99,14 @@ func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tun
 		ip = net.ParseIP(cfg.ExternalIP)
 		if ip == nil {
 			pterm.Error.Println("External ip is invalid")
-			os.Exit(1)
+			return nil, fmt.Errorf("invalid external ip")
 		}
 	}
 
 	addr, err := netip.ParseAddrPort(cfg.ListenAddr)
 	if err != nil {
 		pterm.Error.Println("Listen addr is invalid")
-		os.Exit(1)
+		return nil, fmt.Errorf("invalid listen addr")
 	}
 	port = addr.Port()
 
@@ -84,7 +117,7 @@ func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tun
 		lsCfg, err = liteclient.GetConfigFromFile(cfg.NetworkConfigPath)
 		if err != nil {
 			pterm.Error.Println("Failed to load ton network config from file:", err.Error())
-			os.Exit(1)
+			return nil, fmt.Errorf("failed to load ton network config from file: %w", err)
 		}
 	} else {
 		lsCfg, err = liteclient.GetConfigFromUrl(closerCtx, "https://ton-blockchain.github.io/global.config.json")
@@ -93,7 +126,7 @@ func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tun
 			lsCfg = &liteclient.GlobalConfig{}
 			if err = json.NewDecoder(bytes.NewBufferString(config.FallbackNetworkConfig)).Decode(lsCfg); err != nil {
 				pterm.Error.Println("Failed to parse fallback ton config:", err.Error())
-				os.Exit(1)
+				return nil, fmt.Errorf("failed to parse fallback ton config: %w", err)
 			}
 		}
 	}
@@ -102,6 +135,7 @@ func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tun
 
 	lsPool := liteclient.NewConnectionPool()
 	apiClient := ton.NewAPIClient(lsPool, ton.ProofCheckPolicyFast).WithRetry(3)
+	toClose = append(toClose, lsPool.Stop)
 
 	// connect async to not slow down main processes
 	go func() {
@@ -134,6 +168,7 @@ func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tun
 		tunnel.Acceptor = tunAcceptor
 		events := make(chan any, 1)
 		go tunnel.RunTunnel(closerCtx, tunCfg, &tunNodesCfg, lsCfg, log.Logger, events)
+		tunnelInitialized = true
 
 		initUpd := make(chan any, 1)
 		inited := false
@@ -142,7 +177,7 @@ func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tun
 			for event := range events {
 				switch e := event.(type) {
 				case tunnel.StoppedEvent:
-					onTunnelStop()
+					close(tunStop)
 					return
 				case tunnel.MsgEvent:
 					reportLoadingState(e.Msg)
@@ -221,6 +256,10 @@ func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tun
 		netMgr = adnl.NewMultiNetReader(dl)
 		gate = adnl.NewGatewayWithNetManager(cfg.Key, netMgr)
 	}
+	toClose = append(toClose, func() {
+		gate.Close()
+		netMgr.Close()
+	})
 
 	reportLoadingState("Starting ADNL server...")
 
@@ -255,11 +294,17 @@ func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tun
 	if err = dhtGate.StartClient(); err != nil {
 		return nil, fmt.Errorf("failed to init dht adnl gateway: %w", err)
 	}
+	toClose = append(toClose, func() {
+		dhtGate.Close()
+	})
 
 	dhtClient, err := dht.NewClientFromConfig(dhtGate, lsCfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init dht client: %w", err)
 	}
+	toClose = append(toClose, func() {
+		dhtClient.Close()
+	})
 
 	providerGateSeed := sha256.Sum256(cfg.Key.Seed())
 	gateKey := ed25519.NewKeyFromSeed(providerGateSeed[:])
@@ -267,23 +312,35 @@ func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tun
 	if err = gateProvider.StartClient(); err != nil {
 		return nil, fmt.Errorf("failed to start adnl gateway for provider: %w", err)
 	}
+	toClose = append(toClose, func() {
+		gateProvider.Close()
+	})
 
 	reportLoadingState("Loading storage...")
-
-	srv := storage.NewServer(dhtClient, gate, cfg.Key, serverMode, 8)
 
 	ldb, err := leveldb.OpenFile(dbPath, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load db: %w", err)
 	}
+	toClose = append(toClose, func() {
+		ldb.Close()
+	})
+
+	c.srv = storage.NewServer(dhtClient, gate, cfg.Key, serverMode, 8)
+	toClose = append(toClose, func() {
+		c.srv.Stop()
+	})
 
 	ch := make(chan db.Event, 1)
-	c.connector = storage.NewConnector(srv)
+	c.connector = storage.NewConnector(c.srv)
 	c.storage, err = db.NewStorage(ldb, c.connector, 0, false, false, false, ch)
 	if err != nil {
 		return nil, fmt.Errorf("failed to init storage: %w", err)
 	}
-	srv.SetStorage(c.storage)
+	toClose = append(toClose, func() {
+		c.storage.Close()
+	})
+	c.srv.SetStorage(c.storage)
 
 	prvClient := transport.NewClient(gateProvider, dhtClient)
 	c.provider = provider.NewClient(c.storage, apiClient, prvClient)
@@ -297,9 +354,13 @@ func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tun
 	c.connector.SetUploadLimit(u)
 
 	go func() {
+		defer destroy(true)
+
 		ticker := time.Tick(1000 * time.Millisecond)
 		for {
 			select {
+			case <-closerCtx.Done():
+				return
 			case <-ch:
 			case <-ticker:
 			}
@@ -310,6 +371,7 @@ func NewClient(closerCtx context.Context, dbPath string, cfg Config, tunCfg *tun
 			}
 		}
 	}()
+	success = true
 
 	reportLoadingState("Initialized")
 

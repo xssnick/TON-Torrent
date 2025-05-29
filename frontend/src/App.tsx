@@ -24,7 +24,6 @@ import {ProvidersTorrentMenu} from "./components/ProvidersTorrentMenu";
 import {AddProviderModal} from "./components/ModalAddProvider";
 import {DoTxModal} from "./components/ModalDoTx";
 import InfoTorrentMenu from "./components/InfoTorrentMenu";
-import TunnelConfiguration from "./components/TunnelConfiguration";
 import TunnelNodesModal from "./components/TunnelNodesModal";
 import {main} from "../wailsjs/go/models";
 import SectionInfo = main.SectionInfo;
@@ -49,7 +48,6 @@ interface State {
     showSettingsModal: boolean
     showRemoveConfirmModal: boolean
     showTunnelRouteModal: boolean
-    showTunnelConfigModal: boolean
     showTunnelReinitModal: boolean
 
     tunnelMax: number
@@ -95,7 +93,6 @@ export class App extends Component<{}, State> {
             showAddProviderModal: false,
             showDoTransactionModal: false,
             showTunnelRouteModal: false,
-            showTunnelConfigModal: false,
             showTunnelReinitModal: false,
             overallUploadSpeed: "0 Bytes",
             overallDownloadSpeed: "0 Bytes",
@@ -157,13 +154,6 @@ export class App extends Component<{}, State> {
         this.setState((current)=>({...current, showTunnelReinitModal: !this.state.showTunnelReinitModal}))
     }
 
-    hideTunnelConfigModal = () => {
-        this.setState((current)=>({...current, showTunnelConfigModal: false}))
-    }
-    showTunnelConfigModal = (maxFree: number, max: number) => {
-        this.setState((current)=>({...current, showTunnelConfigModal: true, tunnelMax: max, tunnelMaxFree: maxFree}))
-    }
-
     async componentDidMount() {
         let dark = await IsDarkTheme();
         this.setState((current)=>({...current, isDark: dark}))
@@ -186,8 +176,11 @@ export class App extends Component<{}, State> {
         EventsOn("open_torrent", (hash: string) => {
             this.setState((current)=>({...current, showAddTorrentModal: true, openFileHash: hash}))
         })
-        EventsOn("daemon_ready", (data)=> {
-            this.setState((current)=>({...current, ready: true}));
+        EventsOn("daemon_ready", (ready: boolean)=> {
+            this.setState((current)=>({...current, ready: ready}));
+            if (!ready) {
+                this.setState((current)=>({...current, loadingMessage: "Reloading...", tunnelAddr: undefined, tunnelPaidAmount: "", selectedItems: []}));
+            }
         })
         EventsOn("tunnel_assigned", (addr: string)=> {
             this.setState((current)=>({...current, tunnelAddr: addr}));
@@ -330,20 +323,18 @@ export class App extends Component<{}, State> {
                         this.toggleTunnelRouteModal();
                         EventsEmit("tunnel_check_result", true);
                     }}
-                    onReroute={() => {
-                        this.toggleTunnelRouteModal();
-                        EventsEmit("tunnel_check_result", false);
+                    onReroute={(num: number) => {
+                        EventsEmit("tunnel_check_result", false, num);
                     }}
                     pricePerMBIn={this.state.tunnelSectionsPriceIn}
                     pricePerMBOut={this.state.tunnelSectionsPriceOut}
                     sections={this.state.tunnelSectionsToApprove}
                 /> : null}
                 {this.state.showTunnelReinitModal ? <ReinitTunnelConfirm onExit={this.toggleTunnelReinitModal}/> : null}
-                {this.state.showTunnelConfigModal ? <TunnelConfiguration onClose={this.hideTunnelConfigModal} max={this.state.tunnelMax} maxFree={this.state.tunnelMaxFree}/> : null}
                 {this.state.showAddTorrentModal ? <AddTorrentModal openHash={this.state.openFileHash} onExit={this.toggleAddTorrentModal} isDark={this.state.isDark}/> : null}
                 {this.state.showAddTorrentModal ? <AddTorrentModal openHash={this.state.openFileHash} onExit={this.toggleAddTorrentModal} isDark={this.state.isDark}/> : null}
                 {this.state.showCreateTorrentModal ? <CreateTorrentModal onExit={this.toggleCreateTorrentModal}/> : null}
-                {this.state.showSettingsModal ? <SettingsModal onExit={this.toggleSettingsModal} onTunnelConfig={this.showTunnelConfigModal}/> : null}
+                {this.state.showSettingsModal ? <SettingsModal onExit={this.toggleSettingsModal}/> : null}
                 {this.state.showRemoveConfirmModal ? <RemoveConfirmModal hashes={this.state.removeHashes!}  onExit={this.toggleRemoveConfirmModal} isDark={this.state.isDark}/> : null}
                 {this.state.showAddProviderModal ? <AddProviderModal hash={this.state.addProviderTorrentHash!} onExit={this.toggleAddProviderModal}/> : null}
                 {this.state.showDoTransactionModal ? <DoTxModal hash={this.state.doProviderTxModalData!.hash} owner={this.state.doProviderTxModalData!.owner} providers={this.state.doProviderTxModalData!.providers} justTopup={this.state.doProviderTxModalData!.justTopup}  onExit={this.toggleDoTransactionModal}/> : null}
