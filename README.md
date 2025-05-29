@@ -1,7 +1,7 @@
 # TON Torrent
 [![Based on TON][ton-svg]][ton] [![Join our group][join-svg]][tg]
 
-TON Storage UI based on [tonutils-storage](https://github.com/xssnick/tonutils-storage), with storage-daemon support mode.
+TON Storage UI based on [tonutils-storage](https://github.com/xssnick/tonutils-storage)
 
 ## Getting started
 <img align="right"  width="500" alt="Preview" src="https://github.com/xssnick/TON-Torrent/assets/9332353/c8065c0e-b7f2-4b6f-bcf0-37d0180d1dbe">
@@ -26,10 +26,6 @@ You could also create torrent from some of your folders and share bag id or meta
 At the first start, this program will try to resolve your external IP and check port availability. If ports are closen, then you can download only from peers with public IP (similar to regular torrent).
 You could always enable seed mode in settings and set external ip manually, for example, if check failed because of something else. 
 
-## Switching to original storage-daemon
-
-If you want to use C++ storage daemon and you have it running on your machine, you could switch to it in settings by specifying control port and storage-db path.
-
 ## Building
 
 To build, you need to install [Wails](https://wails.io/), then run:
@@ -41,13 +37,10 @@ Tunnels adds ability to rent address+port from another node, for example to can 
 This is useful when your provider not gives you public ip address, but you want to host your ton-site or bags from local computer.
 This can also speed up download speed becuase you can connect to more peers.
 
-1. Create empty file with name `tunnel-config.json`
-2. At Settings select this file as tunnel config.
-3. Restart TON Torrent, on next start it will generate basic config in this file.
-4. Fill config with desired tunnel route and start TON Torrent again.
-5. You will be connected to peers through tunnel.
-
-In case of fail, or if you want to disable tunnel - remove tunnel-config file, restart app and clear config in Settings. 
+1. Get nodes-pool config file from your tunnel provider.
+1. At Settings select nodes-pool json file as tunnel config.
+2. After configuration saving you will be asked about tunnel route
+3. When you agree, your connection will be tunnelled.
 
 ### Live Development
 
