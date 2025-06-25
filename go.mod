@@ -12,7 +12,7 @@ require (
 	github.com/wailsapp/wails/v2 v2.10.1
 	github.com/xssnick/ton-payment-network v0.2.1
 	github.com/xssnick/tonutils-go v1.13.0
-	github.com/xssnick/tonutils-storage v1.0.5
+	github.com/xssnick/tonutils-storage v1.1.0
 	github.com/xssnick/tonutils-storage-provider v0.3.6
 )
 

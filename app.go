@@ -207,6 +207,7 @@ func (a *App) initializeStorage() {
 	tunCfg := a.config.TunnelConfig
 
 retry:
+	tunnelAsked := false
 	cl, err := gostorage.NewClient(a.closerCtx, a.rootPath+"/tonutils-storage-db", cfg, tunCfg, func(addr string) {
 		go func() {
 			// wait till frontend init, to display event
@@ -266,6 +267,7 @@ retry:
 			time.Sleep(10 * time.Millisecond)
 		}
 		runtime2.EventsEmit(a.ctx, "tunnel_check", sect, tlb.FromNanoTON(priceIn).String(), tlb.FromNanoTON(priceOut).String())
+		tunnelAsked = true
 
 		ch := make(chan int, 1)
 		runtime2.EventsOn(a.ctx, "tunnel_check_result", func(optionalData ...interface{}) {
@@ -324,8 +326,13 @@ retry:
 	if err != nil {
 		if strings.HasPrefix(err.Error(), "tunnel preparation failed:") {
 			if tunCfg != nil {
-				a.ShowWarnMsg("Failed to prepare tunnel, will start without it\n\nError: " + err.Error())
-				tunCfg = nil
+				if !tunnelAsked {
+					// error before tunnel popup, drop tunnel
+					a.ShowWarnMsg("Failed to prepare tunnel, will start without it\n\nError: " + err.Error())
+					tunCfg = nil
+				} else {
+					a.ShowWarnMsg("Failed to prepare tunnel\n\nError: " + err.Error())
+				}
 			}
 			goto retry
 		}

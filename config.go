@@ -52,6 +52,7 @@ func LoadConfig(dir string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
+		cfg.TunnelConfig.PaymentsEnabled = true
 		cfg.TunnelConfig.Payments.DBPath = dir + "/payments-db"
 		cfg.TunnelConfig.Payments.ChannelsConfig.SupportedCoins.Ton.BalanceControl.DepositUpToAmount = "3"
 		cfg.TunnelConfig.Payments.ChannelsConfig.SupportedCoins.Ton.BalanceControl.DepositWhenAmountLessThan = "1"
@@ -83,6 +84,7 @@ func LoadConfig(dir string) (*Config, error) {
 		}
 	}
 
+	var updated bool
 	if cfg.Version < 1 {
 		cfg.Version = 1
 		cfg.TunnelConfig, err = tunnelConfig.GenerateClientConfig()
@@ -92,7 +94,16 @@ func LoadConfig(dir string) (*Config, error) {
 		cfg.TunnelConfig.Payments.DBPath = dir + "/payments-db"
 		cfg.TunnelConfig.Payments.ChannelsConfig.SupportedCoins.Ton.BalanceControl.DepositUpToAmount = "3"
 		cfg.TunnelConfig.Payments.ChannelsConfig.SupportedCoins.Ton.BalanceControl.DepositWhenAmountLessThan = "1"
+		updated = true
+	}
 
+	if cfg.Version < 2 {
+		cfg.Version = 2
+		cfg.TunnelConfig.PaymentsEnabled = true
+		updated = true
+	}
+
+	if updated {
 		err = cfg.SaveConfig(dir)
 		if err != nil {
 			return nil, err

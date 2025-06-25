@@ -94,21 +94,14 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                     });
                     return;
                 }
+                
+                setState(current => {
+                    const providersMap = new Map<string, Provider>();
 
-                console.log(provider);
-
-                setState((current) => {
-                    let ps: Provider[] = [];
+                    // ① данные из контракта
                     if (provider.Providers) {
-                        for (const p of provider.Providers) {
-                            let curI = current.providers.findIndex(v => v.id == p.Key);
-
-                            if (curI != -1 && current.providers[curI].type == 'new') {
-                                // it is not new anymore
-                                current.providers[curI].type = 'committed';
-                            }
-
-                            ps.push({
+                        provider.Providers.forEach(p => {
+                            providersMap.set(p.Key, {
                                 id: p.Key,
                                 lastProof: p.LastProof,
                                 proofEvery: p.Span,
@@ -117,24 +110,19 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                                 status: p.Status,
                                 reason: p.Reason,
                                 peer: p.Peer,
-                                type: curI != -1 ? current.providers[curI].type : 'committed',
+                                type: 'committed',
                                 data: p.Data,
                             });
-                        }
-                    }
-                    // push new
-                    ps.push(...current.providers.filter(v => v.type == 'new'));
-                    
-                    // Load new providers from local cache
-                    const cachedProviders = JSON.parse(localStorage.getItem('providers_' + props.torrent) || '[]') as Provider[];
-                    for (const cachedProvider of cachedProviders) {
-                        const existingProvider = current.providers.find(v => v.id === cachedProvider.id);
-                        if (!existingProvider) {
-                            ps.push({...cachedProvider, type: 'new'});
-                        }
+                        });
                     }
 
-                    return {...current, providers: ps, fetched: true, contractBalance: provider.Balance, address: provider.Address}
+                    current.providers
+                        .filter(v => v.type === 'new' && !providersMap.has(v.id))
+                        .forEach(v => providersMap.set(v.id, v));
+
+                    const providers = Array.from(providersMap.values());
+
+                    return {...current, providers: providers, fetched: true, contractBalance: provider.Balance, address: provider.Address}
                 });
             });
         }
@@ -165,7 +153,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                 current.providers.push(newProvider);
 
                 // Save provider to local cache
-                let cachedProviders = JSON.parse(localStorage.getItem('providers') || '[]') as Provider[];
+                let cachedProviders = JSON.parse(localStorage.getItem('providers_' + props.torrent) || '[]') as Provider[];
                 if (!cachedProviders.find(v => v.id === p.Key)) {
                     cachedProviders.push(newProvider);
                     localStorage.setItem('providers_'+props.torrent, JSON.stringify(cachedProviders));
@@ -267,7 +255,7 @@ export const ProvidersTorrentMenu: React.FC<ProvidersProps> = (props) => {
                         let prs = state.providers;
 
                         // Save provider to local cache
-                        let cachedProviders = JSON.parse(localStorage.getItem('providers') || '[]') as Provider[];
+                        let cachedProviders = JSON.parse(localStorage.getItem('providers_' + props.torrent) || '[]') as Provider[];
                         if (cachedProviders.find(v => v.id === prs[i].id)) {
                             cachedProviders = cachedProviders.filter(v => v.id !== prs[i].id);
                             localStorage.setItem('providers_' + props.torrent, JSON.stringify(cachedProviders));
