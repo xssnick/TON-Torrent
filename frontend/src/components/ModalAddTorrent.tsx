@@ -8,7 +8,7 @@ import {
     StartDownload
 } from "../../wailsjs/go/main/App";
 import {Refresh} from "./Table";
-import {baseModal} from "./Modal";
+import {Modal} from "./Modal";
 import Upload from "../assets/images/icons/upload.svg";
 import FileLight from "../../public/light/file-popup.svg";
 import FileDark from "../../public/dark/file-popup.svg";
@@ -192,7 +192,7 @@ export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
     }
 
     render() {
-        return baseModal(this.cancel, (
+        return <Modal allowClose={true} onHide={this.cancel} content={(
             <>
                 <div style={(this.state.selectFilesStage && this.state.files.length == 0) ? {} : {display: "none"}} className="add-torrent-block">
                     <span className="title">Searching for torrent info...</span>
@@ -247,6 +247,6 @@ export class AddTorrentModal extends Component<AddTorrentModalProps, State> {
                     </button>
                 </div>
             </>
-        ));
+        )}/>;
     }
 }

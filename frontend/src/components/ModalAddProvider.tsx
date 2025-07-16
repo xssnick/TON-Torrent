@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {baseModal} from "./Modal";
+import {Modal} from "./Modal";
 import {
     CancelCreateTorrent,
     CreateTorrent,
@@ -57,7 +57,7 @@ export class AddProviderModal extends Component<AddProviderModalProps, State> {
     }
 
     render() {
-        return baseModal(this.props.onExit, (
+        return <Modal allowClose={true} onHide={this.props.onExit} content={(
             <>
                 <div style={this.state.fetchStage ? {width: "287px"} : {display: "none"}} className="add-torrent-block">
                     <span className="title">Connecting to provider...</span>
@@ -88,6 +88,6 @@ export class AddProviderModal extends Component<AddProviderModalProps, State> {
                     </button>
                 </div>}
             </>
-        ));
+        )}/>;
     }
 }

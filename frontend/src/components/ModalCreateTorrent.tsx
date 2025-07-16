@@ -1,12 +1,10 @@
 import React, {Component} from 'react';
-import {baseModal} from "./Modal";
+import {Modal} from "./Modal";
 import {
     CancelCreateTorrent,
     CreateTorrent,
-    ExportMeta,
     OpenDir,
     OpenFile,
-    OpenFolderSelectFile
 } from "../../wailsjs/go/main/App";
 import {EventsOff, EventsOn} from "../../wailsjs/runtime";
 
@@ -68,7 +66,7 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
     }
 
     render() {
-        return baseModal(this.props.onExit, (
+        return <Modal allowClose={!this.state.createdStage} onHide={this.props.onExit} content={(
             <>
                 <div style={this.state.createdStage ? {width: "287px"} : {display: "none"}} className="add-torrent-block">
                     {this.state.hash ? <div className="torrent-created">
@@ -136,6 +134,6 @@ export class CreateTorrentModal extends Component<CreateTorrentModalProps, State
                     </button>
                 </div>}
             </>
-        ));
+        )}/>;
     }
 }

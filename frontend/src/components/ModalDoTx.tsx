@@ -1,5 +1,5 @@
 import React, {Component, useState} from 'react';
-import {baseModal} from "./Modal";
+import {Modal} from "./Modal";
 import {
     BuildProviderContractData,
     CancelCreateTorrent,
@@ -9,7 +9,6 @@ import {
     OpenDir,
     OpenFolderSelectFile
 } from "../../wailsjs/go/main/App";
-import {EventsEmit, EventsOff, EventsOn} from "../../wailsjs/runtime";
 import {useTonAddress, useTonConnectUI, useTonWallet} from "@tonconnect/ui-react";
 import {ProvidersProps} from "./ProvidersTorrentMenu";
 
@@ -34,7 +33,7 @@ export const DoTxModal: React.FC<DoTxModalProps> = (props) => {
     });
 
     const [tonConnectUI] = useTonConnectUI();
-    return baseModal(props.onExit, (
+    return <Modal allowClose={true} onHide={props.onExit} content={(
         <>
             <div style={{width: "287px"}} className="add-torrent-block">
                 <span className="title">Contract deposit</span>
@@ -86,5 +85,5 @@ export const DoTxModal: React.FC<DoTxModalProps> = (props) => {
                 </button>
             </div>
         </>
-    ));
+    )}/>;
 }

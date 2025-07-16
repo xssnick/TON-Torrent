@@ -118,8 +118,8 @@ export function RequestProviderStorageInfo(arg1, arg2, arg3) {
   return window['go']['main']['App']['RequestProviderStorageInfo'](arg1, arg2, arg3);
 }
 
-export function SaveConfig(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['SaveConfig'](arg1, arg2, arg3, arg4);
+export function SaveConfig(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['SaveConfig'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function SaveTunnelConfig(arg1, arg2) {

@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {baseModal} from "./Modal";
+import {Modal} from "./Modal";
 import {
     GetConfig,
     GetSpeedLimit,
@@ -7,7 +7,6 @@ import {
     SaveConfig,
     SetSpeedLimit,
     OpenTunnelConfig,
-    ReinitApp
 } from "../../wailsjs/go/main/App";
 import {BrowserOpenURL} from "../../wailsjs/runtime";
 
@@ -18,6 +17,7 @@ interface State {
     addrValid: boolean
     uploadSpeed: string
     downloadSpeed: string
+    selectedTunnelConfig: boolean
 
     seedFiles: boolean
 
@@ -40,6 +40,7 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
             downloadSpeed: "",
             seedFiles: false,
             tunnelConfig: "",
+            selectedTunnelConfig: false,
         };
     }
 
@@ -73,19 +74,19 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
             u = Number(this.state.uploadSpeed);
         }
 
-        SaveConfig(this.state.downloads, this.state.seedFiles, this.state.addr, this.state.tunnelConfig).then(()=>{
+        SaveConfig(this.state.downloads, this.state.seedFiles, this.state.addr, this.state.tunnelConfig, this.state.selectedTunnelConfig).then(()=>{
             SetSpeedLimit(d, u).then();
         });
         this.props.onExit();
     }
 
     render() {
-        return baseModal(this.props.onExit, (
+        return <Modal allowClose={true} onHide={this.props.onExit} content={(
             <>
                 <div style={{width: "287px"}} className="add-torrent-block">
                     <span className="title">Settings</span>
                     <span className="field-name">Downloads directory</span>
-                    <div className="create-input">
+                    <div className="create-input" title={this.state.downloads}>
                         <span>{
                             this.state.downloads.length > 25 ? "..." + this.state.downloads.slice(this.state.downloads.length - 25, this.state.downloads.length) : this.state.downloads
                         }</span>
@@ -99,7 +100,7 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                         </button>
                     </div>
                     <span style={{ marginTop: "7px" }} className="field-name">Tunnel config</span>
-                    <div className="create-input">
+                    <div className="create-input" title={this.state.tunnelConfig}>
                         <span>{this.state.tunnelConfig == "" ? "Not selected" : (this.state.tunnelConfig.length > 25 ? "..." + this.state.tunnelConfig.slice(this.state.tunnelConfig.length - 25, this.state.tunnelConfig.length) : this.state.tunnelConfig)}</span>
                         <button onClick={() => {
                             OpenTunnelConfig().then((p: any) => {
@@ -107,7 +108,7 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                                 if (p) {
                                     path = p.Path;
                                 }
-                                this.setState((current) => ({...current, tunnelConfig: path}));
+                                this.setState((current) => ({...current, tunnelConfig: path, selectedTunnelConfig: true}));
                             })
                         }}>Select
                         </button>
@@ -142,18 +143,14 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                     <div className="set-speed"
                          style={{display: this.state.seedFiles ? 'block' : 'none'}}>
                         <span className="field-name">External ip and port to listen on</span>
-                        <input type="text"
+                        <input type="text" className={this.state.addrValid ? "" : "invalid"}
                                pattern="((\b25[0-5]|\b2[0-4][0-9]|\b[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3})(?::((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4})))\b"
                                value={this.state.addr} onChange={(e) => {
                             let valid = e.target.validity.valid
-                            if (!valid) {
-                                if (!e.target.classList.contains("invalid"))
-                                    e.target.classList.add("invalid")
-                            } else {
-                                e.target.classList.remove("invalid")
-                            }
                             this.setState((current) => ({...current, addr: e.target.value, addrValid: valid}))
                         }}/>
+                        {this.state.addrValid ? "" : <span className="field-error">Address is invalid, use format ip:port</span>}
+
                     </div>
                     {this.state.err ? <span className="error">{this.state.err}</span> : ""}
                 </div>
@@ -171,12 +168,12 @@ export class SettingsModal extends Component<SettingsModalProps, State> {
                     </button>
                 </div>
                 <div className="modal-version">
-                    <span className="version">Version 1.7.1</span>
+                    <span className="version">Version 1.7.2</span>
                     <span className="check" onClick={() => {
                         BrowserOpenURL("https://github.com/xssnick/TON-Torrent/releases")
                     }}>Check updates</span>
                 </div>
             </>
-        ));
+        )}/>;
     }
 }

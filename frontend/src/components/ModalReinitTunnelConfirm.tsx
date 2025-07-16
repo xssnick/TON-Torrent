@@ -1,9 +1,5 @@
 import React, {Component} from 'react';
-import {baseModal} from "./Modal";
-import {GetInfo, RemoveTorrent} from "../../wailsjs/go/main/App";
-import {Refresh} from "./Table";
-import FileLight from "../../public/light/file-popup.svg";
-import FileDark from "../../public/dark/file-popup.svg";
+import {Modal} from "./Modal";
 import {EventsEmit} from "../../wailsjs/runtime";
 
 interface ReinitTunnelConfirmProps {
@@ -21,7 +17,7 @@ export class ReinitTunnelConfirm extends Component<ReinitTunnelConfirmProps, {}>
     }
 
     render() {
-        return baseModal(this.props.onExit, (
+        return <Modal onHide={this.props.onExit} content={(
             <>
                 <div className="add-torrent-block">
                     <span className="title">Tunnel seems stalled, do you want to reinit it?</span>
@@ -36,6 +32,6 @@ export class ReinitTunnelConfirm extends Component<ReinitTunnelConfirmProps, {}>
                     </button>
                 </div>
             </>
-        ));
+        )}/>;
     }
 }

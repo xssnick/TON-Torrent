@@ -16,7 +16,7 @@ import (
 	"github.com/tonutils/torrent-client/core/upnp"
 	"github.com/tonutils/torrent-client/oshook"
 	runtime2 "github.com/wailsapp/wails/v2/pkg/runtime"
-	"github.com/xssnick/ton-payment-network/tonpayments/chain"
+	"github.com/xssnick/ton-payment-network/tonpayments/wallet"
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/tl"
 	"github.com/xssnick/tonutils-go/tlb"
@@ -497,7 +497,7 @@ func (a *App) BuildWithdrawalContractData(hash, ownerAddr string) *api.Transacti
 }
 
 func (a *App) GetPaymentNetworkWalletAddr() string {
-	w, err := chain.InitWallet(ton.NewAPIClient(liteclient.NewOfflineClient()), ed25519.NewKeyFromSeed(a.config.TunnelConfig.Payments.WalletPrivateKey))
+	w, err := wallet.InitWallet(ton.NewAPIClient(liteclient.NewOfflineClient()), ed25519.NewKeyFromSeed(a.config.TunnelConfig.Payments.WalletPrivateKey))
 	if err != nil {
 		log.Println(err.Error())
 		return "{ERROR}"
@@ -864,7 +864,7 @@ func (a *App) SaveTunnelConfig(num uint, payments bool) string {
 	return ""
 }
 
-func (a *App) SaveConfig(downloads string, seedMode bool, storageExtIP, tunnelConfigPath string) string {
+func (a *App) SaveConfig(downloads string, seedMode bool, storageExtIP, tunnelConfigPath string, selectedNewTun bool) string {
 	reload := false
 	a.config.DownloadsPath = downloads
 
@@ -889,7 +889,7 @@ func (a *App) SaveConfig(downloads string, seedMode bool, storageExtIP, tunnelCo
 		return err.Error()
 	}
 
-	if reload {
+	if reload || selectedNewTun {
 		a.ReinitApp()
 	}
 

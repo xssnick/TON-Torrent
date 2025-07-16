@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {baseModal} from "./Modal";
+import {Modal} from "./Modal";
 import {GetInfo, RemoveTorrent} from "../../wailsjs/go/main/App";
 import {Refresh} from "./Table";
 import FileLight from "../../public/light/file-popup.svg";
@@ -41,7 +41,7 @@ export class RemoveConfirmModal extends Component<RemoveConfirmModalProps, State
     }
 
     render() {
-        return baseModal(this.props.onExit, (
+        return <Modal onHide={this.props.onExit} content={(
             <>
                 <div className="add-torrent-block">
                     <span className="title">Are you sure you want to delete torrents below?</span>
@@ -65,6 +65,6 @@ export class RemoveConfirmModal extends Component<RemoveConfirmModalProps, State
                     </button>
                 </div>
             </>
-        ));
+        )}/>;
     }
 }

@@ -61,7 +61,7 @@ export function RemoveTorrent(arg1:string,arg2:boolean,arg3:boolean):Promise<str
 
 export function RequestProviderStorageInfo(arg1:string,arg2:string,arg3:string):Promise<api.ProviderStorageInfo>;
 
-export function SaveConfig(arg1:string,arg2:boolean,arg3:string,arg4:string):Promise<string>;
+export function SaveConfig(arg1:string,arg2:boolean,arg3:string,arg4:string,arg5:boolean):Promise<string>;
 
 export function SaveTunnelConfig(arg1:number,arg2:boolean):Promise<string>;
 

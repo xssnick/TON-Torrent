@@ -87,6 +87,16 @@
     line-height: 18px; /* 150% */
     letter-spacing: -0.007px;
   }
+  .field-error {
+    padding-left: 12px;
+    color: red;
+    font-variant-numeric: lining-nums tabular-nums;
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 14px; /* 150% */
+    letter-spacing: -0.007px;
+  }
   .torrent-name-input {
     margin-bottom: 8px;
   }

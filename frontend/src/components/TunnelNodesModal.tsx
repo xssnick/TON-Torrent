@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import { baseModal } from "./Modal";
+import { Modal } from "./Modal";
 import {main} from "../../wailsjs/go/models";
 import SectionInfo = main.SectionInfo;
 import {GetConfig, GetMaxTunnelNodes, GetPaymentNetworkWalletAddr} from "../../wailsjs/go/main/App";
@@ -119,7 +119,7 @@ export const TunnelNodesModal: React.FC<TunnelNodesModalProps> = ({
                         />
                     </div>
                     <div className="important-text">
-                        Please make sure there is enough TON for tunnel payments and payment-network contract deployment, deposit at least 5 TON.
+                        Please make sure there is enough TON for tunnel payments and payment-network contract deployment, deposit at least 5.5 TON.
                     </div>
                 </div>
             </div>: null}
@@ -140,7 +140,7 @@ export const TunnelNodesModal: React.FC<TunnelNodesModalProps> = ({
         </div>
     );
 
-    return baseModal(onCancel, content);
+    return <Modal allowClose={true} onHide={onCancel} content={content}/>;
 };
 
 export default TunnelNodesModal;
